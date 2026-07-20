@@ -1,0 +1,28 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+*.g.dart
+*.freezed.dart
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Secrets - never commit real keys
+env.json
+firebase_options.dart
+*.env
+
+# Platform build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+/ios/Flutter/App.framework
+/ios/Flutter/Flutter.framework
+/ios/Pods/
