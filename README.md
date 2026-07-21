@@ -1,4 +1,4 @@
-# Carlton Leisure — Flutter app
+# Carlton Leisure — Mobile Application
 
 Phase 1 scaffold: project structure, theme, navigation skeleton, DI, and a
 placeholder auth flow. Booking/payment/hotels/cars folders exist but are
