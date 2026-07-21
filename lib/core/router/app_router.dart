@@ -1,12 +1,14 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 
 abstract class AppRoutes {
   static const splash = '/';
   static const login = '/login';
+  static const signup = '/signup';
   static const home = '/home';
 
   // Add as each feature is built:
@@ -30,6 +32,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.login,
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.signup,
+      builder: (context, state) => const SignupScreen(),
     ),
     GoRoute(
       path: AppRoutes.home,
