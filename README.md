@@ -110,7 +110,7 @@ Each feature folder follows `data/` (API + local models),
 ## Roadmap
 
 - [x] Phase 1 — project setup, theme, navigation skeleton, auth placeholder
-- [ ] Phase 2 — flight search + results + details
+- [x] Phase 2 — flight search + results + details
 - [ ] Phase 3 — booking flow + payment integration (Stripe/Card/Barclays/PayPal)
 - [ ] Phase 4 — hotels & cars modules
 - [ ] Phase 5 — profile, trips history, push notifications
