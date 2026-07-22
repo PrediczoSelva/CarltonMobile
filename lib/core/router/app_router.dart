@@ -3,6 +3,12 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/booking/presentation/screens/booking_confirmation_screen.dart';
+import '../../features/booking/presentation/screens/booking_summary_screen.dart';
+import '../../features/booking/presentation/screens/card_payment_screen.dart';
+import '../../features/booking/presentation/screens/payment_method_selection_screen.dart';
+import '../../features/booking/presentation/screens/payment_processing_screen.dart';
+import '../../features/booking/presentation/screens/passenger_details_screen.dart';
 import '../../features/flight/presentation/screens/flight_search_screen.dart';
 import '../../features/flight/presentation/screens/flight_results_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
@@ -18,6 +24,12 @@ abstract class AppRoutes {
   static const personalDetails = '/profile/personal-details';
   static const flightSearch = '/flights/search';
   static const flightResults = '/flights/results';
+  static const passengerDetails = '/booking/passenger-details';
+  static const bookingSummary = '/booking/summary';
+  static const paymentMethodSelection = '/booking/payment-method';
+  static const cardPayment = '/booking/payment/card';
+  static const paymentProcessing = '/booking/payment/process';
+  static const bookingConfirmation = '/booking/confirmation';
 
   // Add as each feature is built:
   // static const flightSearch = '/flights/search';
@@ -64,6 +76,30 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.flightResults,
       builder: (context, state) => const FlightResultsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.passengerDetails,
+      builder: (context, state) => const PassengerDetailsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.bookingSummary,
+      builder: (context, state) => const BookingSummaryScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.paymentMethodSelection,
+      builder: (context, state) => const PaymentMethodSelectionScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.cardPayment,
+      builder: (context, state) => const CardPaymentScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.paymentProcessing,
+      builder: (context, state) => const PaymentProcessingScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.bookingConfirmation,
+      builder: (context, state) => const BookingConfirmationScreen(),
     ),
   ],
 );
