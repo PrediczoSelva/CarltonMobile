@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -135,7 +136,7 @@ class FlightResultsScreen extends StatelessWidget {
                       SizedBox(
                         width: 100,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => context.push('/booking/passenger-details'),
                           child: const Text('Book'),
                         ),
                       ),
