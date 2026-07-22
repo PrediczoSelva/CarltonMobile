@@ -47,6 +47,33 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  static const _hotelSuggestions = [
+    _HotelSuggestion(
+      name: 'Shangri-La Colombo',
+      location: 'Colombo, Sri Lanka',
+      price: 45000,
+      rating: 4.8,
+    ),
+    _HotelSuggestion(
+      name: 'Taj Samudra',
+      location: 'Colombo, Sri Lanka',
+      price: 52000,
+      rating: 4.6,
+    ),
+    _HotelSuggestion(
+      name: 'Cinnamon Grand',
+      location: 'Colombo, Sri Lanka',
+      price: 48000,
+      rating: 4.7,
+    ),
+    _HotelSuggestion(
+      name: 'Heritance Kandalama',
+      location: 'Dambulla, Sri Lanka',
+      price: 38000,
+      rating: 4.5,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,7 +209,90 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (_tabIndex == 1) {
-      return const Center(child: Text('Hotels search form goes here'));
+      return ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          const SizedBox(height: 8),
+          TextField(
+            readOnly: true,
+            decoration: InputDecoration(
+              hintText: 'Search hotels',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: const Icon(Icons.tune),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Suggested hotels', style: AppTextStyles.h4),
+              TextButton(onPressed: () {}, child: const Text('See all')),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _hotelSuggestions.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final hotel = _hotelSuggestions[index];
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.hotel, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(hotel.name, style: AppTextStyles.bodyLarge),
+                            const SizedBox(height: 2),
+                            Text(hotel.location, style: AppTextStyles.bodySmall),
+                            Row(
+                              children: [
+                                const Icon(Icons.star, size: 16, color: AppColors.accent),
+                                const SizedBox(width: 4),
+                                Text(hotel.rating.toString(), style: AppTextStyles.bodySmall),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('LKR ${hotel.price.toStringAsFixed(0)}', style: AppTextStyles.price),
+                          const SizedBox(height: 4),
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(64, 32),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                            ),
+                            child: const Text('Book'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
     }
 
     return const Center(child: Text('Cars search form goes here'));
@@ -203,4 +313,18 @@ class _FlightSuggestion {
   final String city;
   final double price;
   final String date;
+}
+
+class _HotelSuggestion {
+  const _HotelSuggestion({
+    required this.name,
+    required this.location,
+    required this.price,
+    required this.rating,
+  });
+
+  final String name;
+  final String location;
+  final double price;
+  final double rating;
 }
