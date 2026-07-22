@@ -74,6 +74,33 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  static const _carSuggestions = [
+    _CarSuggestion(
+      name: 'Toyota Prius',
+      category: 'Sedan',
+      price: 8500,
+      seats: 5,
+    ),
+    _CarSuggestion(
+      name: 'Honda CR-V',
+      category: 'SUV',
+      price: 12000,
+      seats: 5,
+    ),
+    _CarSuggestion(
+      name: 'Toyota Hiace',
+      category: 'Van',
+      price: 18000,
+      seats: 8,
+    ),
+    _CarSuggestion(
+      name: 'Suzuki Alto',
+      category: 'Hatchback',
+      price: 5500,
+      seats: 4,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -295,7 +322,83 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    return const Center(child: Text('Cars search form goes here'));
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      children: [
+        const SizedBox(height: 8),
+        TextField(
+          readOnly: true,
+          decoration: InputDecoration(
+            hintText: 'Search cars',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: const Icon(Icons.tune),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Suggested cars', style: AppTextStyles.h4),
+            TextButton(onPressed: () {}, child: const Text('See all')),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _carSuggestions.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final car = _carSuggestions[index];
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.directions_car, color: AppColors.primary),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(car.name, style: AppTextStyles.bodyLarge),
+                          const SizedBox(height: 2),
+                          Text('${car.category} • ${car.seats} seats', style: AppTextStyles.bodySmall),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('LKR ${car.price.toStringAsFixed(0)}', style: AppTextStyles.price),
+                        const SizedBox(height: 4),
+                        ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(64, 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          child: const Text('Book'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
   }
 }
 
@@ -327,4 +430,18 @@ class _HotelSuggestion {
   final String location;
   final double price;
   final double rating;
+}
+
+class _CarSuggestion {
+  const _CarSuggestion({
+    required this.name,
+    required this.category,
+    required this.price,
+    required this.seats,
+  });
+
+  final String name;
+  final String category;
+  final double price;
+  final int seats;
 }
