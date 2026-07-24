@@ -14,6 +14,7 @@ import '../../features/flight/presentation/screens/flight_results_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/profile/presentation/screens/settings_screen.dart';
 
 abstract class AppRoutes {
   static const splash = '/';
@@ -22,6 +23,7 @@ abstract class AppRoutes {
   static const home = '/home';
   static const profile = '/profile';
   static const personalDetails = '/profile/personal-details';
+  static const settings = '/profile/settings';
   static const flightSearch = '/flights/search';
   static const flightResults = '/flights/results';
   static const passengerDetails = '/booking/passenger-details';
@@ -100,6 +102,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.bookingConfirmation,
       builder: (context, state) => const BookingConfirmationScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.settings,
+      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );
