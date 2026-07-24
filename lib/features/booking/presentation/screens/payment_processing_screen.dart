@@ -48,7 +48,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                     const SizedBox(height: 24),
                     Text('Payment successful', style: AppTextStyles.h3),
                     const SizedBox(height: 8),
-                    Text('LKR 97,000 paid successfully', style: AppTextStyles.bodyMedium),
+                    Text('GBP 97,000 paid successfully', style: AppTextStyles.bodyMedium),
                     const SizedBox(height: 24),
                     PrimaryButton(
                       label: 'View confirmation',
