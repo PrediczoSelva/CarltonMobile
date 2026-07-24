@@ -31,7 +31,7 @@ class SettingsScreen extends StatelessWidget {
               const _SettingsTile(
                 icon: Icons.attach_money,
                 title: 'Currency',
-                subtitle: 'LKR',
+                subtitle: 'GBP',
                 onTap: null,
               ),
             ],
