@@ -212,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('LKR ${flight.price.toStringAsFixed(0)}', style: AppTextStyles.price),
+                          Text('GBP ${flight.price.toStringAsFixed(0)}', style: AppTextStyles.price),
                           const SizedBox(height: 4),
                           ElevatedButton(
                             onPressed: () {},
@@ -299,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('LKR ${hotel.price.toStringAsFixed(0)}', style: AppTextStyles.price),
+                          Text('GBP ${hotel.price.toStringAsFixed(0)}', style: AppTextStyles.price),
                           const SizedBox(height: 4),
                           ElevatedButton(
                             onPressed: () {},
@@ -378,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('LKR ${car.price.toStringAsFixed(0)}', style: AppTextStyles.price),
+                        Text('GBP ${car.price.toStringAsFixed(0)}', style: AppTextStyles.price),
                         const SizedBox(height: 4),
                         ElevatedButton(
                           onPressed: () {},
