@@ -58,7 +58,7 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                   children: [
                     Text('Amount to pay', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textOnPrimary)),
                     const SizedBox(height: 8),
-                    Text('LKR 97000', style: AppTextStyles.h2.copyWith(color: AppColors.textOnPrimary)),
+                    Text('GBP 97000', style: AppTextStyles.h2.copyWith(color: AppColors.textOnPrimary)),
                   ],
                 ),
               ),
