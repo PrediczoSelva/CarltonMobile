@@ -31,7 +31,7 @@ class BookingConfirmationScreen extends StatelessWidget {
           _ConfirmationRow(label: 'Arrival', value: '13:45'),
           _ConfirmationRow(label: 'Passenger', value: 'John Doe'),
           _ConfirmationRow(label: 'Seat', value: '12A'),
-          _ConfirmationRow(label: 'Total paid', value: 'LKR 97,000'),
+          _ConfirmationRow(label: 'Total paid', value: 'GBP 97,000'),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {},
