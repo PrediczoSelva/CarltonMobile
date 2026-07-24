@@ -31,7 +31,7 @@ class ProfileScreen extends StatelessWidget {
           _ProfileTile(icon: Icons.person_outline, label: 'Personal details', onTap: () => context.push('/profile/personal-details')),
           _ProfileTile(icon: Icons.favorite_border, label: 'Saved preferences', onTap: () {}),
           _ProfileTile(icon: Icons.card_giftcard_outlined, label: 'My trips', onTap: () {}),
-          _ProfileTile(icon: Icons.settings_outlined, label: 'Settings', onTap: () {}),
+          _ProfileTile(icon: Icons.settings_outlined, label: 'Settings', onTap: () => context.push('/profile/settings')),
           _ProfileTile(icon: Icons.help_outline, label: 'Help & support', onTap: () {}),
           const SizedBox(height: 24),
           ElevatedButton.icon(
