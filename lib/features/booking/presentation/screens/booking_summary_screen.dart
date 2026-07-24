@@ -46,14 +46,14 @@ class BookingSummaryScreen extends StatelessWidget {
           _SummarySection(
             title: 'Payment',
             children: [
-              _SummaryRow(label: 'Base fare', value: 'LKR 85,000'),
-              _SummaryRow(label: 'Taxes & fees', value: 'LKR 12,000'),
+              _SummaryRow(label: 'Base fare', value: 'GBP 85,000'),
+              _SummaryRow(label: 'Taxes & fees', value: 'GBP 12,000'),
               const SizedBox(height: 8),
               Row(
                 children: [
                   Text('Total', style: AppTextStyles.h4),
                   const Spacer(),
-                  Text('LKR 97,000', style: AppTextStyles.price),
+                  Text('GBP 97,000', style: AppTextStyles.price),
                 ],
               ),
             ],
