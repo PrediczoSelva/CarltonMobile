@@ -131,7 +131,7 @@ class FlightResultsScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Text('LKR ${flight.price.toStringAsFixed(0)}', style: AppTextStyles.price),
+                      Text('GBP ${flight.price.toStringAsFixed(0)}', style: AppTextStyles.price),
                       const Spacer(),
                       SizedBox(
                         width: 100,
