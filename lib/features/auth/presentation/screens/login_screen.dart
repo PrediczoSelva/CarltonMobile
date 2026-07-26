@@ -60,8 +60,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
               PrimaryButton(label: 'Sign in', isLoading: _isLoading, onPressed: _handleLogin),
-              const SizedBox(height: 12),
-              TextButton(onPressed: () {}, child: const Text('Continue as guest')),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => context.push('/forgot-password'),
+                child: const Text('Forgot password?'),
+              ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => context.push('/signup'),
