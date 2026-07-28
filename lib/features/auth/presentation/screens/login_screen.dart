@@ -29,10 +29,22 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in both email and password'),
+        ),
+      );
+      return;
+    }
+
     context.read<AuthBloc>().add(
           AuthLoginRequested(
-            username: _emailController.text.trim(),
-            password: _passwordController.text,
+            username: email,
+            password: password,
           ),
         );
   }
@@ -73,8 +85,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Password'),
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 BlocBuilder<AuthBloc, AuthState>(
