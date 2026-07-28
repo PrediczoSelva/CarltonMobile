@@ -12,7 +12,7 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
 
   final ApiClient _apiClient;
 
-  static const String _basePath = '/api/Auth';
+  static const String _basePath = '/Auth';
 
   @override
   Future<LoginResponse> login(LoginRequest request) async {
