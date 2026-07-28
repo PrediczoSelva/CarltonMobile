@@ -51,25 +51,25 @@ class _HomeScreenState extends State<HomeScreen> {
     _HotelSuggestion(
       name: 'Shangri-La Colombo',
       location: 'Colombo, Sri Lanka',
-      price: 45000,
+      price: 4500,
       rating: 4.8,
     ),
     _HotelSuggestion(
       name: 'Taj Samudra',
       location: 'Colombo, Sri Lanka',
-      price: 52000,
+      price: 5200,
       rating: 4.6,
     ),
     _HotelSuggestion(
       name: 'Cinnamon Grand',
       location: 'Colombo, Sri Lanka',
-      price: 48000,
+      price: 4800,
       rating: 4.7,
     ),
     _HotelSuggestion(
       name: 'Heritance Kandalama',
       location: 'Dambulla, Sri Lanka',
-      price: 38000,
+      price: 3800,
       rating: 4.5,
     ),
   ];
@@ -78,25 +78,25 @@ class _HomeScreenState extends State<HomeScreen> {
     _CarSuggestion(
       name: 'Toyota Prius',
       category: 'Sedan',
-      price: 8500,
+      price: 850,
       seats: 5,
     ),
     _CarSuggestion(
       name: 'Honda CR-V',
       category: 'SUV',
-      price: 12000,
+      price: 1200,
       seats: 5,
     ),
     _CarSuggestion(
       name: 'Toyota Hiace',
       category: 'Van',
-      price: 18000,
+      price: 1800,
       seats: 8,
     ),
     _CarSuggestion(
       name: 'Suzuki Alto',
       category: 'Hatchback',
-      price: 5500,
+      price: 550,
       seats: 4,
     ),
   ];
