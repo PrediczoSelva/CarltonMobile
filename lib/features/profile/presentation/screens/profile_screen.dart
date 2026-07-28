@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -35,7 +38,10 @@ class ProfileScreen extends StatelessWidget {
           _ProfileTile(icon: Icons.help_outline, label: 'Help & support', onTap: () {}),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => context.go('/login'),
+            onPressed: () {
+              context.read<AuthBloc>().add(AuthLogoutRequested());
+              context.go('/login');
+            },
             icon: const Icon(Icons.logout),
             label: const Text('Log out'),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
