@@ -8,7 +8,7 @@ class AppConstants {
   // a .env file that is gitignored. See README for setup.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.carltonleisure.com/v1',
+    defaultValue: 'http://10.0.2.2:5193/api',
   );
 
   static const String stripePublishableKey = String.fromEnvironment(
