@@ -26,3 +26,5 @@ firebase_options.dart
 /ios/Flutter/App.framework
 /ios/Flutter/Flutter.framework
 /ios/Pods/
+.DS_Store
+.kilo/
