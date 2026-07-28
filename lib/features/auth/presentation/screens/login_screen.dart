@@ -18,6 +18,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -59,12 +61,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 Text('Welcome back', style: AppTextStyles.h2),
                 const SizedBox(height: 8),
-                Text('Sign in to manage your bookings', style: AppTextStyles.bodyMedium),
+                Text('Sign in to manage your bookings',
+                    style: AppTextStyles.bodyMedium),
                 const SizedBox(height: 32),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'Email', hintText: 'you@example.com'),
+                  decoration: const InputDecoration(
+                      labelText: 'Email', hintText: 'you@example.com'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
