@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../auth/domain/entities/user.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 
 class PassengerDetailsScreen extends StatefulWidget {
   const PassengerDetailsScreen({super.key});
 
   @override
-  State<PassengerDetailsScreen> createState() => _PassengerDetailsScreenState();
+  State<PassengerDetailsScreen> createState() =>
+      _PassengerDetailsScreenState();
 }
 
 class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
-  int _passengerCount = 1;
-
   final List<Map<String, TextEditingController>> _passengers = [
     {
       'firstName': TextEditingController(),
@@ -32,21 +36,25 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   bool _isLoading = false;
 
   @override
-  void dispose() {
-    for (final passenger in _passengers) {
-      for (final controller in passenger.values) {
-        controller.dispose();
-      }
+  void initState() {
+    super.initState();
+    _fillUserDetails();
+  }
+
+  void _fillUserDetails() {
+    final state = context.read<AuthBloc>().state;
+    if (state is AuthAuthenticated) {
+      final user = state.user;
+      final parts = user.name.split(' ');
+      _passengers[0]['firstName']!.text = parts.isNotEmpty ? parts.first : '';
+      _passengers[0]['lastName']!.text =
+          parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      _emailController.text = user.username;
     }
-    _emailController.dispose();
-    _phoneController.dispose();
-    _countryController.dispose();
-    super.dispose();
   }
 
   void _addPassenger() {
     setState(() {
-      _passengerCount++;
       _passengers.add({
         'firstName': TextEditingController(),
         'lastName': TextEditingController(),
@@ -68,6 +76,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   }
 
   @override
+  void dispose() {
+    for (final passenger in _passengers) {
+      for (final controller in passenger.values) {
+        controller.dispose();
+      }
+    }
+    _emailController.dispose();
+    _phoneController.dispose();
+    _countryController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Passenger details')),
@@ -79,11 +100,11 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             children: [
               ..._buildPassengerForms(),
               const SizedBox(height: 12),
-              if (_passengerCount < 9)
+              if (_passengers.length < 9)
                 OutlinedButton.icon(
                   onPressed: _addPassenger,
                   icon: const Icon(Icons.add),
-                  label: Text('Add passenger $_passengerCount'),
+                  label: Text('Add passenger ${_passengers.length + 1}'),
                 ),
               const SizedBox(height: 24),
               const Divider(),
@@ -104,10 +125,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _countryController,
-                decoration: const InputDecoration(labelText: 'Country of residence'),
+                decoration: const InputDecoration(
+                    labelText: 'Country of residence'),
               ),
               const SizedBox(height: 24),
-              PrimaryButton(label: 'Continue', isLoading: _isLoading, onPressed: _next),
+              PrimaryButton(
+                label: 'Continue',
+                isLoading: _isLoading,
+                onPressed: _next,
+              ),
             ],
           ),
         ),
@@ -123,7 +149,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       widgets.addAll([
         Row(
           children: [
-            Text(lead ? 'Lead passenger' : 'Passenger ${i + 1}', style: AppTextStyles.h4),
+            Text(lead ? 'Lead passenger' : 'Passenger ${i + 1}',
+                style: AppTextStyles.h4),
             if (lead) ...[
               const SizedBox(width: 8),
               Container(
@@ -132,7 +159,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   color: AppColors.accent,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text('Lead', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textOnAccent)),
+                child: Text('Lead',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textOnAccent)),
               ),
             ],
           ],
