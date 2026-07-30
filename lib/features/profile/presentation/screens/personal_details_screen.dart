@@ -36,6 +36,10 @@ class PersonalDetailsScreen extends StatelessWidget {
         _DetailRow(label: 'Last name', value: lastName),
         _DetailRow(label: 'Email', value: user.username),
         _DetailRow(label: 'Role', value: user.role),
+        _DetailRow(label: 'Phone Number', value: '+94 77 123 4567'),
+        _DetailRow(label: 'Address', value: '123 Main St, Colombo, Sri Lanka'),
+        _DetailRow(label: 'Nationality', value: 'Sri Lankan'),
+        _DetailRow(label: 'Date of Birth', value: '1990-01-01'),
       ],
     );
   }
