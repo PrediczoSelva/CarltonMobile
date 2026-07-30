@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../auth/domain/entities/user.dart';
 
 class PersonalDetailsScreen extends StatelessWidget {
   const PersonalDetailsScreen({super.key});
@@ -9,19 +13,30 @@ class PersonalDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Personal details')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          _DetailRow(label: 'First name', value: 'John'),
-          _DetailRow(label: 'Last name', value: 'Doe'),
-          _DetailRow(label: 'Address', value: '123 Main St, Colombo, Sri Lanka'),
-          _DetailRow(label: 'Email', value: 'john.doe@example.com'),
-          _DetailRow(label: 'Mobile Number', value: '+94 77 123 4567'),
-          _DetailRow(label: 'Gender', value: 'Male'),
-          _DetailRow(label: 'NIC', value: '199012345678'),
-          _DetailRow(label: 'Passport number', value: 'N1234567'),
-        ],
+      body: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is AuthAuthenticated) {
+            return _buildDetails(context, state.user);
+          }
+          return const Center(child: Text('No user data available'));
+        },
       ),
+    );
+  }
+
+  Widget _buildDetails(BuildContext context, UserEntity user) {
+    final parts = user.name.split(' ');
+    final firstName = parts.isNotEmpty ? parts.first : '';
+    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _DetailRow(label: 'First name', value: firstName),
+        _DetailRow(label: 'Last name', value: lastName),
+        _DetailRow(label: 'Email', value: user.username),
+        _DetailRow(label: 'Role', value: user.role),
+      ],
     );
   }
 }
