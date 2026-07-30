@@ -5,10 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../../../auth/domain/entities/user.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../auth/domain/entities/user.dart';
 
 class PassengerDetailsScreen extends StatefulWidget {
   const PassengerDetailsScreen({super.key});
@@ -19,26 +19,20 @@ class PassengerDetailsScreen extends StatefulWidget {
 }
 
 class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
-  final List<Map<String, TextEditingController>> _passengers = [
-    {
-      'firstName': TextEditingController(),
-      'lastName': TextEditingController(),
-      'dob': TextEditingController(),
-      'nationality': TextEditingController(),
-      'passportNumber': TextEditingController(),
-      'passportExpiry': TextEditingController(),
-    }
-  ];
-
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _countryController = TextEditingController(text: 'Sri Lanka');
   bool _isLoading = false;
+  bool _userDetailsFilled = false;
 
   @override
   void initState() {
     super.initState();
-    _fillUserDetails();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fillUserDetails();
+    });
   }
 
   void _fillUserDetails() {
@@ -46,23 +40,21 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     if (state is AuthAuthenticated) {
       final user = state.user;
       final parts = user.name.split(' ');
-      _passengers[0]['firstName']!.text = parts.isNotEmpty ? parts.first : '';
-      _passengers[0]['lastName']!.text =
+      _firstNameController.text = parts.isNotEmpty ? parts.first : '';
+      _lastNameController.text =
           parts.length > 1 ? parts.sublist(1).join(' ') : '';
       _emailController.text = user.username;
+      setState(() {
+        _userDetailsFilled = true;
+      });
     }
   }
 
   void _addPassenger() {
     setState(() {
-      _passengers.add({
-        'firstName': TextEditingController(),
-        'lastName': TextEditingController(),
-        'dob': TextEditingController(),
-        'nationality': TextEditingController(),
-        'passportNumber': TextEditingController(),
-        'passportExpiry': TextEditingController(),
-      });
+      _firstNameController.clear();
+      _lastNameController.clear();
+      _userDetailsFilled = false;
     });
   }
 
@@ -77,11 +69,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
 
   @override
   void dispose() {
-    for (final passenger in _passengers) {
-      for (final controller in passenger.values) {
-        controller.dispose();
-      }
-    }
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _countryController.dispose();
@@ -98,13 +87,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ..._buildPassengerForms(),
-              const SizedBox(height: 12),
-              if (_passengers.length < 9)
+              if (_userDetailsFilled) ...[
+                _buildUserInfoCard(),
+                const SizedBox(height: 16),
+              ],
+              _buildPassengerForm(),
+              const SizedBox(height: 16),
+              if (!_userDetailsFilled)
                 OutlinedButton.icon(
                   onPressed: _addPassenger,
-                  icon: const Icon(Icons.add),
-                  label: Text('Add passenger ${_passengers.length + 1}'),
+                  icon: const Icon(Icons.person_add),
+                  label: const Text('Add another passenger'),
                 ),
               const SizedBox(height: 24),
               const Divider(),
@@ -113,13 +106,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email address'),
+                decoration: const InputDecoration(
+                    labelText: 'Email address'),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone number'),
+                decoration: const InputDecoration(
+                    labelText: 'Phone number'),
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 12),
@@ -134,6 +129,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                 isLoading: _isLoading,
                 onPressed: _next,
               ),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -141,82 +137,100 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     );
   }
 
-  List<Widget> _buildPassengerForms() {
-    final widgets = <Widget>[];
-    for (var i = 0; i < _passengers.length; i++) {
-      final passenger = _passengers[i];
-      final lead = i == 0;
-      widgets.addAll([
-        Row(
+  Widget _buildUserInfoCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
           children: [
-            Text(lead ? 'Lead passenger' : 'Passenger ${i + 1}',
-                style: AppTextStyles.h4),
-            if (lead) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(6),
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.primary,
+              child: Text(
+                _getInitials(
+                  '${_firstNameController.text} ${_lastNameController.text}',
                 ),
-                child: Text('Lead',
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textOnAccent)),
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textOnPrimary),
               ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: passenger['firstName'],
-          decoration: const InputDecoration(labelText: 'First name'),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: passenger['lastName'],
-          decoration: const InputDecoration(labelText: 'Last name'),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: passenger['dob'],
-          decoration: const InputDecoration(labelText: 'Date of birth'),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
+            ),
+            const SizedBox(width: 16),
             Expanded(
-              child: DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Passenger type'),
-                items: const [
-                  DropdownMenuItem(value: 'Adult', child: Text('Adult')),
-                  DropdownMenuItem(value: 'Child', child: Text('Child')),
-                  DropdownMenuItem(value: 'Infant', child: Text('Infant')),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_firstNameController.text} ${_lastNameController.text}',
+                    style: AppTextStyles.bodyLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _emailController.text,
+                    style: AppTextStyles.bodySmall,
+                  ),
                 ],
-                onChanged: (_) {},
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(
-                controller: passenger['nationality'],
-                decoration: const InputDecoration(labelText: 'Nationality'),
-              ),
+            IconButton(
+              icon: const Icon(Icons.edit, size: 18),
+              onPressed: () {
+                setState(() {
+                  _userDetailsFilled = false;
+                });
+              },
+              tooltip: 'Edit',
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: passenger['passportNumber'],
-          decoration: const InputDecoration(labelText: 'Passport number'),
+      ),
+    );
+  }
+
+  Widget _buildPassengerForm() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              _userDetailsFilled ? 'Passenger 2' : 'Lead passenger',
+              style: AppTextStyles.h4,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _firstNameController,
+              decoration: const InputDecoration(
+                  labelText: 'First name'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _lastNameController,
+              decoration: const InputDecoration(
+                  labelText: 'Last name'),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: passenger['passportExpiry'],
-          decoration: const InputDecoration(labelText: 'Passport expiry'),
-        ),
-        const SizedBox(height: 20),
-      ]);
+      ),
+    );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2 && parts.first.isNotEmpty && parts[1].isNotEmpty) {
+      return '${parts.first[0].toUpperCase()}${parts[1][0].toUpperCase()}';
     }
-    return widgets;
+    if (parts.isNotEmpty && parts.first.isNotEmpty) {
+      return parts.first[0].toUpperCase();
+    }
+    return '?';
   }
 }
