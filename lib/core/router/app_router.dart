@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
@@ -13,6 +14,7 @@ import '../../features/booking/presentation/screens/passenger_details_screen.dar
 import '../../features/flight/presentation/screens/flight_search_screen.dart';
 import '../../features/flight/presentation/screens/flight_results_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
@@ -34,16 +36,7 @@ abstract class AppRoutes {
   static const cardPayment = '/booking/payment/card';
   static const paymentProcessing = '/booking/payment/process';
   static const bookingConfirmation = '/booking/confirmation';
-
-  // Add as each feature is built:
-  // static const flightSearch = '/flights/search';
-  // static const flightResults = '/flights/results';
-  // static const flightDetails = '/flights/details/:id';
-  // static const booking = '/booking';
-  // static const payment = '/payment';
-  // static const bookingConfirmation = '/booking/confirmation';
-  // static const myTrips = '/my-trips';
-  // static const profileSettings = '/profile/settings';
+  static const myTrips = '/my-trips';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -65,53 +58,139 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.signup,
       builder: (context, state) => const SignupScreen(),
     ),
-    GoRoute(
-      path: AppRoutes.home,
-      builder: (context, state) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.profile,
-      builder: (context, state) => const ProfileScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.personalDetails,
-      builder: (context, state) => const PersonalDetailsScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.flightSearch,
-      builder: (context, state) => const FlightSearchScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.flightResults,
-      builder: (context, state) => const FlightResultsScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.passengerDetails,
-      builder: (context, state) => const PassengerDetailsScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.bookingSummary,
-      builder: (context, state) => const BookingSummaryScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.paymentMethodSelection,
-      builder: (context, state) => const PaymentMethodSelectionScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.cardPayment,
-      builder: (context, state) => const CardPaymentScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.paymentProcessing,
-      builder: (context, state) => const PaymentProcessingScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.bookingConfirmation,
-      builder: (context, state) => const BookingConfirmationScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.settings,
-      builder: (context, state) => const SettingsScreen(),
+    ShellRoute(
+      builder: (context, state, child) {
+        return MainShell(child: child);
+      },
+      routes: [
+        GoRoute(
+          path: AppRoutes.home,
+          builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.flightSearch,
+          builder: (context, state) => const FlightSearchScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.flightResults,
+          builder: (context, state) => const FlightResultsScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.myTrips,
+          builder: (context, state) => const MyTripsScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.profile,
+          builder: (context, state) => const ProfileScreen(),
+          routes: [
+            GoRoute(
+              path: AppRoutes.personalDetails,
+              builder: (context, state) => const PersonalDetailsScreen(),
+            ),
+            GoRoute(
+              path: AppRoutes.settings,
+              builder: (context, state) => const SettingsScreen(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: AppRoutes.passengerDetails,
+          builder: (context, state) => const PassengerDetailsScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.bookingSummary,
+          builder: (context, state) => const BookingSummaryScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.paymentMethodSelection,
+          builder: (context, state) => const PaymentMethodSelectionScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.cardPayment,
+          builder: (context, state) => const CardPaymentScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.paymentProcessing,
+          builder: (context, state) => const PaymentProcessingScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.bookingConfirmation,
+          builder: (context, state) => const BookingConfirmationScreen(),
+        ),
+      ],
     ),
   ],
 );
+
+class MainShell extends StatefulWidget {
+  final Widget child;
+
+  const MainShell({super.key, required this.child});
+
+  @override
+  State<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<MainShell> {
+  int _currentIndex = 0;
+
+  static const _navItems = [
+    _NavItem(icon: Icons.home, label: 'Home'),
+    _NavItem(icon: Icons.flight_takeoff, label: 'Book'),
+    _NavItem(icon: Icons.bookmark_outline, label: 'Trips'),
+    _NavItem(icon: Icons.person_outline, label: 'Profile'),
+  ];
+
+  static const _routes = [
+    AppRoutes.home,
+    AppRoutes.flightSearch,
+    AppRoutes.myTrips,
+    AppRoutes.profile,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    _syncIndexFromRoute(GoRouterState.of(context).uri.toString());
+    return Scaffold(
+      body: widget.child,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          GoRouter.of(context).go(_routes[index]);
+        },
+        items: _navItems
+            .map((item) => BottomNavigationBarItem(
+                  icon: Icon(item.icon),
+                  label: item.label,
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  void _syncIndexFromRoute(String route) {
+    for (var i = 0; i < _routes.length; i++) {
+      if (route == _routes[i] || route.startsWith(_routes[i])) {
+        if (_currentIndex != i) {
+          setState(() {
+            _currentIndex = i;
+          });
+        }
+        return;
+      }
+    }
+  }
+}
+
+class _NavItem {
+  final IconData icon;
+  final String label;
+
+  const _NavItem({required this.icon, required this.label});
+}
