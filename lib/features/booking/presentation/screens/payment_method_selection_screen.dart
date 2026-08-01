@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/widgets/primary_button.dart';
+import '../../../booking/domain/entities/booking_session.dart';
 
 class PaymentMethodSelectionScreen extends StatefulWidget {
   const PaymentMethodSelectionScreen({super.key});
@@ -37,13 +40,56 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
     ),
   ];
 
+  void _continue() {
+    if (_selectedMethod == null) return;
+
+    final session = getIt<BookingSession>();
+    session.paymentMethod = _selectedMethod;
+
+    if (_selectedMethod == 'card') {
+      context.push('/booking/payment/card');
+    } else {
+      context.push('/booking/payment/process');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final session = getIt<BookingSession>();
+    final price = session.totalPriceWithTaxes;
+    final currency = session.currency ?? 'GBP';
+
     return Scaffold(
       appBar: AppBar(title: const Text('Payment method')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Amount to pay',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textOnPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$currency ${price.toStringAsFixed(0)}',
+                  style: AppTextStyles.h2.copyWith(
+                    color: AppColors.textOnPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           ..._methods.map(
             (method) => RadioListTile<String>(
               value: method.id,
@@ -62,17 +108,9 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _selectedMethod == null
-                ? null
-                : () {
-                    if (_selectedMethod == 'card') {
-                      context.push('/booking/payment/card');
-                    } else {
-                      context.push('/booking/payment/process');
-                    }
-                  },
-            child: const Text('Continue'),
+          PrimaryButton(
+            label: 'Continue',
+            onPressed: _selectedMethod == null ? null : _continue,
           ),
         ],
       ),
