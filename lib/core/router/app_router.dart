@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/di/injection.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/booking/presentation/bloc/booking_bloc.dart';
 import '../../features/booking/presentation/screens/booking_confirmation_screen.dart';
 import '../../features/booking/presentation/screens/booking_summary_screen.dart';
 import '../../features/booking/presentation/screens/card_payment_screen.dart';
 import '../../features/booking/presentation/screens/payment_method_selection_screen.dart';
 import '../../features/booking/presentation/screens/payment_processing_screen.dart';
 import '../../features/booking/presentation/screens/passenger_details_screen.dart';
-import '../../features/flight/presentation/screens/flight_search_screen.dart';
+import '../../features/flight/presentation/bloc/flight_bloc.dart';
 import '../../features/flight/presentation/screens/flight_results_screen.dart';
+import '../../features/flight/presentation/screens/flight_search_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
@@ -69,7 +73,10 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: AppRoutes.flightSearch,
-          builder: (context, state) => const FlightSearchScreen(),
+          builder: (context, state) => BlocProvider(
+            create: (_) => getIt<FlightSearchBloc>(),
+            child: const FlightSearchScreen(),
+          ),
         ),
         GoRoute(
           path: AppRoutes.flightResults,
@@ -77,7 +84,10 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: AppRoutes.myTrips,
-          builder: (context, state) => const MyTripsScreen(),
+          builder: (context, state) => BlocProvider(
+            create: (_) => getIt<BookingBloc>(),
+            child: const MyTripsScreen(),
+          ),
         ),
         GoRoute(
           path: AppRoutes.profile,
@@ -111,7 +121,10 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: AppRoutes.paymentProcessing,
-          builder: (context, state) => const PaymentProcessingScreen(),
+          builder: (context, state) => BlocProvider(
+            create: (_) => getIt<BookingBloc>(),
+            child: const PaymentProcessingScreen(),
+          ),
         ),
         GoRoute(
           path: AppRoutes.bookingConfirmation,
