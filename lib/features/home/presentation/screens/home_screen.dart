@@ -215,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text('GBP ${flight.price.toStringAsFixed(0)}', style: AppTextStyles.price),
                           const SizedBox(height: 4),
                           ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () => context.push('/flights/search'),
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size(64, 32),
                               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -302,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text('GBP ${hotel.price.toStringAsFixed(0)}', style: AppTextStyles.price),
                           const SizedBox(height: 4),
                           ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () => context.push('/flights/search'),
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size(64, 32),
                               padding: const EdgeInsets.symmetric(horizontal: 12),
