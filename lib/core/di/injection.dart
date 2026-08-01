@@ -7,6 +7,17 @@ import '../../features/auth/data/datasources/auth_remote_datasource_impl.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../features/booking/data/datasources/booking_remote_datasource.dart';
+import '../../features/booking/data/datasources/booking_remote_datasource_impl.dart';
+import '../../features/booking/data/repositories/booking_repository_impl.dart';
+import '../../features/booking/domain/entities/booking_session.dart';
+import '../../features/booking/domain/repositories/booking_repository.dart';
+import '../../features/booking/presentation/bloc/booking_bloc.dart';
+import '../../features/flight/data/datasources/flight_remote_datasource.dart';
+import '../../features/flight/data/datasources/flight_remote_datasource_impl.dart';
+import '../../features/flight/data/repositories/flight_repository_impl.dart';
+import '../../features/flight/domain/repositories/flight_repository.dart';
+import '../../features/flight/presentation/bloc/flight_bloc.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -32,5 +43,28 @@ Future<void> setupDependencyInjection() async {
   );
   getIt.registerFactory<AuthBloc>(
     () => AuthBloc(authRepository: getIt<AuthRepository>()),
+  );
+
+  // Flight
+  getIt.registerLazySingleton<FlightRemoteDatasource>(
+    () => FlightRemoteDatasourceImpl(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<FlightRepository>(
+    () => FlightRepositoryImpl(getIt<FlightRemoteDatasource>()),
+  );
+  getIt.registerFactory<FlightSearchBloc>(
+    () => FlightSearchBloc(getIt<FlightRepository>()),
+  );
+
+  // Booking
+  getIt.registerLazySingleton<BookingRemoteDatasource>(
+    () => BookingRemoteDatasourceImpl(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<BookingRepository>(
+    () => BookingRepositoryImpl(getIt<BookingRemoteDatasource>()),
+  );
+  getIt.registerSingleton<BookingSession>(BookingSession());
+  getIt.registerFactory<BookingBloc>(
+    () => BookingBloc(getIt<BookingRepository>()),
   );
 }
