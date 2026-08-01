@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../booking/domain/entities/booking_session.dart';
 
 class CardPaymentScreen extends StatefulWidget {
   const CardPaymentScreen({super.key});
@@ -17,7 +19,6 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   final _expiryController = TextEditingController();
   final _cvvController = TextEditingController();
   final _nameController = TextEditingController();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,17 +29,26 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
     super.dispose();
   }
 
-  Future<void> _pay() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() => _isLoading = false);
-      context.push('/booking/payment/process');
+  void _pay() {
+    if (_nameController.text.trim().isEmpty ||
+        _cardNumberController.text.trim().isEmpty ||
+        _expiryController.text.trim().isEmpty ||
+        _cvvController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all card details')),
+      );
+      return;
     }
+
+    context.push('/booking/payment/process');
   }
 
   @override
   Widget build(BuildContext context) {
+    final session = getIt<BookingSession>();
+    final price = session.totalPriceWithTaxes;
+    final currency = session.currency ?? 'GBP';
+
     return Scaffold(
       appBar: AppBar(title: const Text('Card payment')),
       body: SafeArea(
@@ -56,21 +66,33 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Amount to pay', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textOnPrimary)),
+                    Text(
+                      'Amount to pay',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textOnPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('GBP 97000', style: AppTextStyles.h2.copyWith(color: AppColors.textOnPrimary)),
+                    Text(
+                      '$currency ${price.toStringAsFixed(0)}',
+                      style: AppTextStyles.h2.copyWith(
+                        color: AppColors.textOnPrimary,
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Cardholder name'),
+                decoration:
+                    const InputDecoration(labelText: 'Cardholder name'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _cardNumberController,
-                decoration: const InputDecoration(labelText: 'Card number'),
+                decoration:
+                    const InputDecoration(labelText: 'Card number'),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
@@ -79,7 +101,8 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                   Expanded(
                     child: TextField(
                       controller: _expiryController,
-                      decoration: const InputDecoration(labelText: 'MM/YY'),
+                      decoration:
+                          const InputDecoration(labelText: 'MM/YY'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -93,7 +116,10 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              PrimaryButton(label: 'Pay now', isLoading: _isLoading, onPressed: _pay),
+              PrimaryButton(
+                label: 'Pay now',
+                onPressed: _pay,
+              ),
             ],
           ),
         ),
