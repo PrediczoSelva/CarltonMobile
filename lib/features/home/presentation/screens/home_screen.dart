@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -19,18 +20,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
   late final FlightRepository _flightRepository;
-  List<Flight> _flightsData = [];
+  List<Flight> _suggestedFlights = [];
   bool _loadingSuggestions = true;
   String? _suggestionsError;
 
   static const _tabs = ['Flights', 'Hotels', 'Cars'];
-
-  static const _suggestedRoutes = [
-    _SuggestedRoute(origin: 'CMB', originName: 'Colombo', destination: 'LHR', destName: 'London'),
-    _SuggestedRoute(origin: 'CMB', originName: 'Colombo', destination: 'DXB', destName: 'Dubai'),
-    _SuggestedRoute(origin: 'CMB', originName: 'Colombo', destination: 'SIN', destName: 'Singapore'),
-    _SuggestedRoute(origin: 'CMB', originName: 'Colombo', destination: 'BKK', destName: 'Bangkok'),
-  ];
 
   static const _hotelSuggestions = [
     _HotelSuggestion(
@@ -93,16 +87,28 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadSuggestions();
   }
 
+  DateTime _tomorrow() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day + 1);
+  }
+
   Future<void> _loadSuggestions() async {
     setState(() {
       _loadingSuggestions = true;
       _suggestionsError = null;
     });
     try {
-      final flights = await _flightRepository.getAllFlights();
+      final tomorrow = _tomorrow();
+      final criteria = FlightSearchCriteria(
+        origin: 'Colombo (CMB)',
+        destination: 'London (LHR)',
+        departureDate: tomorrow,
+        passengers: 1,
+      );
+      final flights = await _flightRepository.searchFlights(criteria);
       if (mounted) {
         setState(() {
-          _flightsData = flights.take(4).toList();
+          _suggestedFlights = flights.take(4).toList();
           _loadingSuggestions = false;
         });
       }
@@ -116,12 +122,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  static String _formatDate(DateTime dt) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${dt.day} ${months[dt.month - 1]}';
+  String _formatDate(DateTime dt) {
+    return DateFormat('EEE, MMM d').format(dt);
+  }
+
+  String _formatTime(DateTime dt) {
+    return DateFormat.Hm().format(dt);
   }
 
   @override
@@ -411,71 +417,123 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    if (_suggestedFlights.isEmpty) {
+      return Center(
+        child: Text(
+          'No flights available at the moment.',
+          style: AppTextStyles.bodyMedium,
+        ),
+      );
+    }
+
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _suggestedRoutes.length,
+      itemCount: _suggestedFlights.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final route = _suggestedRoutes[index];
-        final flight = _flightsData.isNotEmpty
-            ? _flightsData[index % _flightsData.length]
-            : null;
+        final flight = _suggestedFlights[index];
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(12),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.flight_takeoff,
-                      color: AppColors.primary),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${route.origin} → ${route.destination}',
-                        style: AppTextStyles.bodyLarge,
+                Row(
+                  children: [
+                    Text(flight.airline, style: AppTextStyles.h4),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${route.destName} • ${_formatDate(_defaultDepartureTime())}',
+                      child: Text(
+                        flight.flightCode,
                         style: AppTextStyles.bodySmall,
                       ),
-                      if (flight != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          '${flight.airline} ${flight.flightCode} • ${flight.stopsText}',
-                          style: AppTextStyles.bodySmall,
-                        ),
-                      ],
-                    ],
+                    ),
+                  ],
+                ),
+                Text(
+                  '${flight.source.isNotEmpty ? flight.source : 'Catalog'} • ${flight.stopsText}',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    if (flight != null)
-                      Text(
-                        '${flight.currency} ${flight.price.toStringAsFixed(0)}',
-                        style: AppTextStyles.price,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatTime(flight.departureTime),
+                          style: AppTextStyles.h2,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(flight.origin,
+                            style: AppTextStyles.bodySmall),
+                      ],
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 12),
+                        child: Column(
+                          children: [
+                            Text(
+                              flight.duration.isNotEmpty
+                                  ? flight.duration
+                                  : '${flight.stopsText}',
+                              style: AppTextStyles.bodySmall,
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              height: 1,
+                              color: AppColors.border,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              flight.stopsText,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    const SizedBox(height: 4),
-                    ElevatedButton(
-                      onPressed: () => _startSearch(context, route),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(64, 32),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatTime(flight.arrivalTime),
+                          style: AppTextStyles.h2,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(flight.destination,
+                            style: AppTextStyles.bodySmall),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text(
+                      '${flight.currency} ${flight.price.toStringAsFixed(0)}',
+                      style: AppTextStyles.price,
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      width: 100,
+                      child: ElevatedButton(
+                        onPressed: () => _bookFlight(context, flight),
+                        child: const Text('Book'),
                       ),
-                      child: const Text('Book'),
                     ),
                   ],
                 ),
@@ -487,20 +545,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  static DateTime _defaultDepartureDate() => DateTime.now().add(const Duration(days: 7));
-
-  static DateTime _defaultDepartureTime() => DateTime.now().add(const Duration(days: 7));
-
-  void _startSearch(BuildContext context, _SuggestedRoute route) {
-    final criteria = FlightSearchCriteria(
-      origin: '${route.originName} (${route.origin})',
-      destination: '${route.destName} (${route.destination})',
-      departureDate: _defaultDepartureDate(),
+  void _bookFlight(BuildContext context, Flight flight) {
+    final session = getIt<BookingSession>()..reset();
+    session.searchCriteria = FlightSearchCriteria(
+      origin: '${flight.origin} (${flight.origin})',
+      destination: '${flight.destination} (${flight.destination})',
+      departureDate: flight.departureTime,
       passengers: 1,
     );
-    final session = getIt<BookingSession>()..reset();
-    session.searchCriteria = criteria;
-    context.push('/flights/results');
+    session.selectedOutboundFlight = flight;
+    session.outboundFlights = [flight];
+    session.currency = flight.currency;
+    context.push('/booking/passenger-details');
   }
 }
 
@@ -530,18 +586,4 @@ class _CarSuggestion {
   final String category;
   final double price;
   final int seats;
-}
-
-class _SuggestedRoute {
-  const _SuggestedRoute({
-    required this.origin,
-    required this.originName,
-    required this.destination,
-    required this.destName,
-  });
-
-  final String origin;
-  final String originName;
-  final String destination;
-  final String destName;
 }
