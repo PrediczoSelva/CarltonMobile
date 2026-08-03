@@ -30,4 +30,14 @@ class FlightSearchCriteria {
     final match = RegExp(r'\(([A-Z]{3})\)').firstMatch(destination);
     return match != null ? match.group(1)! : destination;
   }
+
+  String get originCity {
+    final match = RegExp(r'\(([A-Z]{3})\)').firstMatch(origin);
+    return match != null ? origin.substring(0, match.start).trim() : origin;
+  }
+
+  String get destinationCity {
+    final match = RegExp(r'\(([A-Z]{3})\)').firstMatch(destination);
+    return match != null ? destination.substring(0, match.start).trim() : destination;
+  }
 }
