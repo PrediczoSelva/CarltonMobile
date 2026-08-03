@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class Flight {
   const Flight({
     required this.id,
@@ -16,22 +18,107 @@ class Flight {
   });
 
   factory Flight.fromJson(Map<String, dynamic> json) {
+    if (kDebugMode) {
+      print('[Flight.fromJson] keys=${json.keys.toList()}');
+      print('[Flight.fromJson] raw=$json');
+    }
+
+    String? _s(dynamic a, [dynamic b, dynamic c, dynamic d, dynamic e]) {
+      for (final v in [a, b, c, d, e]) {
+        if (v is String && v.isNotEmpty) return v;
+      }
+      return null;
+    }
+
+    int _i(dynamic a, [dynamic b, dynamic c, dynamic d]) {
+      for (final v in [a, b, c, d]) {
+        if (v is int) return v;
+        if (v is String) {
+          final parsed = int.tryParse(v);
+          if (parsed != null) return parsed;
+        }
+      }
+      return 0;
+    }
+
+    num? _n(dynamic a, [dynamic b, dynamic c, dynamic d, dynamic e]) {
+      for (final v in [a, b, c, d, e]) {
+        if (v is num) return v;
+        if (v is String) {
+          final parsed = num.tryParse(v);
+          if (parsed != null) return parsed;
+        }
+      }
+      return null;
+    }
+
+    DateTime? _dt(dynamic a, [dynamic b, dynamic c, dynamic d, dynamic e]) {
+      for (final v in [a, b, c, d, e]) {
+        if (v is String && v.isNotEmpty) {
+          final parsed = DateTime.tryParse(v);
+          if (parsed != null) return parsed;
+        }
+      }
+      return null;
+    }
+
+    final route = json['route'] as Map<String, dynamic>? ?? json['Route'] as Map<String, dynamic>?;
+    final priceObj = json['price'] is Map ? json['price'] as Map<String, dynamic> : null;
+
     return Flight(
-      id: json['id'] as int? ?? 0,
-      airline: json['airline'] as String? ?? '',
-      flightCode: json['flightCode'] as String? ?? '',
-      origin: json['origin'] as String? ?? '',
-      destination: json['destination'] as String? ?? '',
-      departureTime:
-          DateTime.tryParse(json['departureTime'] as String? ?? '') ?? DateTime.now(),
-      arrivalTime: DateTime.tryParse(json['arrivalTime'] as String? ?? '') ?? DateTime.now(),
-      duration: json['duration'] as String? ?? '',
-      stops: json['stops'] as int? ?? 0,
-      stopLocations:
-          (json['stopLocations'] as List<dynamic>?)?.cast<String>().toList() ?? [],
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      currency: json['currency'] as String? ?? 'GBP',
-      aircraft: json['aircraft'] as String? ?? '',
+      id: _i(json['id'], json['flightId'], json['Id'], json['flightID']),
+      airline: _s(json['airline'], json['airlineName'], json['Airline'],
+              json['carrier'], json['carrierName']) ??
+          '',
+      flightCode: _s(json['flightCode'], json['flightNumber'], json['FlightCode'],
+              json['flightNo'], json['flightIata']) ??
+          '',
+      origin: _s(
+            json['origin'],
+            json['departure'],
+            json['originAirport'],
+            json['from'],
+            json['departureAirport'],
+          ) ??
+          _s(route?['origin'], route?['originAirport'], route?['from'],
+              route?['departureAirport']) ??
+          '',
+      destination: _s(
+            json['destination'],
+            json['destinationAirport'],
+            json['to'],
+            json['arrivalAirport'],
+            json['arrivalIata'],
+          ) ??
+          _s(route?['destination'], route?['destinationAirport'], route?['to'],
+              route?['arrivalAirport']) ??
+          '',
+      departureTime: _dt(json['departureTime'], json['departure'],
+          json['departureDateTime'], json['departureAt'], json['departsAt']) ??
+          _dt(route?['departureTime'], route?['departure']) ??
+          DateTime.now(),
+      arrivalTime: _dt(json['arrivalTime'], json['arrival'], json['arrivalDateTime'],
+          json['arrivalAt'], json['arrivesAt']) ??
+          _dt(route?['arrivalTime'], route?['arrival']) ??
+          DateTime.now(),
+      duration: _s(json['duration'], json['travelTime'], json['Duration'],
+              json['journeyTime'], json['flightDuration']) ??
+          '',
+      stops: _i(json['stops'], json['numberOfStops'], json['Stops'], json['stopCount']),
+      stopLocations: (json['stopLocations'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      price: _n(priceObj?['amount'], priceObj?['price'], json['price'],
+              json['basePrice'], json['Price'])
+          ?.toDouble() ??
+          0,
+      currency: _s(json['currency'], json['currencyCode'], json['Currency'],
+              priceObj?['currency']) ??
+          'GBP',
+      aircraft: _s(json['aircraft'], json['Aircraft'], json['airplane'],
+          json['equipment'], json['aircraftType']) ??
+          '',
     );
   }
 
@@ -65,7 +152,8 @@ class Flight {
         'aircraft': aircraft,
       };
 
-  String get stopsText => stops == 0 ? 'Non-stop' : '$stops stop${stops > 1 ? 's' : ''}';
+  String get stopsText =>
+      stops == 0 ? 'Non-stop' : '$stops stop${stops > 1 ? 's' : ''}';
 
   @override
   String toString() => '$airline $flightCode ($origin → $destination)';
