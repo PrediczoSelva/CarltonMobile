@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/flight.dart';
@@ -28,12 +29,24 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
   @override
   Future<List<Flight>> searchFlights(FlightSearchCriteria criteria) async {
     try {
-      final response = await _apiClient.get<dynamic>(_basePath);
+      final dateStr = DateFormat('yyyy-MM-dd').format(criteria.departureDate);
+      final response = await _apiClient.post<dynamic>(
+        '$_basePath/search/all',
+        data: {
+          'from': criteria.originCode,
+          'to': criteria.destinationCode,
+          'date': dateStr,
+          'adults': criteria.passengers,
+          'tripType': criteria.returnDate != null ? 'round-trip' : 'one-way',
+          'cabinClass': 'Economy',
+        },
+      );
+
       final flights = _parseFlights(response.data);
       if (kDebugMode) {
-        print('[FlightSearch] searchFlights: ${flights.length} flights loaded');
+        print('[FlightSearch] searchFlights: ${flights.length} flights from /api/flights/search/all');
         for (final f in flights) {
-          print('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency}');
+          print('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
         }
       }
       return flights;
@@ -42,8 +55,19 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
       if (kDebugMode) {
         print('[FlightSearch] DioException: $code, data: ${e.response?.data}');
       }
-      if (code == 404 || code == 400) return [];
-      if (code == 401) throw Exception('Please log in to continue.');
+      if (code == 503) {
+        throw Exception('Flight search service is temporarily unavailable. Please try again.');
+      }
+      if (code == 400) {
+        final msg = e.response?.data is Map
+            ? (e.response?.data as Map)['message'] as String?
+            : null;
+        throw Exception(msg ?? 'Invalid search parameters. Please check your input.');
+      }
+      if (code == 401) {
+        throw Exception('Please log in to continue.');
+      }
+      if (code == 404) return [];
       throw Exception('Failed to search flights. Try again.');
     } catch (e) {
       if (kDebugMode) {
@@ -59,9 +83,9 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
       final response = await _apiClient.get<dynamic>(_basePath);
       final flights = _parseFlights(response.data);
       if (kDebugMode && flights.isNotEmpty) {
-        print('[FlightSearch] getAllFlights: ${flights.length} flights loaded');
+        print('[FlightSearch] getAllFlights: ${flights.length} catalog flights loaded');
         for (final f in flights) {
-          print('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency}');
+          print('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
         }
       }
       return flights;
