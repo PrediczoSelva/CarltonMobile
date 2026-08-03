@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -20,43 +22,102 @@ class PassengerDetailsScreen extends StatefulWidget {
 
 class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   late final BookingSession _session;
+  late final ApiClient _apiClient;
   final List<_PassengerFormController> _controllers = [];
   final _contactEmailController = TextEditingController();
   final _contactPhoneController = TextEditingController();
   final _contactCountryController = TextEditingController(text: 'Sri Lanka');
-  bool _isLoading = false;
+  bool _isLoading = true;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
     _session = getIt<BookingSession>();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initForms());
+    _apiClient = getIt<ApiClient>();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProfileAndInitForms());
   }
 
-  void _initForms() {
+  Future<void> _loadProfileAndInitForms() async {
     final passengerCount = _session.searchCriteria?.passengers ?? 1;
     final authState = context.read<AuthBloc>().state;
-    final isFirst = true;
+
+    Map<String, dynamic>? profile;
+
+    try {
+      final response = await _apiClient.get<dynamic>('/profile/personal');
+      if (response.data != null && response.data is Map) {
+        profile = response.data as Map<String, dynamic>;
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadError = 'Could not load profile data. Using saved data.';
+        });
+      }
+    }
 
     for (var i = 0; i < passengerCount; i++) {
       final c = _PassengerFormController();
-      if (authState is AuthAuthenticated && isFirst) {
+      if (i == 0 && authState is AuthAuthenticated) {
         final user = authState.user;
         final parts = user.name.split(' ');
-        c.firstName.text = parts.isNotEmpty ? parts.first : '';
-        c.lastName.text =
-            parts.length > 1 ? parts.sublist(1).join(' ') : '';
-        _contactEmailController.text = user.username;
+
+        c.firstName.text = profile?['firstName'] as String? ??
+            (parts.isNotEmpty ? parts.first : '');
+        c.lastName.text = profile?['lastName'] as String? ??
+            (parts.length > 1 ? parts.sublist(1).join(' ') : '');
+
+        final email = profile?['email'] as String? ?? user.username;
+        c.email.text = email ?? '';
+        _contactEmailController.text = email ?? '';
+
+        final phone = profile?['phone'] as String?;
+        if (phone != null) {
+          c.phone.text = phone;
+          _contactPhoneController.text = phone;
+        }
+
+        final country = profile?['country'] as String? ??
+            profile?['nationality'] as String? ??
+            'Sri Lanka';
+        c.country.text = country ?? 'Sri Lanka';
+        _contactCountryController.text = c.country.text;
+
+        final dobStr = profile?['dateOfBirth'] as String?;
+        if (dobStr != null) {
+          final dob = DateTime.tryParse(dobStr);
+          if (dob != null) {
+            c.dateOfBirth = dob;
+            c.dob.text = DateFormat('yyyy-MM-dd').format(dob);
+          }
+        }
+
+        final passportNum = profile?['passportNumber'] as String?;
+        if (passportNum != null) {
+          c.passport.text = passportNum;
+        }
+
+        final passportExpiryStr = profile?['passportExpiryDate'] as String?;
+        if (passportExpiryStr != null) {
+          c.passportExpiry = DateTime.tryParse(passportExpiryStr);
+        }
       }
       _controllers.add(c);
     }
 
-    setState(() {});
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _next() {
-    if (_controllers.any((c) =>
-        c.firstName.text.trim().isEmpty || c.lastName.text.trim().isEmpty)) {
+    final hasEmptyLead = _controllers.first.firstName.text.trim().isEmpty ||
+        _controllers.first.lastName.text.trim().isEmpty;
+
+    if (hasEmptyLead) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all passenger names')),
       );
@@ -103,7 +164,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Passenger details')),
-      body: _controllers.isEmpty
+      body: _isLoading
           ? Center(child: CircularProgressIndicator(color: AppColors.primary))
           : BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
@@ -152,6 +213,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           ),
                           const SizedBox(height: 16),
                         ],
+                        if (_loadError != null) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Text(
+                              _loadError!,
+                              style: AppTextStyles.bodySmall
+                                  ?.copyWith(color: AppColors.textSecondary),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                        Text('Passenger details', style: AppTextStyles.h4),
+                        const SizedBox(height: 12),
                         ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -167,15 +241,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-                        if (_controllers.length < passengerCount)
+                        if (_controllers.length < 9)
                           OutlinedButton.icon(
-                            onPressed: _controllers.length < 9
-                                ? () {
-                                    setState(() {
-                                      _controllers.add(_PassengerFormController());
-                                    });
-                                  }
-                                : null,
+                            onPressed: () {
+                              setState(() {
+                                _controllers.add(_PassengerFormController());
+                              });
+                            },
                             icon: const Icon(Icons.person_add),
                             label: const Text('Add another passenger'),
                           ),
@@ -206,8 +278,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         const SizedBox(height: 24),
                         PrimaryButton(
                           label: 'Continue',
-                          isLoading: _isLoading,
-                          onPressed: _isLoading ? null : _next,
+                          isLoading: false,
+                          onPressed: _next,
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -234,6 +306,14 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
               isLead ? 'Lead passenger' : 'Passenger ${index + 1}',
               style: AppTextStyles.h4,
             ),
+            if (isLead) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Pre-filled from your profile',
+                style: AppTextStyles.bodySmall
+                    ?.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
             const SizedBox(height: 12),
             TextField(
               controller: c.firstName,
@@ -287,14 +367,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   Future<void> _pickDateOfBirth(_PassengerFormController c) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(1990),
+      initialDate: c.dateOfBirth ?? DateTime(1990),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
     if (picked != null) {
       setState(() {
         c.dateOfBirth = picked;
-        c.dob.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+        c.dob.text =
+            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
       });
     }
   }
