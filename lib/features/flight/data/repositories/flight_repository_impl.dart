@@ -14,6 +14,11 @@ class FlightRepositoryImpl implements FlightRepository {
   }
 
   @override
+  Future<List<Flight>> getAllFlights() {
+    return _remoteDatasource.getAllFlights();
+  }
+
+  @override
   Future<Flight?> getFlightById(int id) {
     return _remoteDatasource.getFlightById(id);
   }
