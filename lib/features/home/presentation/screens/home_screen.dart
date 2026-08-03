@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../booking/domain/entities/booking_session.dart';
 import '../../../flight/domain/entities/flight.dart';
+import '../../../flight/domain/entities/flight_search_criteria.dart';
 import '../../../flight/domain/repositories/flight_repository.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,11 +19,18 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
   late final FlightRepository _flightRepository;
-  List<Flight> _suggestedFlights = [];
+  List<Flight> _flightsData = [];
   bool _loadingSuggestions = true;
   String? _suggestionsError;
 
   static const _tabs = ['Flights', 'Hotels', 'Cars'];
+
+  static const _suggestedRoutes = [
+    _SuggestedRoute(origin: 'CMB', originName: 'Colombo', destination: 'LHR', destName: 'London'),
+    _SuggestedRoute(origin: 'CMB', originName: 'Colombo', destination: 'DXB', destName: 'Dubai'),
+    _SuggestedRoute(origin: 'CMB', originName: 'Colombo', destination: 'SIN', destName: 'Singapore'),
+    _SuggestedRoute(origin: 'CMB', originName: 'Colombo', destination: 'BKK', destName: 'Bangkok'),
+  ];
 
   static const _hotelSuggestions = [
     _HotelSuggestion(
@@ -93,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final flights = await _flightRepository.getAllFlights();
       if (mounted) {
         setState(() {
-          _suggestedFlights = flights.take(4).toList();
+          _flightsData = flights.take(4).toList();
           _loadingSuggestions = false;
         });
       }
@@ -402,22 +411,16 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (_suggestedFlights.isEmpty) {
-      return Center(
-        child: Text(
-          'No flights available at the moment.',
-          style: AppTextStyles.bodyMedium,
-        ),
-      );
-    }
-
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _suggestedFlights.length,
+      itemCount: _suggestedRoutes.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final flight = _suggestedFlights[index];
+        final route = _suggestedRoutes[index];
+        final flight = _flightsData.isNotEmpty
+            ? _flightsData[index % _flightsData.length]
+            : null;
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -439,31 +442,38 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${flight.origin} → ${flight.destination}',
+                        '${route.origin} → ${route.destination}',
                         style: AppTextStyles.bodyLarge,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${flight.airline} ${flight.flightCode} • ${_formatDate(flight.departureTime)}',
+                        '${route.destName} • ${_formatDate(_defaultDepartureTime())}',
                         style: AppTextStyles.bodySmall,
                       ),
+                      if (flight != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '${flight.airline} ${flight.flightCode} • ${flight.stopsText}',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      '${flight.currency} ${flight.price.toStringAsFixed(0)}',
-                      style: AppTextStyles.price,
-                    ),
+                    if (flight != null)
+                      Text(
+                        '${flight.currency} ${flight.price.toStringAsFixed(0)}',
+                        style: AppTextStyles.price,
+                      ),
                     const SizedBox(height: 4),
                     ElevatedButton(
-                      onPressed: () => context.push('/flights/search'),
+                      onPressed: () => _startSearch(context, route),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(64, 32),
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                       ),
                       child: const Text('Book'),
                     ),
@@ -475,6 +485,22 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+  }
+
+  static DateTime _defaultDepartureDate() => DateTime.now().add(const Duration(days: 7));
+
+  static DateTime _defaultDepartureTime() => DateTime.now().add(const Duration(days: 7));
+
+  void _startSearch(BuildContext context, _SuggestedRoute route) {
+    final criteria = FlightSearchCriteria(
+      origin: '${route.originName} (${route.origin})',
+      destination: '${route.destName} (${route.destination})',
+      departureDate: _defaultDepartureDate(),
+      passengers: 1,
+    );
+    final session = getIt<BookingSession>()..reset();
+    session.searchCriteria = criteria;
+    context.push('/flights/results');
   }
 }
 
@@ -504,4 +530,18 @@ class _CarSuggestion {
   final String category;
   final double price;
   final int seats;
+}
+
+class _SuggestedRoute {
+  const _SuggestedRoute({
+    required this.origin,
+    required this.originName,
+    required this.destination,
+    required this.destName,
+  });
+
+  final String origin;
+  final String originName;
+  final String destination;
+  final String destName;
 }
