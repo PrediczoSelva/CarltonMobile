@@ -15,6 +15,9 @@ class Flight {
     required this.price,
     required this.currency,
     required this.aircraft,
+    this.bookingKey,
+    this.source = '',
+    this.seatsAvailable = 0,
   });
 
   factory Flight.fromJson(Map<String, dynamic> json) {
@@ -117,8 +120,16 @@ class Flight {
               priceObj?['currency']) ??
           'GBP',
       aircraft: _s(json['aircraft'], json['Aircraft'], json['airplane'],
-          json['equipment'], json['aircraftType']) ??
+              json['equipment'], json['aircraftType']) ??
           '',
+      bookingKey: _s(json['bookingKey'], json['BookingKey'],
+          json['atlasRoutingIdentifier'], json['AtlasRoutingIdentifier'],
+          json['amadeusOfferToken']),
+      source: _s(json['source'], json['Source'],
+              json['dataSource'], json['DataSource']) ??
+          '',
+      seatsAvailable: _i(json['seatsAvailable'], json['SeatsAvailable'],
+          json['seatsAvailable'], json['SeatsAvailable']),
     );
   }
 
@@ -135,6 +146,9 @@ class Flight {
   final double price;
   final String currency;
   final String aircraft;
+  final String? bookingKey;
+  final String source;
+  final int seatsAvailable;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -150,6 +164,9 @@ class Flight {
         'price': price,
         'currency': currency,
         'aircraft': aircraft,
+        'bookingKey': bookingKey,
+        'source': source,
+        'seatsAvailable': seatsAvailable,
       };
 
   String get stopsText =>
