@@ -109,6 +109,23 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     });
   }
 
+  Future<void> _pickDate({
+    required BuildContext context,
+    required TextEditingController controller,
+  }) async {
+    final initialDate = DateTime.tryParse(controller.text) ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 80)),
+    );
+    if (picked != null) {
+      controller.text =
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+    }
+  }
+
   void _addNewTraveller() {
     if (_selectedTravellerIds.length + 1 + _newTravellerForms.length >=
         (_session.searchCriteria?.passengers ?? 9)) {
@@ -138,89 +155,206 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Add new traveller',
-                        style: AppTextStyles.h4,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Add new traveller',
+                          style: AppTextStyles.h4,
+                        ),
                       ),
+                      IconButton(
+                        onPressed: () {
+                          controller.dispose();
+                          Navigator.pop(sheetContext);
+                        },
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Fill in the traveller details below and save them for future bookings.',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
                     ),
-                    IconButton(
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Relationship', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: controller.relationship.text.isEmpty
+                        ? null
+                        : controller.relationship.text,
+                    decoration: const InputDecoration(
+                      labelText: 'Select relationship',
+                    ),
+                    items: const [
+                      'Spouse',
+                      'Child',
+                      'Parent',
+                      'Sibling',
+                      'Friend',
+                      'Colleague',
+                    ]
+                        .map(
+                          (value) => DropdownMenuItem(
+                            value: value,
+                            child: Text(value),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      controller.relationship.text = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Personal Information', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller.firstName,
+                    decoration: const InputDecoration(labelText: 'First name'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller.lastName,
+                    decoration: const InputDecoration(labelText: 'Last name'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller.dateOfBirth,
+                    readOnly: true,
+                    onTap: () => _pickDate(
+                      context: sheetContext,
+                      controller: controller.dateOfBirth,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Date of Birth',
+                      suffixIcon: Icon(Icons.calendar_today_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller.nationality,
+                    decoration: const InputDecoration(labelText: 'Nationality'),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Passport Details', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller.passportNumber,
+                    decoration:
+                        const InputDecoration(labelText: 'Passport Number'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller.issueNumber,
+                    decoration:
+                        const InputDecoration(labelText: 'Issue Number'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller.passportExpiryDate,
+                    readOnly: true,
+                    onTap: () => _pickDate(
+                      context: sheetContext,
+                      controller: controller.passportExpiryDate,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Expiry Date',
+                      suffixIcon: Icon(Icons.calendar_today_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Optional Details', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller.frequencyFlyerNo,
+                    decoration:
+                        const InputDecoration(labelText: 'Frequency Flyer No'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller.knownTravellerNo,
+                    decoration:
+                        const InputDecoration(labelText: 'Known Traveller No'),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Special Requirement', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller.specialRequirement,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Special Requirement',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
                       onPressed: () {
-                        controller.dispose();
+                        final firstName = controller.firstName.text.trim();
+                        final lastName = controller.lastName.text.trim();
+                        if (firstName.isEmpty && lastName.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter a traveller name'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        setState(() {
+                          _newTravellerForms.add(controller);
+                          _savedTravellers.add({
+                            'id': DateTime.now().millisecondsSinceEpoch,
+                            'title':
+                                controller.relationship.text.trim().isNotEmpty
+                                    ? controller.relationship.text.trim()
+                                    : 'Add New Traveler',
+                            'firstName': firstName,
+                            'lastName': lastName,
+                            'dateOfBirth': controller.dateOfBirth.text.trim(),
+                            'passportNumber':
+                                controller.passportNumber.text.trim(),
+                            'issueNumber': controller.issueNumber.text.trim(),
+                            'passportExpiryDate':
+                                controller.passportExpiryDate.text.trim(),
+                            'nationality': controller.nationality.text.trim(),
+                            'frequencyFlyerNo':
+                                controller.frequencyFlyerNo.text.trim(),
+                            'knownTravellerNo':
+                                controller.knownTravellerNo.text.trim(),
+                            'specialRequirement':
+                                controller.specialRequirement.text.trim(),
+                            'passportCountry':
+                                controller.nationality.text.trim(),
+                          });
+                          _selectedTravellerIds.add(
+                            _savedTravellers.last['id'] as int,
+                          );
+                        });
                         Navigator.pop(sheetContext);
                       },
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Enter the traveller details below.',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller.firstName,
-                  decoration: const InputDecoration(labelText: 'First name'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller.lastName,
-                  decoration: const InputDecoration(labelText: 'Last name'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller.email,
-                  decoration: const InputDecoration(labelText: 'Email address'),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller.phone,
-                  decoration: const InputDecoration(labelText: 'Phone number'),
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final firstName = controller.firstName.text.trim();
-                      final lastName = controller.lastName.text.trim();
-                      if (firstName.isEmpty && lastName.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter a traveller name'),
-                          ),
-                        );
-                        return;
-                      }
-
-                      setState(() {
-                        _newTravellerForms.add(controller);
-                      });
-                      Navigator.pop(sheetContext);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.textOnPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.textOnPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      child: const Text('Save Traveller'),
                     ),
-                    child: const Text('Add traveller'),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -474,7 +608,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           onPressed: _addNewTraveller,
                           icon: const Icon(Icons.person_add_alt_1_outlined,
                               size: 18),
-                          label: const Text('Add new traveller'),
+                          label: const Text('traveller'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primary,
                             side: const BorderSide(color: AppColors.border),
@@ -695,10 +829,6 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       }
     }
 
-    for (final form in _newTravellerForms) {
-      selectedWidgets.add(_buildNewTravellerForm(form));
-    }
-
     if (selectedWidgets.length == 1) {
       return Container(
         padding: const EdgeInsets.all(14),
@@ -769,56 +899,35 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       ),
     );
   }
-
-  Widget _buildNewTravellerForm(_NewTravellerController c) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'New Traveller',
-              style: AppTextStyles.bodyLarge,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: c.firstName,
-              decoration: const InputDecoration(labelText: 'First name'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: c.lastName,
-              decoration: const InputDecoration(labelText: 'Last name'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: c.email,
-              decoration: const InputDecoration(labelText: 'Email address'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: c.phone,
-              decoration: const InputDecoration(labelText: 'Phone number'),
-              keyboardType: TextInputType.phone,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _NewTravellerController {
+  final relationship = TextEditingController();
   final firstName = TextEditingController();
   final lastName = TextEditingController();
+  final dateOfBirth = TextEditingController();
+  final nationality = TextEditingController();
+  final passportNumber = TextEditingController();
+  final issueNumber = TextEditingController();
+  final passportExpiryDate = TextEditingController();
+  final frequencyFlyerNo = TextEditingController();
+  final knownTravellerNo = TextEditingController();
+  final specialRequirement = TextEditingController();
   final email = TextEditingController();
   final phone = TextEditingController();
 
   void dispose() {
+    relationship.dispose();
     firstName.dispose();
     lastName.dispose();
+    dateOfBirth.dispose();
+    nationality.dispose();
+    passportNumber.dispose();
+    issueNumber.dispose();
+    passportExpiryDate.dispose();
+    frequencyFlyerNo.dispose();
+    knownTravellerNo.dispose();
+    specialRequirement.dispose();
     email.dispose();
     phone.dispose();
   }
