@@ -334,7 +334,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                             if (firstName.isEmpty && lastName.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Please enter a traveller name'),
+                                  content:
+                                      Text('Please enter a traveller name'),
                                 ),
                               );
                               return;
@@ -344,19 +345,23 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               _newTravellerForms.add(controller);
                               _savedTravellers.add({
                                 'id': DateTime.now().millisecondsSinceEpoch,
-                                'title':
-                                    controller.relationship.text.trim().isNotEmpty
-                                        ? controller.relationship.text.trim()
-                                        : 'Add New Traveler',
+                                'title': controller.relationship.text
+                                        .trim()
+                                        .isNotEmpty
+                                    ? controller.relationship.text.trim()
+                                    : 'Add New Traveler',
                                 'firstName': firstName,
                                 'lastName': lastName,
-                                'dateOfBirth': controller.dateOfBirth.text.trim(),
+                                'dateOfBirth':
+                                    controller.dateOfBirth.text.trim(),
                                 'passportNumber':
                                     controller.passportNumber.text.trim(),
-                                'issueNumber': controller.issueNumber.text.trim(),
+                                'issueNumber':
+                                    controller.issueNumber.text.trim(),
                                 'passportExpiryDate':
                                     controller.passportExpiryDate.text.trim(),
-                                'nationality': controller.nationality.text.trim(),
+                                'nationality':
+                                    controller.nationality.text.trim(),
                                 'frequencyFlyerNo':
                                     controller.frequencyFlyerNo.text.trim(),
                                 'knownTravellerNo':
