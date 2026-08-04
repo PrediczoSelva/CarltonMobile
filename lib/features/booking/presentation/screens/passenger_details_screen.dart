@@ -120,9 +120,112 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       );
       return;
     }
-    setState(() {
-      _newTravellerForms.add(_NewTravellerController());
-    });
+
+    final controller = _NewTravellerController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Add new traveller',
+                        style: AppTextStyles.h4,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        controller.dispose();
+                        Navigator.pop(sheetContext);
+                      },
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Enter the traveller details below.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller.firstName,
+                  decoration: const InputDecoration(labelText: 'First name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller.lastName,
+                  decoration: const InputDecoration(labelText: 'Last name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller.email,
+                  decoration: const InputDecoration(labelText: 'Email address'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller.phone,
+                  decoration: const InputDecoration(labelText: 'Phone number'),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final firstName = controller.firstName.text.trim();
+                      final lastName = controller.lastName.text.trim();
+                      if (firstName.isEmpty && lastName.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter a traveller name'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      setState(() {
+                        _newTravellerForms.add(controller);
+                      });
+                      Navigator.pop(sheetContext);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.textOnPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Add traveller'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _removeNewTraveller(int index) {
