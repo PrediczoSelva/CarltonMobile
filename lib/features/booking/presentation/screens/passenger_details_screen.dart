@@ -29,6 +29,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
 
   final Set<int> _selectedTravellerIds = {};
   final List<_NewTravellerController> _newTravellerForms = [];
+  final int _leadPassengerId = -1;
 
   final _contactEmailController = TextEditingController();
   final _contactEmailConfirmController = TextEditingController();
@@ -105,6 +106,26 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           return;
         }
         _selectedTravellerIds.add(id);
+      }
+    });
+  }
+
+  void _toggleLeadPassenger() {
+    setState(() {
+      if (_selectedTravellerIds.contains(_leadPassengerId)) {
+        _selectedTravellerIds.remove(_leadPassengerId);
+      } else {
+        if (_selectedTravellerIds.length + 1 + _newTravellerForms.length >
+            (_session.searchCriteria?.passengers ?? 9)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Maximum ${_session.searchCriteria?.passengers ?? 9} passengers allowed.'),
+            ),
+          );
+          return;
+        }
+        _selectedTravellerIds.add(_leadPassengerId);
       }
     });
   }
@@ -295,63 +316,74 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final firstName = controller.firstName.text.trim();
-                        final lastName = controller.lastName.text.trim();
-                        if (firstName.isEmpty && lastName.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter a traveller name'),
-                            ),
-                          );
-                          return;
-                        }
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          controller.dispose();
+                          Navigator.pop(sheetContext);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final firstName = controller.firstName.text.trim();
+                            final lastName = controller.lastName.text.trim();
+                            if (firstName.isEmpty && lastName.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter a traveller name'),
+                                ),
+                              );
+                              return;
+                            }
 
-                        setState(() {
-                          _newTravellerForms.add(controller);
-                          _savedTravellers.add({
-                            'id': DateTime.now().millisecondsSinceEpoch,
-                            'title':
-                                controller.relationship.text.trim().isNotEmpty
-                                    ? controller.relationship.text.trim()
-                                    : 'Add New Traveler',
-                            'firstName': firstName,
-                            'lastName': lastName,
-                            'dateOfBirth': controller.dateOfBirth.text.trim(),
-                            'passportNumber':
-                                controller.passportNumber.text.trim(),
-                            'issueNumber': controller.issueNumber.text.trim(),
-                            'passportExpiryDate':
-                                controller.passportExpiryDate.text.trim(),
-                            'nationality': controller.nationality.text.trim(),
-                            'frequencyFlyerNo':
-                                controller.frequencyFlyerNo.text.trim(),
-                            'knownTravellerNo':
-                                controller.knownTravellerNo.text.trim(),
-                            'specialRequirement':
-                                controller.specialRequirement.text.trim(),
-                            'passportCountry':
-                                controller.nationality.text.trim(),
-                          });
-                          _selectedTravellerIds.add(
-                            _savedTravellers.last['id'] as int,
-                          );
-                        });
-                        Navigator.pop(sheetContext);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                            setState(() {
+                              _newTravellerForms.add(controller);
+                              _savedTravellers.add({
+                                'id': DateTime.now().millisecondsSinceEpoch,
+                                'title':
+                                    controller.relationship.text.trim().isNotEmpty
+                                        ? controller.relationship.text.trim()
+                                        : 'Add New Traveler',
+                                'firstName': firstName,
+                                'lastName': lastName,
+                                'dateOfBirth': controller.dateOfBirth.text.trim(),
+                                'passportNumber':
+                                    controller.passportNumber.text.trim(),
+                                'issueNumber': controller.issueNumber.text.trim(),
+                                'passportExpiryDate':
+                                    controller.passportExpiryDate.text.trim(),
+                                'nationality': controller.nationality.text.trim(),
+                                'frequencyFlyerNo':
+                                    controller.frequencyFlyerNo.text.trim(),
+                                'knownTravellerNo':
+                                    controller.knownTravellerNo.text.trim(),
+                                'specialRequirement':
+                                    controller.specialRequirement.text.trim(),
+                                'passportCountry':
+                                    controller.nationality.text.trim(),
+                              });
+                              _selectedTravellerIds.add(
+                                _savedTravellers.last['id'] as int,
+                              );
+                            });
+                            Navigator.pop(sheetContext);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textOnPrimary,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Save Traveller'),
                         ),
                       ),
-                      child: const Text('Save Traveller'),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -473,7 +505,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     if (fn.isNotEmpty) parts.add(fn);
     final ln = t['lastName'] as String? ?? '';
     if (ln.isNotEmpty) parts.add(ln);
-    return parts.join(' ');
+    final name = parts.join(' ').trim();
+    return name.isNotEmpty ? name : 'Traveller';
   }
 
   String _leadName() {
@@ -608,7 +641,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           onPressed: _addNewTraveller,
                           icon: const Icon(Icons.person_add_alt_1_outlined,
                               size: 18),
-                          label: const Text('traveller'),
+                          label: const Text('Add New Traveler'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primary,
                             side: const BorderSide(color: AppColors.border),
@@ -696,9 +729,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             child: _travellerCard(
               name: _leadName(),
               subtitle: 'Lead passenger profile',
-              isSelected: true,
-              onTap: () {},
-              showCheckbox: false,
+              isSelected: _selectedTravellerIds.contains(_leadPassengerId),
+              onTap: _toggleLeadPassenger,
+              showCheckbox: true,
             ),
           );
         }
@@ -799,13 +832,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   }
 
   Widget _buildSelectedSection() {
-    final selectedWidgets = <Widget>[
-      _selectedCard(name: _leadName(), subtitle: 'Lead passenger'),
-    ];
+    final selectedWidgets = <Widget>[];
+
+    if (_selectedTravellerIds.contains(_leadPassengerId)) {
+      selectedWidgets
+          .add(_selectedCard(name: _leadName(), subtitle: 'Lead passenger'));
+    }
 
     for (final id in _selectedTravellerIds) {
-      final traveller =
-          _savedTravellers.firstWhere((t) => t['id'] == id, orElse: () => {});
+      if (id == _leadPassengerId) continue;
+      final traveller = _savedTravellers.firstWhere(
+        (t) => t['id'] == id,
+        orElse: () => {'id': id, 'title': '', 'firstName': '', 'lastName': ''},
+      );
       selectedWidgets.add(_selectedCard(
         name: _travellerName(traveller),
         subtitle: 'Saved traveller',
