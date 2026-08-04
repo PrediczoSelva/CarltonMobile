@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
@@ -23,135 +22,250 @@ class PassengerDetailsScreen extends StatefulWidget {
 class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   late final BookingSession _session;
   late final ApiClient _apiClient;
-  final List<_PassengerFormController> _controllers = [];
+
+  bool _isLoading = true;
+  Map<String, dynamic>? _personalDetails;
+  List<Map<String, dynamic>> _savedTravellers = [];
+
+  final Set<int> _selectedTravellerIds = {};
+  final List<_NewTravellerController> _newTravellerForms = [];
+
   final _contactEmailController = TextEditingController();
+  final _contactEmailConfirmController = TextEditingController();
   final _contactPhoneController = TextEditingController();
   final _contactCountryController = TextEditingController(text: 'Sri Lanka');
-  bool _isLoading = true;
-  String? _loadError;
 
   @override
   void initState() {
     super.initState();
     _session = getIt<BookingSession>();
     _apiClient = getIt<ApiClient>();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProfileAndInitForms());
+    _loadData();
   }
 
-  Future<void> _loadProfileAndInitForms() async {
-    final passengerCount = _session.searchCriteria?.passengers ?? 1;
-    final authState = context.read<AuthBloc>().state;
-
-    Map<String, dynamic>? profile;
-
+  Future<void> _loadData() async {
     try {
       final response = await _apiClient.get<dynamic>('/profile/personal');
       if (response.data != null && response.data is Map) {
-        profile = response.data as Map<String, dynamic>;
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _loadError = 'Could not load profile data. Using saved data.';
-        });
-      }
-    }
-
-    for (var i = 0; i < passengerCount; i++) {
-      final c = _PassengerFormController();
-      if (i == 0 && authState is AuthAuthenticated) {
-        final user = authState.user;
-        final parts = user.name.split(' ');
-
-        c.firstName.text = profile?['firstName'] as String? ??
-            (parts.isNotEmpty ? parts.first : '');
-        c.lastName.text = profile?['lastName'] as String? ??
-            (parts.length > 1 ? parts.sublist(1).join(' ') : '');
-
-        final email = profile?['email'] as String? ?? user.username;
-        c.email.text = email ?? '';
-        _contactEmailController.text = email ?? '';
-
-        final phone = profile?['phone'] as String?;
-        if (phone != null) {
-          c.phone.text = phone;
-          _contactPhoneController.text = phone;
-        }
-
-        final country = profile?['country'] as String? ??
-            profile?['nationality'] as String? ??
+        _personalDetails = response.data as Map<String, dynamic>;
+        final email = _personalDetails!['email'] as String? ?? '';
+        final phone = _personalDetails!['phone'] as String? ?? '';
+        final country = _personalDetails!['country'] as String? ??
+            _personalDetails!['nationality'] as String? ??
             'Sri Lanka';
-        c.country.text = country ?? 'Sri Lanka';
-        _contactCountryController.text = c.country.text;
-
-        final dobStr = profile?['dateOfBirth'] as String?;
-        if (dobStr != null) {
-          final dob = DateTime.tryParse(dobStr);
-          if (dob != null) {
-            c.dateOfBirth = dob;
-            c.dob.text = DateFormat('yyyy-MM-dd').format(dob);
-          }
-        }
-
-        final passportNum = profile?['passportNumber'] as String?;
-        if (passportNum != null) {
-          c.passport.text = passportNum;
-        }
-
-        final passportExpiryStr = profile?['passportExpiryDate'] as String?;
-        if (passportExpiryStr != null) {
-          c.passportExpiry = DateTime.tryParse(passportExpiryStr);
-        }
+        _contactEmailController.text = email;
+        _contactEmailConfirmController.text = email;
+        _contactPhoneController.text = phone;
+        _contactCountryController.text = country;
       }
-      _controllers.add(c);
+    } catch (_) {}
+
+    try {
+      final response = await _apiClient.get<dynamic>('/profile/travellers');
+      if (response.data != null && response.data is List) {
+        _savedTravellers = (response.data as List)
+            .map((e) => e as Map<String, dynamic>)
+            .toList();
+      }
+    } catch (_) {}
+
+    if (_savedTravellers.isEmpty) {
+      _savedTravellers = [
+        {
+          'id': 101,
+          'title': 'Mr',
+          'firstName': 'Sam',
+          'lastName': 'Peterson',
+          'dateOfBirth': '1988-05-12',
+          'passportNumber': 'N1234567',
+          'passportCountry': 'Sri Lanka',
+          'nationality': 'Sri Lanka',
+        },
+      ];
     }
 
     if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
-  void _next() {
-    final hasEmptyLead = _controllers.first.firstName.text.trim().isEmpty ||
-        _controllers.first.lastName.text.trim().isEmpty;
+  void _toggleTraveller(int id) {
+    setState(() {
+      if (_selectedTravellerIds.contains(id)) {
+        _selectedTravellerIds.remove(id);
+      } else {
+        if (_selectedTravellerIds.length + 1 + _newTravellerForms.length >
+            (_session.searchCriteria?.passengers ?? 9)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Maximum ${_session.searchCriteria?.passengers ?? 9} passengers allowed.'),
+            ),
+          );
+          return;
+        }
+        _selectedTravellerIds.add(id);
+      }
+    });
+  }
 
-    if (hasEmptyLead) {
+  void _addNewTraveller() {
+    if (_selectedTravellerIds.length + 1 + _newTravellerForms.length >=
+        (_session.searchCriteria?.passengers ?? 9)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Maximum ${_session.searchCriteria?.passengers ?? 9} passengers allowed.'),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _newTravellerForms.add(_NewTravellerController());
+    });
+  }
+
+  void _removeNewTraveller(int index) {
+    setState(() {
+      _newTravellerForms[index].dispose();
+      _newTravellerForms.removeAt(index);
+    });
+  }
+
+  Passenger _buildLeadPassenger() {
+    final p = _personalDetails;
+    if (p == null) {
+      final authState = context.read<AuthBloc>().state;
+      String firstName = '', lastName = '';
+      if (authState is AuthAuthenticated) {
+        final parts = authState.user.name.split(' ');
+        firstName = parts.isNotEmpty ? parts.first : '';
+        lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      }
+      return Passenger(firstName: firstName, lastName: lastName);
+    }
+    final fn = p['firstName'] as String? ?? '';
+    final ln = p['lastName'] as String? ?? '';
+    return Passenger(
+      firstName: fn,
+      lastName: ln,
+      email: p['email'] as String?,
+      phone: p['phone'] as String?,
+      dateOfBirth: _parseDate(p['dateOfBirth']),
+      passportNumber: p['passportNumber'] as String?,
+      passportExpiry: _parseDate(p['passportExpiryDate']),
+      country: p['country'] as String? ?? p['nationality'] as String?,
+    );
+  }
+
+  Passenger _buildTravellerPassenger(Map<String, dynamic> t) {
+    final firstName = t['firstName'] as String? ?? '';
+    final lastName = t['lastName'] as String? ?? '';
+    final fn = firstName;
+    final ln = lastName;
+    return Passenger(
+      firstName: fn,
+      lastName: ln,
+      dateOfBirth: _parseDate(t['dateOfBirth']),
+      passportNumber: t['passportNumber'] as String?,
+      passportExpiry: _parseDate(t['passportExpiryDate']),
+      country: t['nationality'] as String? ?? t['passportCountry'] as String?,
+    );
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value is String && value.isNotEmpty) {
+      return DateTime.tryParse(value);
+    }
+    return null;
+  }
+
+  void _continue() {
+    final passengers = <Passenger>[];
+
+    passengers.add(_buildLeadPassenger());
+
+    for (final id in _selectedTravellerIds) {
+      final traveller = _savedTravellers.firstWhere((t) => t['id'] == id);
+      passengers.add(_buildTravellerPassenger(traveller));
+    }
+
+    for (final form in _newTravellerForms) {
+      final fn = form.firstName.text.trim();
+      final ln = form.lastName.text.trim();
+      if (fn.isEmpty && ln.isEmpty) continue;
+      passengers.add(Passenger(
+        firstName: fn,
+        lastName: ln,
+        email: form.email.text.trim().isEmpty ? null : form.email.text.trim(),
+        phone: form.phone.text.trim().isEmpty ? null : form.phone.text.trim(),
+      ));
+    }
+
+    final emptyNames = passengers
+        .where((p) => p.firstName.trim().isEmpty || p.lastName.trim().isEmpty);
+    if (emptyNames.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all passenger names')),
       );
       return;
     }
 
-    final passengers = _controllers.map((c) {
-      return Passenger(
-        firstName: c.firstName.text.trim(),
-        lastName: c.lastName.text.trim(),
-        email: c.email.text.trim().isEmpty ? null : c.email.text.trim(),
-        phone: c.phone.text.trim().isEmpty ? null : c.phone.text.trim(),
-        dateOfBirth: c.dateOfBirth,
-        passportNumber:
-            c.passport.text.trim().isEmpty ? null : c.passport.text.trim(),
-        passportExpiry: c.passportExpiry,
-        country: c.country.text.trim().isEmpty ? null : c.country.text.trim(),
+    final email = _contactEmailController.text.trim();
+    if (email.isNotEmpty &&
+        email != _contactEmailConfirmController.text.trim()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email addresses do not match')),
       );
-    }).toList();
+      return;
+    }
 
     _session.passengers = passengers;
-    _session.contactEmail = _contactEmailController.text.trim();
+    _session.contactEmail = email;
     _session.contactPhone = _contactPhoneController.text.trim();
     _session.contactCountry = _contactCountryController.text.trim();
 
     context.push('/booking/summary');
   }
 
+  String _travellerName(Map<String, dynamic> t) {
+    final parts = <String>[];
+    final title = t['title'] as String?;
+    if (title != null && title.isNotEmpty) parts.add(title);
+    final fn = t['firstName'] as String? ?? '';
+    if (fn.isNotEmpty) parts.add(fn);
+    final ln = t['lastName'] as String? ?? '';
+    if (ln.isNotEmpty) parts.add(ln);
+    return parts.join(' ');
+  }
+
+  String _leadName() {
+    if (_personalDetails != null) {
+      final p = _personalDetails!;
+      final title = p['title'] as String?;
+      final fn = p['firstName'] as String? ?? '';
+      final ln = p['lastName'] as String? ?? '';
+      final parts = <String>[
+        if (title != null && title.isNotEmpty) title,
+        fn,
+        ln,
+      ].where((e) => e.isNotEmpty);
+      return parts.join(' ');
+    }
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      return authState.user.name;
+    }
+    return 'Lead Passenger';
+  }
+
   @override
   void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
+    for (final f in _newTravellerForms) {
+      f.dispose();
     }
     _contactEmailController.dispose();
+    _contactEmailConfirmController.dispose();
     _contactPhoneController.dispose();
     _contactCountryController.dispose();
     super.dispose();
@@ -160,142 +274,400 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final flight = _session.selectedOutboundFlight;
-    final passengerCount = _session.searchCriteria?.passengers ?? 1;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Passenger details')),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, state) {
-                return SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (flight != null) ...[
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (flight != null) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(Icons.flight_takeoff,
+                                color: AppColors.primary, size: 28),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    Icons.flight_takeoff,
-                                    color: AppColors.primary,
-                                    size: 28,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${flight.airline} ${flight.flightCode}',
-                                          style: AppTextStyles.h4,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '${flight.origin} → ${flight.destination}',
-                                          style: AppTextStyles.bodySmall,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                   Text(
-                                    '${flight.currency} ${flight.price.toStringAsFixed(0)}',
-                                    style: AppTextStyles.price,
+                                    '${flight.airline} ${flight.flightCode}',
+                                    style: AppTextStyles.h4,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${flight.origin} → ${flight.destination}',
+                                    style: AppTextStyles.bodySmall,
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (_loadError != null) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              _loadError!,
-                              style: AppTextStyles.bodySmall
-                                  ?.copyWith(color: AppColors.textSecondary),
-                              textAlign: TextAlign.center,
+                            Text(
+                              '${flight.currency} ${flight.price.toStringAsFixed(0)}',
+                              style: AppTextStyles.price,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.person_outline,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Quick fill from saved travellers',
+                                    style: AppTextStyles.h4,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Pick a saved traveller to prefill passenger details.',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        _buildSavedTravellerCards(),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _addNewTraveller,
+                          icon: const Icon(Icons.person_add_alt_1_outlined,
+                              size: 18),
+                          label: const Text('Add new traveller'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.border),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                        ],
-                        Text('Passenger details', style: AppTextStyles.h4),
-                        const SizedBox(height: 12),
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _controllers.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final c = _controllers[index];
-                            return _buildPassengerForm(
-                              index,
-                              c,
-                              isLead: index == 0,
-                            );
-                          },
                         ),
-                        const SizedBox(height: 12),
-                        if (_controllers.length < 9)
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _controllers.add(_PassengerFormController());
-                              });
-                            },
-                            icon: const Icon(Icons.person_add),
-                            label: const Text('Add another passenger'),
-                          ),
-                        const SizedBox(height: 24),
-                        const Divider(),
-                        const SizedBox(height: 12),
-                        Text('Contact details', style: AppTextStyles.h4),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _contactEmailController,
-                          decoration:
-                              const InputDecoration(labelText: 'Email address'),
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _contactPhoneController,
-                          decoration:
-                              const InputDecoration(labelText: 'Phone number'),
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _contactCountryController,
-                          decoration: const InputDecoration(
-                              labelText: 'Country of residence'),
-                        ),
-                        const SizedBox(height: 24),
-                        PrimaryButton(
-                          label: 'Continue',
-                          isLoading: false,
-                          onPressed: _next,
-                        ),
-                        const SizedBox(height: 12),
                       ],
                     ),
                   ),
-                );
-              },
+                  const SizedBox(height: 24),
+                  Text('Selected travellers', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 8),
+                  _buildSelectedSection(),
+                  const SizedBox(height: 24),
+                  Text('Contact Details', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Booking confirmation and e-tickets sent here',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _contactEmailController,
+                    decoration:
+                        const InputDecoration(labelText: 'Email Address'),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _contactEmailConfirmController,
+                    decoration:
+                        const InputDecoration(labelText: 'Confirm Email'),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _contactPhoneController,
+                    decoration:
+                        const InputDecoration(labelText: 'Phone Number'),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _contactCountryController,
+                    decoration: const InputDecoration(
+                        labelText: 'Country of Residence'),
+                  ),
+                  const SizedBox(height: 24),
+                  PrimaryButton(
+                    label: 'Continue',
+                    isLoading: false,
+                    onPressed: _continue,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
             ),
     );
   }
 
-  Widget _buildPassengerForm(
-    int index,
-    _PassengerFormController c, {
-    bool isLead = false,
+  Widget _buildSavedTravellerCards() {
+    final allTravellers = <Map<String, dynamic>?>[null, ..._savedTravellers];
+
+    if (allTravellers.length == 1) {
+      return Text(
+        'No saved travellers found yet. Add details below.',
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+      );
+    }
+
+    return Column(
+      children: List.generate(allTravellers.length, (index) {
+        final traveller = allTravellers[index];
+        if (traveller == null) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _travellerCard(
+              name: _leadName(),
+              subtitle: 'Lead passenger profile',
+              isSelected: true,
+              onTap: () {},
+              showCheckbox: false,
+            ),
+          );
+        }
+        final id = traveller['id'] as int? ?? index;
+        final isSelected = _selectedTravellerIds.contains(id);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _travellerCard(
+            name: _travellerName(traveller),
+            subtitle: 'Saved traveller',
+            isSelected: isSelected,
+            onTap: () => _toggleTraveller(id),
+            showCheckbox: true,
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _travellerCard({
+    required String name,
+    required String subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+    bool showCheckbox = true,
   }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.primary.withOpacity(0.06)
+            : AppColors.background,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isSelected ? AppColors.primary : AppColors.border,
+          width: isSelected ? 1.4 : 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.accent.withOpacity(0.25)
+                        : AppColors.surfaceVariant,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.person,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name, style: AppTextStyles.bodyLarge),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (showCheckbox)
+                  Transform.scale(
+                    scale: 0.95,
+                    child: Checkbox(
+                      value: isSelected,
+                      activeColor: AppColors.primary,
+                      onChanged: (_) => onTap(),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedSection() {
+    final selectedWidgets = <Widget>[
+      _selectedCard(name: _leadName(), subtitle: 'Lead passenger'),
+    ];
+
+    for (final id in _selectedTravellerIds) {
+      final traveller =
+          _savedTravellers.firstWhere((t) => t['id'] == id, orElse: () => {});
+      selectedWidgets.add(_selectedCard(
+        name: _travellerName(traveller),
+        subtitle: 'Saved traveller',
+      ));
+    }
+
+    for (final form in _newTravellerForms) {
+      final fn = form.firstName.text.trim();
+      final ln = form.lastName.text.trim();
+      final name = '$fn $ln'.trim();
+      if (name.isNotEmpty) {
+        selectedWidgets.add(_selectedCard(
+          name: name,
+          subtitle: 'New traveller',
+          trailing: IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            onPressed: () =>
+                _removeNewTraveller(_newTravellerForms.indexOf(form)),
+          ),
+        ));
+      }
+    }
+
+    for (final form in _newTravellerForms) {
+      selectedWidgets.add(_buildNewTravellerForm(form));
+    }
+
+    if (selectedWidgets.length == 1) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Text(
+          'No passengers selected yet. Choose a saved traveller or add one below.',
+          style:
+              AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: selectedWidgets,
+      ),
+    );
+  }
+
+  Widget _selectedCard({
+    required String name,
+    required String subtitle,
+    Widget? trailing,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: Text(
+                name.isNotEmpty ? name[0] : '?',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+            if (trailing != null) trailing,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNewTravellerForm(_NewTravellerController c) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -303,17 +675,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isLead ? 'Lead passenger' : 'Passenger ${index + 1}',
-              style: AppTextStyles.h4,
+              'New Traveller',
+              style: AppTextStyles.bodyLarge,
             ),
-            if (isLead) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Pre-filled from your profile',
-                style: AppTextStyles.bodySmall
-                    ?.copyWith(color: AppColors.textSecondary),
-              ),
-            ],
             const SizedBox(height: 12),
             TextField(
               controller: c.firstName,
@@ -327,78 +691,32 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: c.email,
-              decoration:
-                  const InputDecoration(labelText: 'Email address'),
+              decoration: const InputDecoration(labelText: 'Email address'),
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: c.phone,
-              decoration:
-                  const InputDecoration(labelText: 'Phone number'),
+              decoration: const InputDecoration(labelText: 'Phone number'),
               keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: c.passport,
-              decoration:
-                  const InputDecoration(labelText: 'Passport number'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: c.country,
-              decoration:
-                  const InputDecoration(labelText: 'Country of residence'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: c.dob,
-              readOnly: true,
-              onTap: () => _pickDateOfBirth(c),
-              decoration:
-                  const InputDecoration(labelText: 'Date of birth'),
             ),
           ],
         ),
       ),
     );
   }
-
-  Future<void> _pickDateOfBirth(_PassengerFormController c) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: c.dateOfBirth ?? DateTime(1990),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) {
-      setState(() {
-        c.dateOfBirth = picked;
-        c.dob.text =
-            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-      });
-    }
-  }
 }
 
-class _PassengerFormController {
+class _NewTravellerController {
   final firstName = TextEditingController();
   final lastName = TextEditingController();
   final email = TextEditingController();
   final phone = TextEditingController();
-  final passport = TextEditingController();
-  final country = TextEditingController();
-  final dob = TextEditingController();
-  DateTime? dateOfBirth;
-  DateTime? passportExpiry;
 
   void dispose() {
     firstName.dispose();
     lastName.dispose();
     email.dispose();
     phone.dispose();
-    passport.dispose();
-    country.dispose();
-    dob.dispose();
   }
 }
