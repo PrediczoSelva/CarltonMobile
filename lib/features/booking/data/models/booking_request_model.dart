@@ -7,6 +7,7 @@ class BookingRequest {
     required this.contactEmail,
     required this.contactPhone,
     this.paymentMethod,
+    this.paymentMetadataJson,
   });
 
   final int flightId;
@@ -14,6 +15,7 @@ class BookingRequest {
   final String contactEmail;
   final String contactPhone;
   final String? paymentMethod;
+  final String? paymentMetadataJson;
 
   Map<String, dynamic> toJson() => {
         'flightId': flightId,
@@ -21,5 +23,6 @@ class BookingRequest {
         'contactEmail': contactEmail,
         'contactPhone': contactPhone,
         if (paymentMethod != null) 'paymentMethod': paymentMethod,
+        if (paymentMetadataJson != null) 'paymentMetadataJson': paymentMetadataJson,
       };
 }
