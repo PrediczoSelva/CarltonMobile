@@ -25,6 +25,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         contactEmail: event.contactEmail,
         contactPhone: event.contactPhone,
         paymentMethod: event.paymentMethod,
+        paymentMetadataJson: event.paymentMetadataJson,
       );
       emit(BookingSuccess(booking));
     } catch (e) {
