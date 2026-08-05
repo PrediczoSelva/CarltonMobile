@@ -460,7 +460,11 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     passengers.add(_buildLeadPassenger());
 
     for (final id in _selectedTravellerIds) {
-      final traveller = _savedTravellers.firstWhere((t) => t['id'] == id);
+      if (id == _leadPassengerId) continue;
+      final traveller = _savedTravellers.firstWhere(
+        (t) => t['id'] == id,
+        orElse: () => {'id': id, 'title': '', 'firstName': '', 'lastName': ''},
+      );
       passengers.add(_buildTravellerPassenger(traveller));
     }
 
