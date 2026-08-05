@@ -7,7 +7,8 @@ abstract class BookingRepository {
     required List<Passenger> passengers,
     required String contactEmail,
     required String contactPhone,
-    required String? paymentMethod,
+    String? paymentMethod,
+    String? paymentMetadataJson,
   });
 
   Future<List<Booking>> getUserBookings();
