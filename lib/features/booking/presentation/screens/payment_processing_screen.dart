@@ -42,6 +42,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
             contactEmail: session.contactEmail ?? '',
             contactPhone: session.contactPhone ?? '',
             paymentMethod: session.paymentMethod ?? 'card',
+            paymentMetadataJson: session.paymentMetadataJson,
           ),
         );
   }
