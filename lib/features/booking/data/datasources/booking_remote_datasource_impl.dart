@@ -14,15 +14,22 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
 
   @override
   Future<BookingModel> createBooking(BookingRequest request) async {
-    try {
-      final response = await _apiClient.post<dynamic>(
-        _basePath,
-        data: request.toJson(),
-      );
-      return BookingModel.fromJson(response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw _handleDioError(e);
+    final endpoints = ['$_basePath', '$_basePath/guest'];
+    for (final endpoint in endpoints) {
+      try {
+        final response = await _apiClient.post<dynamic>(
+          endpoint,
+          data: request.toJson(),
+        );
+        return BookingModel.fromJson(response.data as Map<String, dynamic>);
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 401 && endpoint != endpoints.last) {
+          continue;
+        }
+        throw _handleDioError(e);
+      }
     }
+    throw Exception('Unable to create booking. Please try again.');
   }
 
   @override
