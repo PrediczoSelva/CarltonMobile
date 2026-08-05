@@ -9,6 +9,7 @@ class CreateBookingRequested extends BookingEvent {
     required this.contactEmail,
     required this.contactPhone,
     this.paymentMethod,
+    this.paymentMetadataJson,
   });
 
   final int flightId;
@@ -16,6 +17,7 @@ class CreateBookingRequested extends BookingEvent {
   final String contactEmail;
   final String contactPhone;
   final String? paymentMethod;
+  final String? paymentMetadataJson;
 }
 
 class GetUserBookingsRequested extends BookingEvent {}
