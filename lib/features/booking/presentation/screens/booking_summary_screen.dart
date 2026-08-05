@@ -43,10 +43,17 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
             _SummarySection(
               title: 'Flight',
               children: [
-                _SummaryRow(label: 'Airline', value: '${flight.airline} ${flight.flightCode}'),
-                _SummaryRow(label: 'Route', value: '${flight.origin} → ${flight.destination}'),
-                _SummaryRow(label: 'Departure', value: _formatTime(flight.departureTime)),
-                _SummaryRow(label: 'Arrival', value: _formatTime(flight.arrivalTime)),
+                _SummaryRow(
+                    label: 'Airline',
+                    value: '${flight.airline} ${flight.flightCode}'),
+                _SummaryRow(
+                    label: 'Route',
+                    value: '${flight.origin} → ${flight.destination}'),
+                _SummaryRow(
+                    label: 'Departure',
+                    value: _formatTime(flight.departureTime)),
+                _SummaryRow(
+                    label: 'Arrival', value: _formatTime(flight.arrivalTime)),
                 _SummaryRow(label: 'Duration', value: flight.duration),
                 _SummaryRow(label: 'Stops', value: flight.stopsText),
                 _SummaryRow(label: 'Aircraft', value: flight.aircraft),
@@ -72,7 +79,8 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
             children: [
               _SummaryRow(label: 'Email', value: _session.contactEmail ?? '—'),
               _SummaryRow(label: 'Phone', value: _session.contactPhone ?? '—'),
-              _SummaryRow(label: 'Country', value: _session.contactCountry ?? '—'),
+              _SummaryRow(
+                  label: 'Country', value: _session.contactCountry ?? '—'),
             ],
           ),
           const SizedBox(height: 16),
@@ -106,7 +114,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
             onPressed: () {
               _session.totalPrice = total;
               _session.currency = currency;
-              context.push('/booking/payment-method');
+              context.push('/booking/service-pack');
             },
           ),
         ],
