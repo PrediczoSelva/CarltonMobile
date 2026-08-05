@@ -10,6 +10,7 @@ import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/booking/presentation/bloc/booking_bloc.dart';
 import '../../features/booking/presentation/screens/booking_confirmation_screen.dart';
 import '../../features/booking/presentation/screens/booking_summary_screen.dart';
+import '../../features/booking/presentation/screens/service_pack_selection_screen.dart';
 import '../../features/booking/presentation/screens/card_payment_screen.dart';
 import '../../features/booking/presentation/screens/payment_method_selection_screen.dart';
 import '../../features/booking/presentation/screens/payment_processing_screen.dart';
@@ -36,6 +37,7 @@ abstract class AppRoutes {
   static const flightResults = '/flights/results';
   static const passengerDetails = '/booking/passenger-details';
   static const bookingSummary = '/booking/summary';
+  static const servicePackSelection = '/booking/service-pack';
   static const paymentMethodSelection = '/booking/payment-method';
   static const cardPayment = '/booking/payment/card';
   static const paymentProcessing = '/booking/payment/process';
@@ -110,6 +112,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: AppRoutes.bookingSummary,
           builder: (context, state) => const BookingSummaryScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.servicePackSelection,
+          builder: (context, state) => const ServicePackSelectionScreen(),
         ),
         GoRoute(
           path: AppRoutes.paymentMethodSelection,
