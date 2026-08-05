@@ -16,6 +16,8 @@ class BookingSession {
   String? contactPhone;
   String? contactCountry;
   String? paymentMethod;
+  String? paymentMetadataJson;
+  String? stripePaymentIntentId;
   double? totalPrice;
   String? currency;
   String? bookingReference;
@@ -50,6 +52,8 @@ class BookingSession {
     contactPhone = null;
     contactCountry = null;
     paymentMethod = null;
+    paymentMetadataJson = null;
+    stripePaymentIntentId = null;
     totalPrice = null;
     currency = null;
     bookingReference = null;
