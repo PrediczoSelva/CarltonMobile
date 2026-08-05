@@ -15,7 +15,8 @@ class BookingRepositoryImpl implements BookingRepository {
     required List<Passenger> passengers,
     required String contactEmail,
     required String contactPhone,
-    required String? paymentMethod,
+    String? paymentMethod,
+    String? paymentMetadataJson,
   }) async {
     final request = BookingRequest(
       flightId: flightId,
@@ -23,6 +24,7 @@ class BookingRepositoryImpl implements BookingRepository {
       contactEmail: contactEmail,
       contactPhone: contactPhone,
       paymentMethod: paymentMethod,
+      paymentMetadataJson: paymentMetadataJson,
     );
     return _remoteDatasource.createBooking(request);
   }
