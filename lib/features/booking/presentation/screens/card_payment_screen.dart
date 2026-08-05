@@ -10,6 +10,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../payment/domain/repositories/payment_repository.dart';
 
@@ -28,6 +29,24 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
 
   bool _isLoading = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillCardholderName();
+  }
+
+  Future<void> _prefillCardholderName() async {
+    try {
+      final authRepository = getIt<AuthRepository>();
+      final user = await authRepository.getCurrentUser();
+      if (mounted && user.name.isNotEmpty) {
+        _nameController.text = user.name;
+      }
+    } catch (_) {
+      // Not logged in or no stored user; leave the field blank.
+    }
+  }
 
   @override
   void dispose() {
