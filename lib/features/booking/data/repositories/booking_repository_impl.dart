@@ -1,6 +1,9 @@
 import '../../domain/entities/booking.dart';
 import '../../domain/entities/passenger.dart';
 import '../../domain/repositories/booking_repository.dart';
+import '../models/atlas_verify_response.dart';
+import '../models/amadeus_verify_response.dart';
+import '../models/travelport_verify_response.dart';
 import '../datasources/booking_remote_datasource.dart';
 import '../models/booking_request_model.dart';
 
@@ -18,7 +21,7 @@ class BookingRepositoryImpl implements BookingRepository {
     String? paymentMethod,
     String? paymentMetadataJson,
   }) async {
-    final request = BookingRequest(
+    final request = BookingRequest.fromPassengers(
       flightId: flightId,
       passengers: passengers,
       contactEmail: contactEmail,
@@ -42,5 +45,214 @@ class BookingRepositoryImpl implements BookingRepository {
   @override
   Future<void> cancelBooking(int id) {
     return _remoteDatasource.cancelBooking(id);
+  }
+
+  @override
+  Future<AtlasVerifyResponse> atlasVerify({
+    required String routingIdentifier,
+    required int adultCount,
+    required int childCount,
+    required int infantCount,
+  }) {
+    return _remoteDatasource.atlasVerify(
+      routingIdentifier: routingIdentifier,
+      adultCount: adultCount,
+      childCount: childCount,
+      infantCount: infantCount,
+    );
+  }
+
+  @override
+  Future<AmadeusVerifyResponse> amadeusVerify({
+    required String amadeusOfferToken,
+    required int adultCount,
+    required int childCount,
+    required int infantCount,
+  }) {
+    return _remoteDatasource.amadeusVerify(
+      amadeusOfferToken: amadeusOfferToken,
+      adultCount: adultCount,
+      childCount: childCount,
+      infantCount: infantCount,
+    );
+  }
+
+  @override
+  Future<TravelportVerifyResponse> travelportVerify({
+    required String fareKey,
+    required int adults,
+    required int children,
+    required int infants,
+  }) {
+    return _remoteDatasource.travelportVerify(
+      fareKey: fareKey,
+      adults: adults,
+      children: children,
+      infants: infants,
+    );
+  }
+
+  @override
+  Future<Booking> createAtlasBooking({
+    required String routingIdentifier,
+    required List<Passenger> passengers,
+    required String contactName,
+    required String contactEmail,
+    required String contactPhone,
+    required String bookingClass,
+    required double quotedTotal,
+    String? flightSnapshotJson,
+    String? stripePaymentIntentId,
+    bool isGuest = false,
+  }) async {
+    final atlasPassengers = passengers.map((p) {
+      final nameParts = '${p.firstName} ${p.lastName}'.trim().split(' ');
+      final given = nameParts.isNotEmpty ? nameParts.first : '';
+      final family = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+      final birthday = p.dateOfBirth != null
+          ? '${p.dateOfBirth!.day.toString().padLeft(2, '0')}${p.dateOfBirth!.month.toString().padLeft(2, '0')}${p.dateOfBirth!.year}'
+          : '';
+      return {
+        'name': '$family/$given',
+        'passengerType': 0,
+        'gender': 'M',
+        'birthday': birthday,
+        if (p.country != null) 'nationality': p.country,
+      };
+    }).toList();
+
+    final verify = await _remoteDatasource.atlasVerify(
+      routingIdentifier: routingIdentifier,
+      adultCount: passengers.length,
+      childCount: 0,
+      infantCount: 0,
+    );
+
+    return _remoteDatasource.atlasBook(
+      sessionId: verify.sessionId,
+      routingIdentifier: routingIdentifier,
+      passengers: atlasPassengers,
+      contact: {
+        'name': contactName,
+        'email': contactEmail,
+        'mobile': contactPhone,
+        'address': 'N/A',
+        'postcode': '',
+      },
+      bookingClass: bookingClass,
+      quotedTotal: quotedTotal,
+      flightSnapshotJson: flightSnapshotJson,
+      stripePaymentIntentId: stripePaymentIntentId,
+      isGuest: isGuest,
+    );
+  }
+
+  @override
+  Future<Booking> createAmadeusBooking({
+    required String amadeusOfferToken,
+    required String verifyId,
+    required String stripePaymentIntentId,
+    required double baseFareTotal,
+    required List<Passenger> passengers,
+    required String contactEmail,
+    required String contactPhone,
+    required String bookingClass,
+    required double quotedTotal,
+    String? flightSnapshotJson,
+    bool isGuest = false,
+  }) async {
+    final amadeusPassengers = passengers.map((p) {
+      final birthday = p.dateOfBirth != null
+          ? '${p.dateOfBirth!.day.toString().padLeft(2, '0')}${_monthAbbrev(p.dateOfBirth!.month)}${p.dateOfBirth!.year.toString().substring(2)}'
+          : '';
+      return {
+        'firstName': p.firstName,
+        'lastName': p.lastName,
+        'passengerType': 0,
+        'gender': 'M',
+        'birthday': birthday,
+        if (p.country != null) 'nationality': p.country,
+      };
+    }).toList();
+
+    final verify = await _remoteDatasource.amadeusVerify(
+      amadeusOfferToken: amadeusOfferToken,
+      adultCount: passengers.length,
+      childCount: 0,
+      infantCount: 0,
+    );
+
+    return _remoteDatasource.amadeusBook(
+      amadeusOfferToken: amadeusOfferToken,
+      verifyId: verify.verifyId,
+      stripePaymentIntentId: stripePaymentIntentId,
+      baseFareTotal: baseFareTotal,
+      passengers: amadeusPassengers,
+      contact: {
+        'email': contactEmail,
+        'mobile': contactPhone,
+      },
+      bookingClass: bookingClass,
+      quotedTotal: quotedTotal,
+      flightSnapshotJson: flightSnapshotJson,
+      isGuest: isGuest,
+    );
+  }
+
+  @override
+  Future<Booking> createTravelportBooking({
+    required String fareKey,
+    required List<String> segmentKeys,
+    required List<Passenger> passengers,
+    required String contactEmail,
+    required String contactPhone,
+    required String bookingClass,
+    required double quotedTotal,
+    double providerBaseFare = 0,
+    String? flightSnapshotJson,
+    String? stripePaymentIntentId,
+    bool isGuest = false,
+  }) async {
+    final travelportPassengers = passengers.map((p) {
+      return {
+        'title': 'Mr',
+        'firstName': p.firstName,
+        'lastName': p.lastName,
+        'dateOfBirth': p.dateOfBirth != null
+            ? '${p.dateOfBirth!.year}-${p.dateOfBirth!.month.toString().padLeft(2, '0')}-${p.dateOfBirth!.day.toString().padLeft(2, '0')}'
+            : '',
+        'passportNumber': p.passportNumber ?? '',
+        'nationality': p.country ?? 'GB',
+        'passengerType': 'ADT',
+      };
+    }).toList();
+
+    final verify = await _remoteDatasource.travelportVerify(
+      fareKey: fareKey,
+      adults: passengers.length,
+      children: 0,
+      infants: 0,
+    );
+
+    return _remoteDatasource.travelportBook(
+      fareKey: verify.fareKey.isNotEmpty ? verify.fareKey : fareKey,
+      segmentKeys: segmentKeys,
+      passengers: travelportPassengers,
+      contact: {
+        'phone': contactPhone,
+        'email': contactEmail,
+      },
+      bookingClass: bookingClass,
+      quotedTotal: quotedTotal,
+      providerBaseFare: providerBaseFare,
+      flightSnapshotJson: flightSnapshotJson,
+      stripePaymentIntentId: stripePaymentIntentId,
+      isGuest: isGuest,
+    );
+  }
+
+  String _monthAbbrev(int month) {
+    const abbr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    return abbr[month - 1];
   }
 }
