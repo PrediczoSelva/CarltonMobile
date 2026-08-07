@@ -60,7 +60,8 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   String? _validateCardNumber(String value) {
     final cleaned = value.replaceAll(' ', '');
     if (cleaned.isEmpty) return 'Card number is required';
-    if (cleaned.length < 13 || cleaned.length > 19) return 'Card number must be 13-19 digits';
+    if (cleaned.length < 13 || cleaned.length > 19)
+      return 'Card number must be 13-19 digits';
     if (!_luhnCheck(cleaned)) return 'Invalid card number';
     return null;
   }
@@ -71,7 +72,8 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
     if (cleaned.length != 4) return 'Use MM/YY format';
     final month = int.tryParse(cleaned.substring(0, 2));
     final year = int.tryParse(cleaned.substring(2, 4));
-    if (month == null || year == null || month < 1 || month > 12) return 'Invalid month';
+    if (month == null || year == null || month < 1 || month > 12)
+      return 'Invalid month';
     final now = DateTime.now();
     final currentYear = now.year % 100;
     final currentMonth = now.month;
@@ -105,13 +107,25 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   Future<void> _pay() async {
     setState(() => _error = null);
 
-    final nameError = _nameController.text.trim().isEmpty ? 'Cardholder name is required' : null;
+    final nameError = _nameController.text.trim().isEmpty
+        ? 'Cardholder name is required'
+        : null;
     final cardError = _validateCardNumber(_cardNumberController.text);
     final expiryError = _validateExpiry(_expiryController.text);
     final cvvError = _validateCvv(_cvvController.text);
 
-    if (nameError != null || cardError != null || expiryError != null || cvvError != null) {
-      setState(() => _error = nameError ?? cardError ?? expiryError ?? cvvError);
+    if (nameError != null ||
+        cardError != null ||
+        expiryError != null ||
+        cvvError != null) {
+      setState(
+          () => _error = nameError ?? cardError ?? expiryError ?? cvvError);
+      return;
+    }
+
+    if (Stripe.publishableKey.isEmpty) {
+      setState(() => _error =
+          'Stripe is not configured. Please provide a Stripe publishable key.');
       return;
     }
 
@@ -120,10 +134,32 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
     try {
       final session = getIt<BookingSession>();
       final flight = session.selectedOutboundFlight;
-      if (flight == null) throw Exception('No flight selected');
+      if (flight == null) {
+        throw Exception('No flight selected. Please go back and search again.');
+      }
 
       final paymentRepository = getIt<PaymentRepository>();
       final amount = session.totalPriceWithTaxes;
+
+      if (amount < 0.50) {
+        throw Exception('The selected flight price is too low to process payment. Please select a different flight.');
+      }
+
+      final source = flight.source.toLowerCase();
+      final isProviderFlight = source.contains('atlas') ||
+          source.contains('amadeus') ||
+          source.contains('travelport') ||
+          (flight.bookingKey != null && flight.bookingKey!.isNotEmpty);
+
+      if (!isProviderFlight && flight.id <= 0) {
+        throw Exception('Selected flight is no longer valid. Please go back and search again.');
+      }
+
+      if (isProviderFlight && (flight.bookingKey == null || flight.bookingKey!.isEmpty)) {
+        throw Exception('Selected flight is missing booking details. Please go back and search again.');
+      }
+
+      debugPrint('[CardPayment] flight=${flight.flightCode} source=${flight.source} id=${flight.id} amount=$amount');
 
       final paymentIntent = await paymentRepository.createFlightPaymentIntent(
         flightId: flight.id,
@@ -160,8 +196,8 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
       );
 
       final lastFour = _cardNumberController.text.replaceAll(' ', '').substring(
-        _cardNumberController.text.replaceAll(' ', '').length - 4,
-      );
+            _cardNumberController.text.replaceAll(' ', '').length - 4,
+          );
 
       final paymentMetadata = {
         'paymentMethod': 'card',
@@ -236,7 +272,8 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                      const Icon(Icons.error_outline,
+                          color: AppColors.error, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -307,7 +344,8 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
 
 class _CardNumberFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
     final digits = newValue.text.replaceAll(' ', '');
     var formatted = '';
     for (var i = 0; i < min(digits.length, 16); i++) {
@@ -323,7 +361,8 @@ class _CardNumberFormatter extends TextInputFormatter {
 
 class _ExpiryFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
     final digits = newValue.text.replaceAll('/', '');
     var formatted = '';
     for (var i = 0; i < min(digits.length, 4); i++) {
