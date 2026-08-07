@@ -18,6 +18,7 @@ class Flight {
     this.bookingKey,
     this.source = '',
     this.seatsAvailable = 0,
+    this.segmentKeys = const [],
   });
 
   factory Flight.fromJson(Map<String, dynamic> json) {
@@ -130,6 +131,10 @@ class Flight {
           '',
       seatsAvailable: _i(json['seatsAvailable'], json['SeatsAvailable'],
           json['seatsAvailable'], json['SeatsAvailable']),
+      segmentKeys: (json['segmentKeys'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -149,6 +154,7 @@ class Flight {
   final String? bookingKey;
   final String source;
   final int seatsAvailable;
+  final List<String> segmentKeys;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -167,6 +173,7 @@ class Flight {
         'bookingKey': bookingKey,
         'source': source,
         'seatsAvailable': seatsAvailable,
+        'segmentKeys': segmentKeys,
       };
 
   String get stopsText =>
