@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../models/atlas_verify_response.dart';
+import '../models/amadeus_verify_response.dart';
+import '../models/travelport_verify_response.dart';
 import '../models/booking_model.dart';
 import '../models/booking_request_model.dart';
 import 'booking_remote_datasource.dart';
@@ -62,6 +65,195 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
   @override
   Future<void> cancelBooking(int id) async {
     await _apiClient.delete<void>('$_basePath/$id');
+  }
+
+  @override
+  Future<AtlasVerifyResponse> atlasVerify({
+    required String routingIdentifier,
+    required int adultCount,
+    required int childCount,
+    required int infantCount,
+  }) async {
+    try {
+      final response = await _apiClient.post<dynamic>(
+        '$_basePath/atlas/verify',
+        data: {
+          'routingIdentifier': routingIdentifier,
+          'adultCount': adultCount,
+          'childCount': childCount,
+          'infantCount': infantCount,
+        },
+      );
+      return AtlasVerifyResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<BookingModel> atlasBook({
+    required String sessionId,
+    required String routingIdentifier,
+    required List<Map<String, dynamic>> passengers,
+    required Map<String, dynamic> contact,
+    required String bookingClass,
+    required double quotedTotal,
+    String? flightSnapshotJson,
+    String? stripePaymentIntentId,
+    bool isGuest = false,
+  }) async {
+    final path = isGuest ? '$_basePath/atlas/guest/book' : '$_basePath/atlas/book';
+    try {
+      final response = await _apiClient.post<dynamic>(
+        path,
+        data: {
+          'sessionId': sessionId,
+          'routingIdentifier': routingIdentifier,
+          'passengers': passengers,
+          'contact': contact,
+          'bookingClass': bookingClass,
+          'quotedTotal': quotedTotal,
+          if (flightSnapshotJson != null) 'flightSnapshotJson': flightSnapshotJson,
+          if (stripePaymentIntentId != null) 'stripePaymentIntentId': stripePaymentIntentId,
+        },
+      );
+      final data = response.data as Map<String, dynamic>;
+      final booking = data['booking'] as Map<String, dynamic>?;
+      if (booking == null) {
+        throw Exception('Invalid booking response from Atlas.');
+      }
+      return BookingModel.fromJson(booking);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<AmadeusVerifyResponse> amadeusVerify({
+    required String amadeusOfferToken,
+    required int adultCount,
+    required int childCount,
+    required int infantCount,
+  }) async {
+    try {
+      final response = await _apiClient.post<dynamic>(
+        '$_basePath/amadeus/verify',
+        data: {
+          'amadeusOfferToken': amadeusOfferToken,
+          'adultCount': adultCount,
+          'childCount': childCount,
+          'infantCount': infantCount,
+        },
+      );
+      return AmadeusVerifyResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<BookingModel> amadeusBook({
+    required String amadeusOfferToken,
+    required String verifyId,
+    required String stripePaymentIntentId,
+    required double baseFareTotal,
+    required List<Map<String, dynamic>> passengers,
+    required Map<String, dynamic> contact,
+    required String bookingClass,
+    required double quotedTotal,
+    String? flightSnapshotJson,
+    bool isGuest = false,
+  }) async {
+    final path = isGuest ? '$_basePath/amadeus/guest/book' : '$_basePath/amadeus/book';
+    try {
+      final response = await _apiClient.post<dynamic>(
+        path,
+        data: {
+          'amadeusOfferToken': amadeusOfferToken,
+          'verifyId': verifyId,
+          'stripePaymentIntentId': stripePaymentIntentId,
+          'baseFareTotal': baseFareTotal,
+          'passengers': passengers,
+          'contact': contact,
+          'bookingClass': bookingClass,
+          'quotedTotal': quotedTotal,
+          if (flightSnapshotJson != null) 'flightSnapshotJson': flightSnapshotJson,
+        },
+      );
+      final data = response.data as Map<String, dynamic>;
+      final booking = data['booking'] as Map<String, dynamic>?;
+      if (booking == null) {
+        throw Exception('Invalid booking response from Amadeus.');
+      }
+      return BookingModel.fromJson(booking);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<TravelportVerifyResponse> travelportVerify({
+    required String fareKey,
+    required int adults,
+    required int children,
+    required int infants,
+  }) async {
+    try {
+      final response = await _apiClient.post<dynamic>(
+        '$_basePath/travelport/verify',
+        data: {
+          'fareKey': fareKey,
+          'adults': adults,
+          'children': children,
+          'infants': infants,
+        },
+      );
+      return TravelportVerifyResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<BookingModel> travelportBook({
+    required String fareKey,
+    required List<String> segmentKeys,
+    required List<Map<String, dynamic>> passengers,
+    required Map<String, dynamic> contact,
+    required String bookingClass,
+    required double quotedTotal,
+    double providerBaseFare = 0,
+    String? flightSnapshotJson,
+    String? stripePaymentIntentId,
+    bool isGuest = false,
+  }) async {
+    final path = isGuest ? '$_basePath/travelport/guest/book' : '$_basePath/travelport/book';
+    try {
+      final response = await _apiClient.post<dynamic>(
+        path,
+        data: {
+          'fareKey': fareKey,
+          'segmentKeys': segmentKeys,
+          'passengers': passengers,
+          'contact': contact,
+          'payment': stripePaymentIntentId != null
+              ? {'paymentType': 'CreditCard', 'reference': stripePaymentIntentId}
+              : null,
+          'bookingClass': bookingClass,
+          'quotedTotal': quotedTotal,
+          'providerBaseFare': providerBaseFare,
+          if (flightSnapshotJson != null) 'flightSnapshotJson': flightSnapshotJson,
+        },
+      );
+      final data = response.data as Map<String, dynamic>;
+      final booking = data['booking'] as Map<String, dynamic>?;
+      if (booking == null) {
+        throw Exception('Invalid booking response from Travelport.');
+      }
+      return BookingModel.fromJson(booking);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
   }
 
   Exception _handleDioError(DioException e) {
