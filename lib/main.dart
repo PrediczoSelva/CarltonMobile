@@ -18,16 +18,23 @@ Future<void> main() async {
 
   try {
     final apiClient = getIt<ApiClient>();
-    final response = await apiClient.get<dynamic>(AppConstants.paymentStripePublishableKey);
+    final response =
+        await apiClient.get<dynamic>(AppConstants.paymentStripePublishableKey);
     final key = response.data is Map
         ? (response.data as Map)['publishableKey'] as String?
         : null;
-    if (key != null && key.isNotEmpty) {
-      Stripe.publishableKey = key;
+    final publishableKey =
+        key?.isNotEmpty == true ? key! : AppConstants.stripePublishableKey;
+
+    if (publishableKey.isNotEmpty) {
+      Stripe.publishableKey = publishableKey;
       await Stripe.instance.applySettings();
     }
   } catch (_) {
-    // Stripe will remain uninitialised; card payments will show an error until configured.
+    if (AppConstants.stripePublishableKey.isNotEmpty) {
+      Stripe.publishableKey = AppConstants.stripePublishableKey;
+      await Stripe.instance.applySettings();
+    }
   }
 
   // TODO once Firebase project is created:
