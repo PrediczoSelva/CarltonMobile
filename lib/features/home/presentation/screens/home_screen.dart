@@ -108,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final flights = await _flightRepository.searchFlights(criteria);
       if (mounted) {
         setState(() {
-          _suggestedFlights = flights.take(4).toList();
+          _suggestedFlights = flights.where((f) => f.price > 0).take(4).toList();
           _loadingSuggestions = false;
         });
       }
