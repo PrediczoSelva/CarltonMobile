@@ -44,7 +44,9 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
       final List<dynamic> list = data is List
           ? data
           : (data as Map<String, dynamic>)['bookings'] as List<dynamic>? ?? [];
-      return list.map((json) => BookingModel.fromJson(json as Map<String, dynamic>)).toList();
+      return list
+          .map((json) => BookingModel.fromJson(json as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -84,7 +86,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'infantCount': infantCount,
         },
       );
-      return AtlasVerifyResponse.fromJson(response.data as Map<String, dynamic>);
+      return AtlasVerifyResponse.fromJson(
+          response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -102,7 +105,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     String? stripePaymentIntentId,
     bool isGuest = false,
   }) async {
-    final path = isGuest ? '$_basePath/atlas/guest/book' : '$_basePath/atlas/book';
+    final path =
+        isGuest ? '$_basePath/atlas/guest/book' : '$_basePath/atlas/book';
     try {
       final response = await _apiClient.post<dynamic>(
         path,
@@ -113,8 +117,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'contact': contact,
           'bookingClass': bookingClass,
           'quotedTotal': quotedTotal,
-          if (flightSnapshotJson != null) 'flightSnapshotJson': flightSnapshotJson,
-          if (stripePaymentIntentId != null) 'stripePaymentIntentId': stripePaymentIntentId,
+          if (flightSnapshotJson != null)
+            'flightSnapshotJson': flightSnapshotJson,
         },
       );
       final data = response.data as Map<String, dynamic>;
@@ -145,7 +149,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'infantCount': infantCount,
         },
       );
-      return AmadeusVerifyResponse.fromJson(response.data as Map<String, dynamic>);
+      return AmadeusVerifyResponse.fromJson(
+          response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -164,20 +169,21 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     String? flightSnapshotJson,
     bool isGuest = false,
   }) async {
-    final path = isGuest ? '$_basePath/amadeus/guest/book' : '$_basePath/amadeus/book';
+    final path =
+        isGuest ? '$_basePath/amadeus/guest/book' : '$_basePath/amadeus/book';
     try {
       final response = await _apiClient.post<dynamic>(
         path,
         data: {
           'amadeusOfferToken': amadeusOfferToken,
           'verifyId': verifyId,
-          'stripePaymentIntentId': stripePaymentIntentId,
           'baseFareTotal': baseFareTotal,
           'passengers': passengers,
           'contact': contact,
           'bookingClass': bookingClass,
           'quotedTotal': quotedTotal,
-          if (flightSnapshotJson != null) 'flightSnapshotJson': flightSnapshotJson,
+          if (flightSnapshotJson != null)
+            'flightSnapshotJson': flightSnapshotJson,
         },
       );
       final data = response.data as Map<String, dynamic>;
@@ -208,7 +214,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'infants': infants,
         },
       );
-      return TravelportVerifyResponse.fromJson(response.data as Map<String, dynamic>);
+      return TravelportVerifyResponse.fromJson(
+          response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -227,7 +234,9 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     String? stripePaymentIntentId,
     bool isGuest = false,
   }) async {
-    final path = isGuest ? '$_basePath/travelport/guest/book' : '$_basePath/travelport/book';
+    final path = isGuest
+        ? '$_basePath/travelport/guest/book'
+        : '$_basePath/travelport/book';
     try {
       final response = await _apiClient.post<dynamic>(
         path,
@@ -236,13 +245,11 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'segmentKeys': segmentKeys,
           'passengers': passengers,
           'contact': contact,
-          'payment': stripePaymentIntentId != null
-              ? {'paymentType': 'CreditCard', 'reference': stripePaymentIntentId}
-              : null,
           'bookingClass': bookingClass,
           'quotedTotal': quotedTotal,
           'providerBaseFare': providerBaseFare,
-          if (flightSnapshotJson != null) 'flightSnapshotJson': flightSnapshotJson,
+          if (flightSnapshotJson != null)
+            'flightSnapshotJson': flightSnapshotJson,
         },
       );
       final data = response.data as Map<String, dynamic>;
@@ -251,6 +258,35 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
         throw Exception('Invalid booking response from Travelport.');
       }
       return BookingModel.fromJson(booking);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<BookingModel> finalizeBookingPayment({
+    required int bookingId,
+    required String stripePaymentIntentId,
+    String? paymentMetadataJson,
+  }) async {
+    try {
+      final response = await _apiClient.post<dynamic>(
+        '$_basePath/$bookingId/finalize-payment',
+        data: {
+          'stripePaymentIntentId': stripePaymentIntentId,
+          if (paymentMetadataJson != null)
+            'paymentMetadataJson': paymentMetadataJson,
+        },
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        if (data.containsKey('booking')) {
+          return BookingModel.fromJson(data['booking'] as Map<String, dynamic>);
+        }
+        return BookingModel.fromJson(data);
+      }
+      throw Exception('Invalid finalize payment response.');
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

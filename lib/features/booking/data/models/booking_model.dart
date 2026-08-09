@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../domain/entities/booking.dart';
 import '../../../flight/domain/entities/flight.dart';
 import 'passenger_model.dart';
@@ -17,11 +19,38 @@ class BookingModel extends Booking {
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
-    final flightJson = json['flight'] as Map<String, dynamic>?;
+    final flightData = json['flight'] ?? json['flightSnapshotJson'];
+    Map<String, dynamic>? flightJson;
+    if (flightData is Map<String, dynamic>) {
+      flightJson = flightData;
+    } else if (flightData is String && flightData.isNotEmpty) {
+      try {
+        final parsed = jsonDecode(flightData);
+        if (parsed is Map<String, dynamic>) {
+          flightJson = parsed;
+        }
+      } catch (_) {
+        flightJson = null;
+      }
+    }
+
+    int parseId(dynamic value) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    final idValue = json['id'] ?? json['bookingId'] ?? json['booking_id'];
+    final pnrValue = json['pnr'] ??
+        json['PNR'] ??
+        json['bookingReference'] ??
+        json['bookingRef'];
+
     return BookingModel(
-      id: json['id'] as int? ?? 0,
-      pnr: json['pnr'] as String? ?? '',
-      flight: flightJson != null ? Flight.fromJson(flightJson) : _fallbackFlight(),
+      id: parseId(idValue),
+      pnr: pnrValue as String? ?? '',
+      flight:
+          flightJson != null ? Flight.fromJson(flightJson) : _fallbackFlight(),
       passengers: (json['passengers'] as List<dynamic>?)
               ?.map((p) => PassengerModel.fromJson(p as Map<String, dynamic>))
               .toList() ??
