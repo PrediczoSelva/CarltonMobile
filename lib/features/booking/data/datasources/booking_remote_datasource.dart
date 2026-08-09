@@ -65,4 +65,10 @@ abstract class BookingRemoteDatasource {
     String? stripePaymentIntentId,
     bool isGuest = false,
   });
+
+  Future<BookingModel> finalizeBookingPayment({
+    required int bookingId,
+    required String stripePaymentIntentId,
+    String? paymentMetadataJson,
+  });
 }
