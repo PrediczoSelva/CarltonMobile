@@ -251,8 +251,34 @@ class BookingRepositoryImpl implements BookingRepository {
     );
   }
 
+  @override
+  Future<Booking> finalizeBookingPayment({
+    required int bookingId,
+    required String stripePaymentIntentId,
+    String? paymentMetadataJson,
+  }) async {
+    return _remoteDatasource.finalizeBookingPayment(
+      bookingId: bookingId,
+      stripePaymentIntentId: stripePaymentIntentId,
+      paymentMetadataJson: paymentMetadataJson,
+    );
+  }
+
   String _monthAbbrev(int month) {
-    const abbr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const abbr = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC'
+    ];
     return abbr[month - 1];
   }
 }
