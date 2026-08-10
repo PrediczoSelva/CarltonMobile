@@ -138,7 +138,6 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
         throw Exception('No flight selected. Please go back and search again.');
       }
 
-      final paymentRepository = getIt<PaymentRepository>();
       final amount = session.totalPriceWithTaxes;
 
       if (amount < 0.50) {
@@ -147,62 +146,74 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
       }
 
       final source = flight.source.toLowerCase();
-      final isProviderFlight = source.contains('atlas') ||
-          source.contains('amadeus') ||
-          source.contains('travelport') ||
-          (flight.bookingKey != null && flight.bookingKey!.isNotEmpty);
+      final isAtlas = source.contains('atlas');
+      final isAmadeus = source.contains('amadeus');
+      final isTravelport = source.contains('travelport');
+      final isProviderFlight = isAtlas || isAmadeus || isTravelport;
 
-      if (!isProviderFlight && flight.id <= 0) {
+      if (!isProviderFlight) {
         throw Exception(
-            'Selected flight is no longer valid. Please go back and search again.');
+            'Only provider flights are supported. Please search and select a provider flight.');
       }
 
-      if (isProviderFlight &&
-          (flight.bookingKey == null || flight.bookingKey!.isEmpty)) {
+      final bookingKey = flight.bookingKey?.trim().isEmpty == false
+          ? flight.bookingKey!.trim()
+          : flight.providerOfferId?.trim().isEmpty == false
+              ? flight.providerOfferId!.trim()
+              : null;
+
+      if (bookingKey == null) {
         throw Exception(
-            'Selected flight is missing booking details. Please go back and search again.');
+            'This flight is missing booking details. Please go back and search again.');
       }
 
       debugPrint(
           '[CardPayment] flight=${flight.flightCode} source=${flight.source} id=${flight.id} amount=$amount');
 
-      final paymentIntent = await paymentRepository.createFlightPaymentIntent(
-        flightId: flight.id > 0 ? flight.id : null,
-        amount: amount,
-        summary: 'Carlton flight booking (flight ${flight.flightCode})',
-      );
+      String? stripeIntentId;
+      String? paymentStatus;
 
-      if (paymentIntent.clientSecret.isEmpty) {
-        throw Exception('Unable to create payment session. Please try again.');
-      }
+      if (isProviderFlight) {
+        stripeIntentId = null;
+        paymentStatus = null;
+      } else {
+        final paymentRepository = getIt<PaymentRepository>();
+        final paymentIntent = await paymentRepository.createFlightPaymentIntent(
+          flightId: flight.id,
+          amount: amount,
+          summary: 'Carlton flight booking (flight ${flight.flightCode})',
+        );
 
-      final expiryParts = _expiryController.text.split('/');
-      final expiryMonth = int.parse(expiryParts[0]);
-      final expiryYear = int.parse('20${expiryParts[1]}');
+        if (paymentIntent.clientSecret.isEmpty) {
+          throw Exception('Unable to create payment session. Please try again.');
+        }
 
-      await Stripe.instance.dangerouslyUpdateCardDetails(
-        CardDetails(
-          number: _cardNumberController.text.replaceAll(' ', ''),
-          expirationMonth: expiryMonth,
-          expirationYear: expiryYear,
-          cvc: _cvvController.text,
-        ),
-      );
+        final expiryParts = _expiryController.text.split('/');
+        final expiryMonth = int.parse(expiryParts[0]);
+        final expiryYear = int.parse('20${expiryParts[1]}');
 
-      final confirmedIntent = await Stripe.instance.confirmPayment(
-        paymentIntentClientSecret: paymentIntent.clientSecret,
-        data: PaymentMethodParams.card(
-          paymentMethodData: PaymentMethodData(
-            billingDetails: BillingDetails(
-              name: _nameController.text.trim(),
+        await Stripe.instance.dangerouslyUpdateCardDetails(
+          CardDetails(
+            number: _cardNumberController.text.replaceAll(' ', ''),
+            expirationMonth: expiryMonth,
+            expirationYear: expiryYear,
+            cvc: _cvvController.text,
+          ),
+        );
+
+        final confirmedIntent = await Stripe.instance.confirmPayment(
+          paymentIntentClientSecret: paymentIntent.clientSecret,
+          data: PaymentMethodParams.card(
+            paymentMethodData: PaymentMethodData(
+              billingDetails: BillingDetails(
+                name: _nameController.text.trim(),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      if (confirmedIntent.status != PaymentIntentsStatus.Succeeded) {
-        throw Exception(
-            'Payment was not completed. Please try again with the test card or another payment method.');
+        stripeIntentId = confirmedIntent.id;
+        paymentStatus = 'succeeded';
       }
 
       final lastFour = _cardNumberController.text.replaceAll(' ', '').substring(
@@ -211,14 +222,20 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
 
       final paymentMetadata = {
         'paymentMethod': 'card',
-        'paymentStatus': 'succeeded',
-        'stripePaymentIntentId': confirmedIntent.id,
+        'paymentStatus': paymentStatus ?? 'pending',
+        'stripePaymentIntentId': stripeIntentId ?? '',
         'paidAtUtc': DateTime.now().toUtc().toIso8601String(),
         'lastFour': lastFour,
+        'cardHolderType': 'lead',
+        'billingType': 'same',
+        'contactPhone': session.contactPhone ?? '',
+        'contactCountry': session.contactCountry ?? '',
+        'guestCheckout': false,
+        'contactEmail': session.contactEmail ?? '',
       };
 
       session.paymentMetadataJson = jsonEncode(paymentMetadata);
-      session.stripePaymentIntentId = confirmedIntent.id;
+      session.stripePaymentIntentId = stripeIntentId;
       session.paymentMethod = 'card';
 
       if (mounted) {
