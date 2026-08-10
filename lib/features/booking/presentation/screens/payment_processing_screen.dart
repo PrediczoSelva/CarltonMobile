@@ -142,11 +142,20 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     final amadeusOfferToken = flight.bookingKey ??
         flight.providerOfferId ??
         (throw Exception('Missing Amadeus offer token.'));
+
+    double? tokenBaseFare;
+    try {
+      final tokenJson = jsonDecode(amadeusOfferToken);
+      tokenBaseFare = (tokenJson['totalAmount'] as num?)?.toDouble();
+    } catch (_) {
+      tokenBaseFare = null;
+    }
+
     return repo.createAmadeusBooking(
       amadeusOfferToken: amadeusOfferToken,
       verifyId: '',
       stripePaymentIntentId: stripeIntentId ?? '',
-      baseFareTotal: quotedTotal,
+      baseFareTotal: tokenBaseFare ?? quotedTotal,
       passengers: session.passengers,
       contactEmail: session.contactEmail ?? '',
       contactPhone: session.contactPhone ?? '',
