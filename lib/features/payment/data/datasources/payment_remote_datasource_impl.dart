@@ -12,18 +12,19 @@ class PaymentRemoteDatasourceImpl implements PaymentRemoteDatasource {
 
   @override
   Future<PaymentIntent> createFlightPaymentIntent({
-    required int flightId,
+    int? flightId,
     required double amount,
     String? summary,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'amount': amount,
+        if (flightId != null && flightId > 0) 'flightId': flightId,
+        if (summary != null && summary.isNotEmpty) 'summary': summary,
+      };
       final response = await _apiClient.post<dynamic>(
         AppConstants.paymentCreateFlightIntent,
-        data: {
-          'flightId': flightId,
-          'amount': amount,
-          if (summary != null && summary.isNotEmpty) 'summary': summary,
-        },
+        data: data,
       );
       return PaymentIntent.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {

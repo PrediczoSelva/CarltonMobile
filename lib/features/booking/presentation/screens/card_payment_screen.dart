@@ -142,7 +142,8 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
       final amount = session.totalPriceWithTaxes;
 
       if (amount < 0.50) {
-        throw Exception('The selected flight price is too low to process payment. Please select a different flight.');
+        throw Exception(
+            'The selected flight price is too low to process payment. Please select a different flight.');
       }
 
       final source = flight.source.toLowerCase();
@@ -152,17 +153,21 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
           (flight.bookingKey != null && flight.bookingKey!.isNotEmpty);
 
       if (!isProviderFlight && flight.id <= 0) {
-        throw Exception('Selected flight is no longer valid. Please go back and search again.');
+        throw Exception(
+            'Selected flight is no longer valid. Please go back and search again.');
       }
 
-      if (isProviderFlight && (flight.bookingKey == null || flight.bookingKey!.isEmpty)) {
-        throw Exception('Selected flight is missing booking details. Please go back and search again.');
+      if (isProviderFlight &&
+          (flight.bookingKey == null || flight.bookingKey!.isEmpty)) {
+        throw Exception(
+            'Selected flight is missing booking details. Please go back and search again.');
       }
 
-      debugPrint('[CardPayment] flight=${flight.flightCode} source=${flight.source} id=${flight.id} amount=$amount');
+      debugPrint(
+          '[CardPayment] flight=${flight.flightCode} source=${flight.source} id=${flight.id} amount=$amount');
 
       final paymentIntent = await paymentRepository.createFlightPaymentIntent(
-        flightId: flight.id,
+        flightId: flight.id > 0 ? flight.id : null,
         amount: amount,
         summary: 'Carlton flight booking (flight ${flight.flightCode})',
       );
@@ -194,6 +199,11 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
           ),
         ),
       );
+
+      if (confirmedIntent.status != PaymentIntentsStatus.Succeeded) {
+        throw Exception(
+            'Payment was not completed. Please try again with the test card or another payment method.');
+      }
 
       final lastFour = _cardNumberController.text.replaceAll(' ', '').substring(
             _cardNumberController.text.replaceAll(' ', '').length - 4,
@@ -330,6 +340,12 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
               ),
               const SizedBox(height: 12),
               TextButton.icon(
+                onPressed: _isLoading ? null : _fillTestCard,
+                icon: const Icon(Icons.payment, size: 18),
+                label: const Text('Fill test card'),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
                 onPressed: _isLoading ? null : () => context.pop(),
                 icon: const Icon(Icons.arrow_back, size: 18),
                 label: const Text('Back'),
@@ -339,6 +355,18 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
         ),
       ),
     );
+  }
+
+  void _fillTestCard() {
+    if (mounted) {
+      setState(() {
+        _cardNumberController.text = '4242 4242 4242 4242';
+        _expiryController.text = '12/34';
+        _cvvController.text = '123';
+        _nameController.text = 'Test User';
+        _error = null;
+      });
+    }
   }
 }
 

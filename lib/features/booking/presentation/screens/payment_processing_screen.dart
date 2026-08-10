@@ -62,8 +62,10 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       return;
     }
 
-    if (isProviderFlight && (flight.bookingKey == null || flight.bookingKey!.isEmpty)) {
-      _showError('Selected flight is missing booking details. Please search again.');
+    if (isProviderFlight &&
+        (flight.bookingKey == null || flight.bookingKey!.isEmpty)) {
+      _showError(
+          'Selected flight is missing booking details. Please search again.');
       return;
     }
 
@@ -75,22 +77,40 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       final quotedTotal = session.totalPriceWithTaxes;
 
       if (quotedTotal < 0.50) {
-        throw Exception('The selected flight price is too low to process payment. Please select a different flight.');
+        throw Exception(
+            'The selected flight price is too low to process payment. Please select a different flight.');
       }
 
       Booking booking;
 
-      final source = flight.source.toLowerCase();
-      if (source.contains('atlas') && flight.bookingKey != null && flight.bookingKey!.isNotEmpty) {
-        booking = await _createAtlasBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
-      } else if (source.contains('amadeus') && flight.bookingKey != null && flight.bookingKey!.isNotEmpty) {
-        booking = await _createAmadeusBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
-      } else if (source.contains('travelport') && flight.bookingKey != null && flight.bookingKey!.isNotEmpty) {
-        booking = await _createTravelportBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
+      if (source.contains('atlas') &&
+          flight.bookingKey != null &&
+          flight.bookingKey!.isNotEmpty) {
+        booking = await _createAtlasBooking(
+            bookingRepository, session, flight, stripeIntentId, quotedTotal);
+      } else if (source.contains('amadeus') &&
+          flight.bookingKey != null &&
+          flight.bookingKey!.isNotEmpty) {
+        booking = await _createAmadeusBooking(
+            bookingRepository, session, flight, stripeIntentId, quotedTotal);
+      } else if (source.contains('travelport') &&
+          flight.bookingKey != null &&
+          flight.bookingKey!.isNotEmpty) {
+        booking = await _createTravelportBooking(
+            bookingRepository, session, flight, stripeIntentId, quotedTotal);
       } else if (flight.id > 0) {
         booking = await _createCatalogBooking(session, flight, stripeIntentId);
       } else {
-        throw Exception('Unable to book this flight. Please select a different flight.');
+        throw Exception(
+            'Unable to book this flight. Please select a different flight.');
+      }
+
+      if (stripeIntentId != null && booking.id > 0) {
+        booking = await bookingRepository.finalizeBookingPayment(
+          bookingId: booking.id,
+          stripePaymentIntentId: stripeIntentId,
+          paymentMetadataJson: session.paymentMetadataJson,
+        );
       }
 
       session.pnr = booking.pnr;
@@ -225,7 +245,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         },
         child: BlocBuilder<BookingBloc, BookingState>(
           builder: (context, state) {
-            final isLoading = _isLoadingState(state) && !_showSuccess && _error == null;
+            final isLoading =
+                _isLoadingState(state) && !_showSuccess && _error == null;
             final session = getIt<BookingSession>();
             final currency = session.currency ?? 'GBP';
             final price = session.totalPriceWithTaxes;
@@ -290,7 +311,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                               ),
                               const SizedBox(height: 24),
                               Text(
-                                _error ?? 'Please try again or select a different payment method.',
+                                _error ??
+                                    'Please try again or select a different payment method.',
                                 style: AppTextStyles.bodyMedium,
                                 textAlign: TextAlign.center,
                               ),

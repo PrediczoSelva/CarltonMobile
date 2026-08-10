@@ -9,7 +9,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
 
   @override
   Future<PaymentIntent> createFlightPaymentIntent({
-    required int flightId,
+    int? flightId,
     required double amount,
     String? summary,
   }) {

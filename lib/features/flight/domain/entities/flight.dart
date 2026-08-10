@@ -27,8 +27,15 @@ class Flight {
       print('[Flight.fromJson] raw=$json');
     }
 
-    String? _s(dynamic a, [dynamic b, dynamic c, dynamic d, dynamic e]) {
-      for (final v in [a, b, c, d, e]) {
+    String? _s(dynamic a,
+        [dynamic b,
+        dynamic c,
+        dynamic d,
+        dynamic e,
+        dynamic f,
+        dynamic g,
+        dynamic h]) {
+      for (final v in [a, b, c, d, e, f, g, h]) {
         if (v is String && v.isNotEmpty) return v;
       }
       return null;
@@ -66,16 +73,18 @@ class Flight {
       return null;
     }
 
-    final route = json['route'] as Map<String, dynamic>? ?? json['Route'] as Map<String, dynamic>?;
-    final priceObj = json['price'] is Map ? json['price'] as Map<String, dynamic> : null;
+    final route = json['route'] as Map<String, dynamic>? ??
+        json['Route'] as Map<String, dynamic>?;
+    final priceObj =
+        json['price'] is Map ? json['price'] as Map<String, dynamic> : null;
 
     return Flight(
       id: _i(json['id'], json['flightId'], json['Id'], json['flightID']),
       airline: _s(json['airline'], json['airlineName'], json['Airline'],
               json['carrier'], json['carrierName']) ??
           '',
-      flightCode: _s(json['flightCode'], json['flightNumber'], json['FlightCode'],
-              json['flightNo'], json['flightIata']) ??
+      flightCode: _s(json['flightCode'], json['flightNumber'],
+              json['FlightCode'], json['flightNo'], json['flightIata']) ??
           '',
       origin: _s(
             json['origin'],
@@ -97,25 +106,30 @@ class Flight {
           _s(route?['destination'], route?['destinationAirport'], route?['to'],
               route?['arrivalAirport']) ??
           '',
-      departureTime: _dt(json['departureTime'], json['departure'],
-          json['departureDateTime'], json['departureAt'], json['departsAt']) ??
+      departureTime: _dt(
+              json['departureTime'],
+              json['departure'],
+              json['departureDateTime'],
+              json['departureAt'],
+              json['departsAt']) ??
           _dt(route?['departureTime'], route?['departure']) ??
           DateTime.now(),
-      arrivalTime: _dt(json['arrivalTime'], json['arrival'], json['arrivalDateTime'],
-          json['arrivalAt'], json['arrivesAt']) ??
+      arrivalTime: _dt(json['arrivalTime'], json['arrival'],
+              json['arrivalDateTime'], json['arrivalAt'], json['arrivesAt']) ??
           _dt(route?['arrivalTime'], route?['arrival']) ??
           DateTime.now(),
       duration: _s(json['duration'], json['travelTime'], json['Duration'],
               json['journeyTime'], json['flightDuration']) ??
           '',
-      stops: _i(json['stops'], json['numberOfStops'], json['Stops'], json['stopCount']),
+      stops: _i(json['stops'], json['numberOfStops'], json['Stops'],
+          json['stopCount']),
       stopLocations: (json['stopLocations'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
       price: _n(priceObj?['amount'], priceObj?['price'], json['price'],
-              json['basePrice'], json['Price'])
-          ?.toDouble() ??
+                  json['basePrice'], json['Price'])
+              ?.toDouble() ??
           0,
       currency: _s(json['currency'], json['currencyCode'], json['Currency'],
               priceObj?['currency']) ??
@@ -123,11 +137,17 @@ class Flight {
       aircraft: _s(json['aircraft'], json['Aircraft'], json['airplane'],
               json['equipment'], json['aircraftType']) ??
           '',
-      bookingKey: _s(json['bookingKey'], json['BookingKey'],
-          json['atlasRoutingIdentifier'], json['AtlasRoutingIdentifier'],
-          json['amadeusOfferToken']),
-      source: _s(json['source'], json['Source'],
-              json['dataSource'], json['DataSource']) ??
+      bookingKey: _s(
+          json['bookingKey'],
+          json['BookingKey'],
+          json['atlasRoutingIdentifier'],
+          json['AtlasRoutingIdentifier'],
+          json['routingIdentifier'],
+          json['amadeusOfferToken'],
+          json['fareKey'],
+          json['FareKey']),
+      source: _s(json['source'], json['Source'], json['dataSource'],
+              json['DataSource']) ??
           '',
       seatsAvailable: _i(json['seatsAvailable'], json['SeatsAvailable'],
           json['seatsAvailable'], json['SeatsAvailable']),

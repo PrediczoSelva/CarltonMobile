@@ -79,4 +79,10 @@ abstract class BookingRepository {
     String? stripePaymentIntentId,
     bool isGuest = false,
   });
+
+  Future<Booking> finalizeBookingPayment({
+    required int bookingId,
+    required String stripePaymentIntentId,
+    String? paymentMetadataJson,
+  });
 }

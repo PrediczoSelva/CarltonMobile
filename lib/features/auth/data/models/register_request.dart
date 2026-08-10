@@ -21,14 +21,14 @@ class RegisterRequest {
 
   Map<String, dynamic> toJson() {
     return {
-      'firstName': firstName,
-      'lastName': lastName,
-      'email': email,
-      'password': password,
-      'phoneCountryCode': phoneCountryCode,
-      'phoneNumber': phoneNumber,
-      'dateOfBirth': dateOfBirth?.toIso8601String(),
-      'nationality': nationality,
+      'FirstName': firstName,
+      'LastName': lastName,
+      'Email': email,
+      'Password': password,
+      'PhoneCountryCode': phoneCountryCode,
+      'PhoneNumber': phoneNumber,
+      'DateOfBirth': dateOfBirth?.toIso8601String(),
+      'Nationality': nationality,
     };
   }
 }
