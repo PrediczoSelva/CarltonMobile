@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 
 import '../../../../core/network/api_client.dart';
@@ -14,6 +15,7 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
   final ApiClient _apiClient;
 
   static const String _basePath = '/bookings';
+  static const String _travelportBasePath = '/travelport';
 
   @override
   Future<BookingModel> createBooking(BookingRequest request) async {
@@ -205,8 +207,9 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     required int infants,
   }) async {
     try {
+      debugPrint('[Travelport] verify fareKey=$fareKey adults=$adults children=$children infants=$infants');
       final response = await _apiClient.post<dynamic>(
-        '$_basePath/travelport/verify',
+        '$_travelportBasePath/verify',
         data: {
           'fareKey': fareKey,
           'adults': adults,
@@ -214,9 +217,11 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'infants': infants,
         },
       );
+      debugPrint('[Travelport] verify response: ${response.data}');
       return TravelportVerifyResponse.fromJson(
           response.data as Map<String, dynamic>);
     } on DioException catch (e) {
+      debugPrint('[Travelport] verify error: ${e.response?.statusCode} ${e.response?.data}');
       throw _handleDioError(e);
     }
   }
@@ -235,9 +240,10 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     bool isGuest = false,
   }) async {
     final path = isGuest
-        ? '$_basePath/travelport/guest/book'
-        : '$_basePath/travelport/book';
+        ? '$_travelportBasePath/guest/book'
+        : '$_travelportBasePath/book';
     try {
+      debugPrint('[Travelport] book path=$path fareKey=$fareKey passengers=${passengers.length} quotedTotal=$quotedTotal');
       final response = await _apiClient.post<dynamic>(
         path,
         data: {
@@ -252,6 +258,7 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
             'flightSnapshotJson': flightSnapshotJson,
         },
       );
+      debugPrint('[Travelport] book response: ${response.data}');
       final data = response.data as Map<String, dynamic>;
       final booking = data['booking'] as Map<String, dynamic>?;
       if (booking == null) {
@@ -259,6 +266,7 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
       }
       return BookingModel.fromJson(booking);
     } on DioException catch (e) {
+      debugPrint('[Travelport] book error: ${e.response?.statusCode} ${e.response?.data}');
       throw _handleDioError(e);
     }
   }
@@ -293,6 +301,7 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
   }
 
   Exception _handleDioError(DioException e) {
+    debugPrint('[BookingAPI] error type=${e.type} status=${e.response?.statusCode} data=${e.response?.data}');
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
@@ -311,10 +320,13 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
               : 'Invalid request.';
           return Exception(message);
         }
-        final message = data is Map
-            ? (data['message'] as String?) ?? 'Something went wrong.'
-            : 'Something went wrong.';
-        return Exception(message);
+        if (data is Map) {
+          final message = data['message'] as String?;
+          if (message != null && message.isNotEmpty) return Exception(message);
+        }
+        final raw = data?.toString().trim();
+        if (raw != null && raw.isNotEmpty) return Exception(raw);
+        return Exception('Something went wrong. Please try again.');
       case DioExceptionType.connectionError:
         return Exception('No internet connection. Please check your network.');
       default:

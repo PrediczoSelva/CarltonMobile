@@ -104,7 +104,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         setState(() => _showSuccess = true);
       }
     } catch (e) {
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      final message = e.toString().replaceFirst('Exception: ', '');
+      debugPrint('[PaymentProcessing] Booking error: $message');
+      _showError(message);
     }
   }
 
@@ -118,18 +120,45 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     final routingIdentifier = flight.bookingKey ??
         flight.providerOfferId ??
         (throw Exception('Missing Atlas routing identifier.'));
+
+    final firstPassenger = session.passengers.isNotEmpty ? session.passengers.first : null;
+    final contactName = firstPassenger != null
+        ? '${firstPassenger.lastName}/${firstPassenger.firstName}'
+        : session.contactEmail ?? 'Customer';
+
+    final rawPhone = session.contactPhone ?? '';
+    final contactPhone = _formatAtlasPhone(rawPhone);
+
     return repo.createAtlasBooking(
       routingIdentifier: routingIdentifier,
       passengers: session.passengers,
-      contactName: session.contactEmail ?? '',
+      contactName: contactName,
       contactEmail: session.contactEmail ?? '',
-      contactPhone: session.contactPhone ?? '',
+      contactPhone: contactPhone,
       bookingClass: 'Economy',
       quotedTotal: quotedTotal,
       flightSnapshotJson: jsonEncode(flight.toJson()),
       stripePaymentIntentId: stripeIntentId,
       isGuest: false,
     );
+  }
+
+  String _formatAtlasPhone(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return raw;
+
+    if (digits.startsWith('00')) {
+      final without00 = digits.substring(2);
+      if (without00.length > 3) {
+        return '${without00.substring(0, 2)}-${without00.substring(2)}';
+      }
+      return without00;
+    }
+
+    if (digits.length > 3) {
+      return '${digits.substring(0, 3)}-${digits.substring(3)}';
+    }
+    return digits;
   }
 
   Future<Booking> _createAmadeusBooking(
@@ -173,9 +202,16 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     String? stripeIntentId,
     double quotedTotal,
   ) async {
-    final fareKey = flight.bookingKey ??
-        flight.providerOfferId ??
-        (throw Exception('Missing Travelport fare key.'));
+    final fareKey = flight.bookingKey?.trim().isEmpty == false
+        ? flight.bookingKey!.trim()
+        : flight.providerOfferId?.trim().isEmpty == false
+            ? flight.providerOfferId!.trim()
+            : null;
+
+    if (fareKey == null) {
+      throw Exception('Missing Travelport fare key. Please go back and search again.');
+    }
+
     return repo.createTravelportBooking(
       fareKey: fareKey,
       segmentKeys: flight.segmentKeys,
