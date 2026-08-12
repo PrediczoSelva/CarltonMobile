@@ -36,4 +36,8 @@ class AppConstants {
   // Payment endpoints
   static const String paymentCreateFlightIntent = '/payment/create-flight-payment-intent';
   static const String paymentStripePublishableKey = '/payment/stripe-publishable-key';
+
+  // E-ticket endpoints
+  static const String eTicketStatus = '/bookings/{id}/e-ticket-status';
+  static const String eTicketDownload = '/bookings/{id}/e-ticket';
 }
