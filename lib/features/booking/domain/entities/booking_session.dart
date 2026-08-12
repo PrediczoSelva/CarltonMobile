@@ -23,6 +23,7 @@ class BookingSession {
   String? bookingReference;
   String? pnr;
   String? bookingStatus;
+  int? bookingId;
 
   bool get hasPassengerData => passengers.isNotEmpty;
 
@@ -59,5 +60,6 @@ class BookingSession {
     bookingReference = null;
     pnr = null;
     bookingStatus = null;
+    bookingId = null;
   }
 }
