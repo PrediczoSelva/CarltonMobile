@@ -4,6 +4,7 @@ import '../../domain/repositories/booking_repository.dart';
 import '../models/atlas_verify_response.dart';
 import '../models/amadeus_verify_response.dart';
 import '../models/travelport_verify_response.dart';
+import '../models/e_ticket_models.dart';
 import '../datasources/booking_remote_datasource.dart';
 import '../models/booking_request_model.dart';
 
@@ -262,6 +263,16 @@ class BookingRepositoryImpl implements BookingRepository {
       stripePaymentIntentId: stripePaymentIntentId,
       paymentMetadataJson: paymentMetadataJson,
     );
+  }
+
+  @override
+  Future<ETicketData> getETicketStatus(int bookingId) {
+    return _remoteDatasource.getETicketStatus(bookingId);
+  }
+
+  @override
+  Future<ETicketData> downloadETicket(int bookingId) {
+    return _remoteDatasource.downloadETicket(bookingId);
   }
 
   String _monthAbbrev(int month) {
