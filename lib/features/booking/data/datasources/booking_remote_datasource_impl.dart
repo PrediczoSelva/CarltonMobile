@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/atlas_verify_response.dart';
 import '../models/amadeus_verify_response.dart';
 import '../models/travelport_verify_response.dart';
 import '../models/booking_model.dart';
 import '../models/booking_request_model.dart';
+import '../models/e_ticket_models.dart';
 import 'booking_remote_datasource.dart';
 
 class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
@@ -295,6 +297,55 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
         return BookingModel.fromJson(data);
       }
       throw Exception('Invalid finalize payment response.');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<ETicketData> getETicketStatus(int bookingId) async {
+    try {
+      final response = await _apiClient.get<dynamic>(
+        AppConstants.eTicketStatus.replaceAll('{id}', bookingId.toString()),
+      );
+      if (response.data == null) {
+        return const ETicketData(
+          issued: false,
+          ticketNumber: '',
+          issueDate: '',
+          airline: '',
+          pnr: '',
+          passengerName: '',
+          segments: [],
+        );
+      }
+      return ETicketData.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return const ETicketData(
+          issued: false,
+          ticketNumber: '',
+          issueDate: '',
+          airline: '',
+          pnr: '',
+          passengerName: '',
+          segments: [],
+        );
+      }
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<ETicketData> downloadETicket(int bookingId) async {
+    try {
+      final response = await _apiClient.get<dynamic>(
+        AppConstants.eTicketDownload.replaceAll('{id}', bookingId.toString()),
+      );
+      if (response.data == null) {
+        throw Exception('No e-ticket data received.');
+      }
+      return ETicketData.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
