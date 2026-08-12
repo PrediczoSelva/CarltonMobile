@@ -3,6 +3,7 @@ import '../entities/passenger.dart';
 import '../../data/models/atlas_verify_response.dart';
 import '../../data/models/amadeus_verify_response.dart';
 import '../../data/models/travelport_verify_response.dart';
+import '../../data/models/e_ticket_models.dart';
 
 abstract class BookingRepository {
   Future<Booking> createBooking({
@@ -85,4 +86,7 @@ abstract class BookingRepository {
     required String stripePaymentIntentId,
     String? paymentMetadataJson,
   });
+
+  Future<ETicketData> getETicketStatus(int bookingId);
+  Future<ETicketData> downloadETicket(int bookingId);
 }
