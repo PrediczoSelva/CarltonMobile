@@ -3,6 +3,7 @@ import '../models/amadeus_verify_response.dart';
 import '../models/travelport_verify_response.dart';
 import '../models/booking_model.dart';
 import '../models/booking_request_model.dart';
+import '../models/e_ticket_models.dart';
 
 abstract class BookingRemoteDatasource {
   Future<BookingModel> createBooking(BookingRequest request);
@@ -71,4 +72,7 @@ abstract class BookingRemoteDatasource {
     required String stripePaymentIntentId,
     String? paymentMetadataJson,
   });
+
+  Future<ETicketData> getETicketStatus(int bookingId);
+  Future<ETicketData> downloadETicket(int bookingId);
 }
