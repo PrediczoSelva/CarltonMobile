@@ -99,6 +99,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       session.bookingStatus = booking.status;
       session.totalPrice = booking.totalPrice;
       session.currency = booking.currency;
+      session.bookingId = booking.id;
 
       if (mounted) {
         setState(() => _showSuccess = true);
@@ -247,6 +248,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       session.bookingStatus = state.booking.status;
       session.totalPrice = state.booking.totalPrice;
       session.currency = state.booking.currency;
+      session.bookingId = state.booking.id;
 
       setState(() => _showSuccess = true);
     }
