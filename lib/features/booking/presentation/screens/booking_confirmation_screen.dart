@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
@@ -14,8 +13,6 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking_session.dart';
-import '../../../booking/domain/repositories/booking_repository.dart';
-import '../../../booking/data/models/e_ticket_models.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
@@ -26,63 +23,15 @@ class BookingConfirmationScreen extends StatefulWidget {
 
 class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
   late final BookingSession _session;
-  final BookingRepository _bookingRepository = getIt<BookingRepository>();
-
-  Timer? _statusTimer;
-  ETicketData? _ticketData;
-  bool _isCheckingStatus = false;
   bool _isDownloading = false;
-  String? _ticketError;
 
   @override
   void initState() {
     super.initState();
     _session = getIt<BookingSession>();
-    _startStatusPolling();
   }
 
-  @override
-  void dispose() {
-    _statusTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startStatusPolling() {
-    _statusTimer?.cancel();
-    _checkETicketStatus();
-    _statusTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _checkETicketStatus();
-    });
-  }
-
-  Future<void> _checkETicketStatus() async {
-    final bookingId = _session.bookingId;
-    if (bookingId == null || bookingId <= 0) return;
-
-    if (!mounted || _isCheckingStatus) return;
-
-    setState(() => _isCheckingStatus = true);
-
-    try {
-      final data = await _bookingRepository.getETicketStatus(bookingId);
-      if (!mounted) return;
-      setState(() {
-        _ticketData = data;
-        _ticketError = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _ticketError = e.toString().replaceFirst('Exception: ', '');
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isCheckingStatus = false);
-      }
-    }
-  }
-
-  Future<void> _downloadETicket() async {
+  Future<void> _downloadBookingConfirmation() async {
     final bookingId = _session.bookingId;
     if (bookingId == null || bookingId <= 0) return;
 
@@ -101,18 +50,34 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
       final bytes = response.data as List<int>? ?? (response.data as Uint8List?);
       if (bytes == null || bytes.isEmpty) {
-        throw Exception('E-ticket file is empty.');
+        throw Exception('Booking confirmation is empty. Please try again later.');
       }
 
       final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/eticket_$bookingId.html');
+      final safeRef = (_session.pnr ?? bookingId.toString()).replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+      final file = File('${directory.path}/booking_confirmation_$safeRef.html');
       await file.writeAsBytes(bytes);
       await OpenFilex.open(file.path);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final status = e.response?.statusCode;
+      if (status == 404) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Booking confirmation is not available yet. It may take a few minutes after payment.')),
+        );
+      } else if (status == 401 || status == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in again to download your booking confirmation.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to download confirmation right now (status $status). Please try again later.')),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
-      final message = e.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to download e-ticket: $message')),
+        SnackBar(content: Text('Failed to download booking confirmation: ${e.toString().replaceFirst('Exception: ', '')}')),
       );
     } finally {
       if (mounted) {
@@ -133,8 +98,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     final price = _session.totalPriceWithTaxes;
     final pnr = _session.pnr ?? '—';
     final passengers = _session.passengers;
-    final isTicketIssued = _ticketData?.issued ?? false;
-    final canDownload = isTicketIssued && _session.bookingId != null;
+    final hasBookingId = _session.bookingId != null && _session.bookingId! > 0;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Booking confirmed')),
@@ -152,7 +116,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              'E-ticket',
+              'Booking Confirmation',
               style: AppTextStyles.h3,
             ),
           ),
@@ -164,7 +128,34 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          _buildTicketStatusCard(isTicketIssued),
+          Card(
+            color: AppColors.info.withOpacity(0.08),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.info),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Your payment is confirmed',
+                          style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'E-ticket issuance may take up to 48 hours. You can download your booking confirmation now. If the e-ticket is not issued within 48 hours, please contact us.',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           _ConfirmationSection(
             title: 'Flight',
@@ -242,19 +233,10 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          if (_ticketError != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                _ticketError!,
-                style: const TextStyle(color: AppColors.error, fontSize: 12),
-                textAlign: TextAlign.center,
-              ),
-            ),
           ElevatedButton.icon(
-            onPressed: canDownload && !_isDownloading ? _downloadETicket : null,
+            onPressed: hasBookingId && !_isDownloading ? _downloadBookingConfirmation : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: canDownload ? AppColors.success : AppColors.disabled,
+              backgroundColor: hasBookingId ? AppColors.primary : AppColors.disabled,
             ),
             icon: _isDownloading
                 ? const SizedBox(
@@ -267,7 +249,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                   )
                 : const Icon(Icons.download),
             label: Text(
-              canDownload ? 'Download e-ticket' : 'Waiting for ticket issuance...',
+              'Download Booking Confirmation',
               style: AppTextStyles.button.copyWith(
                 color: AppColors.textOnPrimary,
               ),
@@ -276,59 +258,12 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () {
-              _statusTimer?.cancel();
               _session.reset();
               context.go('/home');
             },
             child: const Text('Back to home'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTicketStatusCard(bool isIssued) {
-    return Card(
-      color: isIssued
-          ? AppColors.success.withOpacity(0.08)
-          : AppColors.warning.withOpacity(0.08),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(
-              isIssued ? Icons.check_circle : Icons.pending,
-              color: isIssued ? AppColors.success : AppColors.warning,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isIssued ? 'Ticket issued' : 'Waiting for ticket',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    isIssued
-                        ? 'Your e-ticket is ready to download.'
-                        : 'We are waiting for the airline to issue your ticket. This usually takes a few minutes.',
-                    style: AppTextStyles.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            if (_isCheckingStatus && !isIssued)
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-          ],
-        ),
       ),
     );
   }
