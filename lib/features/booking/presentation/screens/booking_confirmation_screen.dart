@@ -1,15 +1,21 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../booking/domain/repositories/booking_repository.dart';
 import '../../../booking/data/models/e_ticket_models.dart';
-import '../../../booking/presentation/utils/e_ticket_pdf_generator.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
@@ -85,13 +91,23 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     setState(() => _isDownloading = true);
 
     try {
-      final data = await _bookingRepository.downloadETicket(bookingId);
+      final apiClient = getIt<ApiClient>();
+      final response = await apiClient.dio.get<dynamic>(
+        AppConstants.eTicketDownload.replaceAll('{id}', bookingId.toString()),
+        options: Options(responseType: ResponseType.bytes),
+      );
+
       if (!mounted) return;
 
-      final file = await ETicketPdfGenerator.generateETicket(data);
-      if (!mounted) return;
+      final bytes = response.data as List<int>? ?? (response.data as Uint8List?);
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception('E-ticket file is empty.');
+      }
 
-      await ETicketPdfGenerator.openFile(file);
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/eticket_$bookingId.html');
+      await file.writeAsBytes(bytes);
+      await OpenFilex.open(file.path);
     } catch (e) {
       if (!mounted) return;
       final message = e.toString().replaceFirst('Exception: ', '');
