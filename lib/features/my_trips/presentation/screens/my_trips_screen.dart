@@ -1,7 +1,15 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking.dart';
@@ -17,6 +25,8 @@ class MyTripsScreen extends StatefulWidget {
 }
 
 class _MyTripsScreenState extends State<MyTripsScreen> {
+  final Set<int> _downloadingIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +126,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final booking = bookings[index];
+        final isDownloading = _downloadingIds.contains(booking.id);
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -152,18 +163,23 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          booking.flight.origin,
-                          style: AppTextStyles.h3,
-                        ),
-                        Text(
-                          DateFormat('MMM d').format(booking.flight.departureTime),
-                          style: AppTextStyles.bodySmall,
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            booking.flight.origin,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('dd MMM yyyy · HH:mm').format(booking.flight.departureTime),
+                            style: AppTextStyles.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
                     Expanded(
                       child: Padding(
@@ -181,29 +197,51 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${booking.passengers.length} passenger(s)',
+                              '${booking.flight.stopsText}',
                               style: AppTextStyles.bodySmall,
                             ),
                           ],
                         ),
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          booking.flight.destination,
-                          style: AppTextStyles.h3,
-                        ),
-                        Text(
-                          DateFormat('MMM d').format(booking.flight.arrivalTime),
-                          style: AppTextStyles.bodySmall,
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            booking.flight.destination,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('dd MMM yyyy · HH:mm').format(booking.flight.arrivalTime),
+                            style: AppTextStyles.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
+                if (booking.passengers.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline, size: 16, color: AppColors.textSecondary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          booking.passengers.map((p) => p.fullName).join(', '),
+                          style: AppTextStyles.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Row(
                   children: [
                     Text(
@@ -215,6 +253,26 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                       'PNR: ${booking.pnr}',
                       style: AppTextStyles.bodySmall,
                     ),
+                    const SizedBox(width: 12),
+                    TextButton.icon(
+                      onPressed: isDownloading
+                          ? null
+                          : () => _downloadConfirmation(booking),
+                      icon: isDownloading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            )
+                          : const Icon(Icons.download, size: 18),
+                      label: Text(
+                        isDownloading ? 'Downloading...' : 'Confirmation',
+                        style: AppTextStyles.bodySmall,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -223,5 +281,56 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
         );
       },
     );
+  }
+
+  Future<void> _downloadConfirmation(Booking booking) async {
+    if (_downloadingIds.contains(booking.id)) return;
+
+    setState(() => _downloadingIds.add(booking.id));
+
+    try {
+      final apiClient = getIt<ApiClient>();
+      final response = await apiClient.dio.get<dynamic>(
+        AppConstants.eTicketDownload.replaceAll('{id}', booking.id.toString()),
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data as List<int>? ?? (response.data as Uint8List?);
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception('Booking confirmation is empty. Please try again later.');
+      }
+
+      final directory = await getApplicationDocumentsDirectory();
+      final safeRef = (booking.pnr.isNotEmpty ? booking.pnr : booking.id.toString())
+          .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+      final file = File('${directory.path}/booking_confirmation_$safeRef.html');
+      await file.writeAsBytes(bytes);
+      await OpenFilex.open(file.path);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final status = e.response?.statusCode;
+      if (status == 404) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Booking confirmation is not available yet. It may take a few minutes after payment.')),
+        );
+      } else if (status == 401 || status == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in again to download your booking confirmation.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to download confirmation right now (status $status). Please try again later.')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to download booking confirmation: ${e.toString().replaceFirst('Exception: ', '')}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _downloadingIds.remove(booking.id));
+      }
+    }
   }
 }
