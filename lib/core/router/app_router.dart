@@ -155,9 +155,9 @@ class _MainShellState extends State<MainShell> {
 
   static const _navItems = [
     _NavItem(icon: Icons.home, label: 'Home'),
-    _NavItem(icon: Icons.flight_takeoff, label: 'Book'),
-    _NavItem(icon: Icons.bookmark_outline, label: 'Trips'),
-    _NavItem(icon: Icons.person_outline, label: 'Profile'),
+    _NavItem(icon: Icons.search, label: 'Search'),
+    _NavItem(icon: Icons.bookmark_outline, label: 'Bookings'),
+    _NavItem(icon: Icons.person_outline, label: 'My account'),
   ];
 
   static const _routes = [
