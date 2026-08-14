@@ -1,61 +1,353 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../booking/domain/entities/booking.dart';
+import '../../../booking/domain/entities/booking_session.dart';
+import '../../../booking/domain/repositories/booking_repository.dart';
+import '../../../booking/presentation/bloc/booking_bloc.dart';
+import '../../../booking/presentation/bloc/booking_state.dart';
+import '../../../flight/domain/entities/flight.dart';
 
 class PaymentProcessingScreen extends StatefulWidget {
   const PaymentProcessingScreen({super.key});
 
   @override
-  State<PaymentProcessingScreen> createState() => _PaymentProcessingScreenState();
+  State<PaymentProcessingScreen> createState() =>
+      _PaymentProcessingScreenState();
 }
 
 class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
-  bool _processing = true;
+  bool _showSuccess = false;
+  String? _error;
+
+  bool _isLoadingState(BookingState state) {
+    return state is BookingLoading || state is BookingInitial;
+  }
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _processing = false);
+    _createBooking();
+  }
+
+  Future<void> _createBooking() async {
+    final session = getIt<BookingSession>();
+
+    if (session.pnr != null) {
+      setState(() => _showSuccess = true);
+      return;
+    }
+
+    final flight = session.selectedOutboundFlight;
+    if (flight == null) {
+      _showError('No flight selected. Please search again.');
+      return;
+    }
+
+    final source = flight.source.toLowerCase();
+    final isAtlas = source.contains("atlas");
+    final isAmadeus = source.contains("amadeus");
+    final isTravelport = source.contains("travelport");
+    final isProviderFlight = isAtlas || isAmadeus || isTravelport;
+
+    if (!isProviderFlight) {
+      _showError('Only provider flights are supported. Please search and select a provider flight.');
+      return;
+    }
+
+    final bookingKey = flight.bookingKey?.trim().isEmpty == false
+        ? flight.bookingKey!.trim()
+        : flight.providerOfferId?.trim().isEmpty == false
+            ? flight.providerOfferId!.trim()
+            : null;
+
+    if (bookingKey == null) {
+      _showError('This flight is missing booking details. Please go back and search again.');
+      return;
+    }
+
+    setState(() => _error = null);
+
+    try {
+      final bookingRepository = getIt<BookingRepository>();
+      final stripeIntentId = session.stripePaymentIntentId;
+      final quotedTotal = session.totalPriceWithTaxes;
+
+      if (quotedTotal < 0.50) {
+        throw Exception('The selected flight price is too low to process payment. Please select a different flight.');
       }
-    });
+
+      Booking booking;
+
+      if (isAtlas) {
+        booking = await _createAtlasBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
+      } else if (isAmadeus) {
+        booking = await _createAmadeusBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
+      } else {
+        booking = await _createTravelportBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
+      }
+
+      session.pnr = booking.pnr;
+      session.bookingReference = booking.pnr;
+      session.bookingStatus = booking.status;
+      session.totalPrice = booking.totalPrice;
+      session.currency = booking.currency;
+      session.bookingId = booking.id;
+
+      if (mounted) {
+        setState(() => _showSuccess = true);
+      }
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '');
+      debugPrint('[PaymentProcessing] Booking error: $message');
+      _showError(message);
+    }
+  }
+
+  Future<Booking> _createAtlasBooking(
+    BookingRepository repo,
+    BookingSession session,
+    Flight flight,
+    String? stripeIntentId,
+    double quotedTotal,
+  ) async {
+    final routingIdentifier = flight.bookingKey ??
+        flight.providerOfferId ??
+        (throw Exception('Missing Atlas routing identifier.'));
+
+    final firstPassenger = session.passengers.isNotEmpty ? session.passengers.first : null;
+    final contactName = firstPassenger != null
+        ? '${firstPassenger.lastName}/${firstPassenger.firstName}'
+        : session.contactEmail ?? 'Customer';
+
+    final rawPhone = session.contactPhone ?? '';
+    final contactPhone = _formatAtlasPhone(rawPhone);
+
+    return repo.createAtlasBooking(
+      routingIdentifier: routingIdentifier,
+      passengers: session.passengers,
+      contactName: contactName,
+      contactEmail: session.contactEmail ?? '',
+      contactPhone: contactPhone,
+      bookingClass: 'Economy',
+      quotedTotal: quotedTotal,
+      flightSnapshotJson: jsonEncode(flight.toJson()),
+      stripePaymentIntentId: stripeIntentId,
+      isGuest: false,
+    );
+  }
+
+  String _formatAtlasPhone(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return raw;
+
+    if (digits.startsWith('00')) {
+      final without00 = digits.substring(2);
+      if (without00.length > 3) {
+        return '${without00.substring(0, 2)}-${without00.substring(2)}';
+      }
+      return without00;
+    }
+
+    if (digits.length > 3) {
+      return '${digits.substring(0, 3)}-${digits.substring(3)}';
+    }
+    return digits;
+  }
+
+  Future<Booking> _createAmadeusBooking(
+    BookingRepository repo,
+    BookingSession session,
+    Flight flight,
+    String? stripeIntentId,
+    double quotedTotal,
+  ) async {
+    final amadeusOfferToken = flight.bookingKey ??
+        flight.providerOfferId ??
+        (throw Exception('Missing Amadeus offer token.'));
+
+    double? tokenBaseFare;
+    try {
+      final tokenJson = jsonDecode(amadeusOfferToken);
+      tokenBaseFare = (tokenJson['totalAmount'] as num?)?.toDouble();
+    } catch (_) {
+      tokenBaseFare = null;
+    }
+
+    return repo.createAmadeusBooking(
+      amadeusOfferToken: amadeusOfferToken,
+      verifyId: '',
+      stripePaymentIntentId: stripeIntentId ?? '',
+      baseFareTotal: tokenBaseFare ?? quotedTotal,
+      passengers: session.passengers,
+      contactEmail: session.contactEmail ?? '',
+      contactPhone: session.contactPhone ?? '',
+      bookingClass: 'Economy',
+      quotedTotal: quotedTotal,
+      flightSnapshotJson: jsonEncode(flight.toJson()),
+      isGuest: false,
+    );
+  }
+
+  Future<Booking> _createTravelportBooking(
+    BookingRepository repo,
+    BookingSession session,
+    Flight flight,
+    String? stripeIntentId,
+    double quotedTotal,
+  ) async {
+    final fareKey = flight.bookingKey?.trim().isEmpty == false
+        ? flight.bookingKey!.trim()
+        : flight.providerOfferId?.trim().isEmpty == false
+            ? flight.providerOfferId!.trim()
+            : null;
+
+    if (fareKey == null) {
+      throw Exception('Missing Travelport fare key. Please go back and search again.');
+    }
+
+    return repo.createTravelportBooking(
+      fareKey: fareKey,
+      segmentKeys: flight.segmentKeys,
+      passengers: session.passengers,
+      contactEmail: session.contactEmail ?? '',
+      contactPhone: session.contactPhone ?? '',
+      bookingClass: 'Economy',
+      quotedTotal: quotedTotal,
+      providerBaseFare: quotedTotal,
+      flightSnapshotJson: jsonEncode(flight.toJson()),
+      stripePaymentIntentId: stripeIntentId,
+      isGuest: false,
+    );
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      setState(() => _error = message);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) context.pop();
+      });
+    }
+  }
+
+  void _handleState(BookingState state) {
+    if (state is BookingSuccess) {
+      final session = getIt<BookingSession>();
+      session.pnr = state.booking.pnr;
+      session.bookingReference = state.booking.pnr;
+      session.bookingStatus = state.booking.status;
+      session.totalPrice = state.booking.totalPrice;
+      session.currency = state.booking.currency;
+      session.bookingId = state.booking.id;
+
+      setState(() => _showSuccess = true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Payment')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _processing
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(color: AppColors.primary),
-                    const SizedBox(height: 24),
-                    Text('Processing payment...', style: AppTextStyles.bodyLarge),
-                  ],
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_circle, color: AppColors.success, size: 72),
-                    const SizedBox(height: 24),
-                    Text('Payment successful', style: AppTextStyles.h3),
-                    const SizedBox(height: 8),
-                    Text('GBP 97,000 paid successfully', style: AppTextStyles.bodyMedium),
-                    const SizedBox(height: 24),
-                    PrimaryButton(
-                      label: 'View confirmation',
-                      onPressed: () => context.push('/booking/confirmation'),
-                    ),
-                  ],
-                ),
+      body: BlocListener<BookingBloc, BookingState>(
+        listener: (context, state) {
+          if (state is BookingError) {
+            _showError(state.message);
+          }
+          _handleState(state);
+        },
+        child: BlocBuilder<BookingBloc, BookingState>(
+          builder: (context, state) {
+            final isLoading =
+                _isLoadingState(state) && !_showSuccess && _error == null;
+            final session = getIt<BookingSession>();
+            final currency = session.currency ?? 'GBP';
+            final price = session.totalPriceWithTaxes;
+
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: isLoading
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Processing booking...',
+                            style: AppTextStyles.bodyLarge,
+                          ),
+                        ],
+                      )
+                    : _showSuccess
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                color: AppColors.success,
+                                size: 72,
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                'Payment successful',
+                                style: AppTextStyles.h3,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '$currency ${price.toStringAsFixed(0)} paid successfully',
+                                style: AppTextStyles.bodyMedium,
+                              ),
+                              if (session.pnr != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'PNR: ${session.pnr}',
+                                  style: AppTextStyles.bodyMedium,
+                                ),
+                              ],
+                              const SizedBox(height: 24),
+                              PrimaryButton(
+                                label: 'View confirmation',
+                                onPressed: () =>
+                                    context.push('/booking/confirmation'),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Booking failed',
+                                style: AppTextStyles.h3,
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                _error ??
+                                    'Please try again or select a different payment method.',
+                                style: AppTextStyles.bodyMedium,
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              PrimaryButton(
+                                label: 'Back to payment method',
+                                onPressed: () => context.pop(),
+                              ),
+                            ],
+                          ),
+              ),
+            );
+          },
         ),
       ),
     );

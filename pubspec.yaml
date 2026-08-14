@@ -23,6 +23,7 @@ dependencies:
 
   # Networking
   dio: ^5.5.0
+  cookie_jar: ^4.0.8
   pretty_dio_logger: ^1.3.1
 
   # Local storage
@@ -47,6 +48,11 @@ dependencies:
   # Payments
   flutter_stripe: ^11.1.0
   flutter_paypal_payment: ^1.0.7
+
+  # PDF generation & file handling
+  pdf: ^3.1.2
+  path_provider: ^2.1.2
+  open_filex: ^4.3.2
 
   # UI utilities
   cached_network_image: ^3.4.1

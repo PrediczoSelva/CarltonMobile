@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../booking/domain/entities/booking_session.dart';
+import '../../../flight/domain/entities/flight.dart';
+import '../../../flight/domain/entities/flight_search_criteria.dart';
+import '../../../flight/domain/repositories/flight_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,39 +19,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
+  late final FlightRepository _flightRepository;
+  List<Flight> _suggestedFlights = [];
+  bool _loadingSuggestions = true;
+  String? _suggestionsError;
 
   static const _tabs = ['Flights', 'Hotels', 'Cars'];
-
-  static const _suggestions = [
-    _FlightSuggestion(
-      from: 'CMB',
-      to: 'DXB',
-      city: 'Dubai',
-      price: 45000,
-      date: '20 Aug',
-    ),
-    _FlightSuggestion(
-      from: 'CMB',
-      to: 'LHR',
-      city: 'London',
-      price: 85000,
-      date: '25 Aug',
-    ),
-    _FlightSuggestion(
-      from: 'CMB',
-      to: 'SIN',
-      city: 'Singapore',
-      price: 35000,
-      date: '18 Aug',
-    ),
-    _FlightSuggestion(
-      from: 'CMB',
-      to: 'MLE',
-      city: 'Maldives',
-      price: 42000,
-      date: '22 Aug',
-    ),
-  ];
 
   static const _hotelSuggestions = [
     _HotelSuggestion(
@@ -102,14 +81,68 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _flightRepository = getIt<FlightRepository>();
+    _loadSuggestions();
+  }
+
+  DateTime _tomorrow() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day + 1);
+  }
+
+  Future<void> _loadSuggestions() async {
+    setState(() {
+      _loadingSuggestions = true;
+      _suggestionsError = null;
+    });
+    try {
+      final tomorrow = _tomorrow();
+      final criteria = FlightSearchCriteria(
+        origin: 'Colombo (CMB)',
+        destination: 'London (LHR)',
+        departureDate: tomorrow,
+        passengers: 1,
+      );
+      final flights = await _flightRepository.searchFlights(criteria);
+      if (mounted) {
+        setState(() {
+          _suggestedFlights = flights.where((f) => f.price > 0).take(4).toList();
+          _loadingSuggestions = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingSuggestions = false;
+          _suggestionsError = e.toString();
+        });
+      }
+    }
+  }
+
+  String _formatDate(DateTime dt) {
+    return DateFormat('EEE, MMM d').format(dt);
+  }
+
+  String _formatTime(DateTime dt) {
+    return DateFormat.Hm().format(dt);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Carlton Leisure'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => context.push('/profile'),
+            icon: const Icon(Icons.message_outlined),
+            onPressed: () => context.push('/messages'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => context.push('/notifications'),
           ),
         ],
       ),
@@ -127,7 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: selected ? AppColors.accent : AppColors.surfaceVariant,
+                        color: selected
+                            ? AppColors.accent
+                            : AppColors.surfaceVariant,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       alignment: Alignment.center,
@@ -135,7 +170,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         _tabs[i],
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: selected ? AppColors.textOnAccent : AppColors.textSecondary,
+                          color: selected
+                              ? AppColors.textOnAccent
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -152,86 +189,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBody() {
     if (_tabIndex == 0) {
-      return ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          const SizedBox(height: 8),
-          TextField(
-            readOnly: true,
-            onTap: () => context.push('/flights/search'),
-            decoration: InputDecoration(
-              hintText: 'Search flights',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: const Icon(Icons.tune),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Suggested flights', style: AppTextStyles.h4),
-              TextButton(
-                onPressed: () => context.push('/flights/search'),
-                child: const Text('See all'),
+      return RefreshIndicator(
+        onRefresh: _loadSuggestions,
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          children: [
+            const SizedBox(height: 8),
+            TextField(
+              readOnly: true,
+              onTap: () => context.push('/flights/search'),
+              decoration: InputDecoration(
+                hintText: 'Search flights',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: const Icon(Icons.tune),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _suggestions.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final flight = _suggestions[index];
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(Icons.flight_takeoff, color: AppColors.primary),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${flight.from} → ${flight.city} (${flight.to})', style: AppTextStyles.bodyLarge),
-                            const SizedBox(height: 2),
-                            Text(flight.date, style: AppTextStyles.bodySmall),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text('GBP ${flight.price.toStringAsFixed(0)}', style: AppTextStyles.price),
-                          const SizedBox(height: 4),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(64, 32),
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                            ),
-                            child: const Text('Book'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Suggested flights', style: AppTextStyles.h4),
+                TextButton(
+                  onPressed: () => context.push('/flights/search'),
+                  child: const Text('See all'),
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-        ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildFlightSuggestions(),
+            const SizedBox(height: 24),
+          ],
+        ),
       );
     }
 
@@ -283,14 +271,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(hotel.name, style: AppTextStyles.bodyLarge),
+                            Text(hotel.name,
+                                style: AppTextStyles.bodyLarge),
                             const SizedBox(height: 2),
-                            Text(hotel.location, style: AppTextStyles.bodySmall),
+                            Text(hotel.location,
+                                style: AppTextStyles.bodySmall),
                             Row(
                               children: [
-                                const Icon(Icons.star, size: 16, color: AppColors.accent),
+                                const Icon(Icons.star,
+                                    size: 16, color: AppColors.accent),
                                 const SizedBox(width: 4),
-                                Text(hotel.rating.toString(), style: AppTextStyles.bodySmall),
+                                Text(hotel.rating.toString(),
+                                    style: AppTextStyles.bodySmall),
                               ],
                             ),
                           ],
@@ -299,13 +291,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('GBP ${hotel.price.toStringAsFixed(0)}', style: AppTextStyles.price),
+                          Text(
+                            'GBP ${hotel.price.toStringAsFixed(0)}',
+                            style: AppTextStyles.price,
+                          ),
                           const SizedBox(height: 4),
                           ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size(64, 32),
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12),
                             ),
                             child: const Text('Book'),
                           ),
@@ -362,7 +358,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: AppColors.surfaceVariant,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.directions_car, color: AppColors.primary),
+                      child: Icon(Icons.directions_car,
+                          color: AppColors.primary),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -371,20 +368,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(car.name, style: AppTextStyles.bodyLarge),
                           const SizedBox(height: 2),
-                          Text('${car.category} • ${car.seats} seats', style: AppTextStyles.bodySmall),
+                          Text('${car.category} • ${car.seats} seats',
+                              style: AppTextStyles.bodySmall),
                         ],
                       ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('GBP ${car.price.toStringAsFixed(0)}', style: AppTextStyles.price),
+                        Text('GBP ${car.price.toStringAsFixed(0)}',
+                            style: AppTextStyles.price),
                         const SizedBox(height: 4),
                         ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(64, 32),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12),
                           ),
                           child: const Text('Book'),
                         ),
@@ -400,22 +400,168 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
-}
 
-class _FlightSuggestion {
-  const _FlightSuggestion({
-    required this.from,
-    required this.to,
-    required this.city,
-    required this.price,
-    required this.date,
-  });
+  Widget _buildFlightSuggestions() {
+    if (_loadingSuggestions) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
 
-  final String from;
-  final String to;
-  final String city;
-  final double price;
-  final String date;
+    if (_suggestionsError != null) {
+      return Center(
+        child: Text(
+          'Could not load suggestions. Pull to refresh to retry.',
+          style: AppTextStyles.bodySmall,
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    if (_suggestedFlights.isEmpty) {
+      return Center(
+        child: Text(
+          'No flights available at the moment.',
+          style: AppTextStyles.bodyMedium,
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _suggestedFlights.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final flight = _suggestedFlights[index];
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(flight.airline, style: AppTextStyles.h4),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        flight.flightCode,
+                        style: AppTextStyles.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${flight.source.isNotEmpty ? flight.source : 'Catalog'} • ${flight.stopsText}',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatTime(flight.departureTime),
+                          style: AppTextStyles.h2,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(flight.origin,
+                            style: AppTextStyles.bodySmall),
+                      ],
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 12),
+                        child: Column(
+                          children: [
+                            Text(
+                              flight.duration.isNotEmpty
+                                  ? flight.duration
+                                  : '${flight.stopsText}',
+                              style: AppTextStyles.bodySmall,
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              height: 1,
+                              color: AppColors.border,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              flight.stopsText,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatTime(flight.arrivalTime),
+                          style: AppTextStyles.h2,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(flight.destination,
+                            style: AppTextStyles.bodySmall),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text(
+                      '${flight.currency} ${flight.price.toStringAsFixed(0)}',
+                      style: AppTextStyles.price,
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      width: 100,
+                      child: ElevatedButton(
+                        onPressed: () => _bookFlight(context, flight),
+                        child: const Text('Book'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _bookFlight(BuildContext context, Flight flight) {
+    final session = getIt<BookingSession>()..reset();
+    session.searchCriteria = FlightSearchCriteria(
+      origin: '${flight.origin} (${flight.origin})',
+      destination: '${flight.destination} (${flight.destination})',
+      departureDate: flight.departureTime,
+      passengers: 1,
+    );
+    session.selectedOutboundFlight = flight;
+    session.outboundFlights = [flight];
+    session.currency = flight.currency;
+    context.push('/booking/passenger-details');
+  }
 }
 
 class _HotelSuggestion {
