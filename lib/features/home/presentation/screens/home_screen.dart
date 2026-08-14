@@ -137,8 +137,12 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Carlton Leisure'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => context.push('/profile'),
+            icon: const Icon(Icons.message_outlined),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {},
           ),
         ],
       ),
