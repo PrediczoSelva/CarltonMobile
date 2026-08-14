@@ -18,6 +18,8 @@ import '../../features/booking/presentation/screens/passenger_details_screen.dar
 import '../../features/flight/presentation/bloc/flight_bloc.dart';
 import '../../features/flight/presentation/screens/flight_results_screen.dart';
 import '../../features/flight/presentation/screens/flight_search_screen.dart';
+import '../../features/home/presentation/screens/messages_screen.dart';
+import '../../features/home/presentation/screens/notifications_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
@@ -43,6 +45,8 @@ abstract class AppRoutes {
   static const paymentProcessing = '/booking/payment/process';
   static const bookingConfirmation = '/booking/confirmation';
   static const myTrips = '/my-trips';
+  static const messages = '/messages';
+  static const notifications = '/notifications';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -135,6 +139,14 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: AppRoutes.bookingConfirmation,
           builder: (context, state) => const BookingConfirmationScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.messages,
+          builder: (context, state) => const MessagesScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.notifications,
+          builder: (context, state) => const NotificationsScreen(),
         ),
       ],
     ),
