@@ -21,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
   late final FlightRepository _flightRepository;
+  late final ScrollController _trendingScrollController;
   List<Flight> _suggestedFlights = [];
   bool _loadingSuggestions = true;
   String? _suggestionsError;
@@ -118,7 +119,40 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _flightRepository = getIt<FlightRepository>();
+    _trendingScrollController = ScrollController();
     _loadSuggestions();
+  }
+
+  @override
+  void dispose() {
+    _trendingScrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleTrendingPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+
+    if (!_trendingScrollController.hasClients) {
+      return;
+    }
+
+    final horizontalDelta =
+        event.scrollDelta.dx.abs() > event.scrollDelta.dy.abs()
+            ? event.scrollDelta.dx
+            : event.scrollDelta.dy;
+    if (horizontalDelta == 0) {
+      return;
+    }
+
+    final position = _trendingScrollController.position;
+    final targetOffset = (position.pixels + horizontalDelta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    _trendingScrollController.jumpTo(targetOffset.toDouble());
   }
 
   DateTime _tomorrow() {
@@ -266,26 +300,32 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             SizedBox(
               height: 200,
-              child: ScrollConfiguration(
-                behavior: MaterialScrollBehavior().copyWith(
-                  dragDevices: {
-                    PointerDeviceKind.touch,
-                    PointerDeviceKind.mouse,
-                    PointerDeviceKind.stylus,
-                  },
-                ),
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: _trendingDestinations.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final destination = _trendingDestinations[index];
-                    return SizedBox(
-                      width: 180,
-                      child: _TrendingDestinationCard(destination: destination),
-                    );
-                  },
+              child: Listener(
+                onPointerSignal: _handleTrendingPointerSignal,
+                child: ScrollConfiguration(
+                  behavior: MaterialScrollBehavior().copyWith(
+                    dragDevices: {
+                      PointerDeviceKind.touch,
+                      PointerDeviceKind.mouse,
+                      PointerDeviceKind.stylus,
+                    },
+                  ),
+                  child: ListView.separated(
+                    controller: _trendingScrollController,
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _trendingDestinations.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final destination = _trendingDestinations[index];
+                      return SizedBox(
+                        width: 180,
+                        child: _TrendingDestinationCard(
+                          destination: destination,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -683,21 +723,23 @@ class _TrendingDestinationCard extends StatefulWidget {
 }
 
 class _TrendingDestinationCardState extends State<_TrendingDestinationCard> {
-  bool _isPressed = false;
+  bool _isHighlighted = false;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {},
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.97 : 1,
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOut,
-        child: Card(
-          clipBehavior: Clip.antiAlias,
+    return AnimatedScale(
+      scale: _isHighlighted ? 0.97 : 1,
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {},
+          onHighlightChanged: (value) {
+            if (_isHighlighted != value) {
+              setState(() => _isHighlighted = value);
+            }
+          },
           child: Stack(
             fit: StackFit.expand,
             children: [
