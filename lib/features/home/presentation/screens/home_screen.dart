@@ -155,6 +155,24 @@ class _HomeScreenState extends State<HomeScreen> {
     _trendingScrollController.jumpTo(targetOffset.toDouble());
   }
 
+  void _scrollTrendingBy(double delta) {
+    if (!_trendingScrollController.hasClients) {
+      return;
+    }
+
+    final position = _trendingScrollController.position;
+    final targetOffset = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    _trendingScrollController.animateTo(
+      targetOffset.toDouble(),
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
+    );
+  }
+
   DateTime _tomorrow() {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day + 1);
@@ -300,33 +318,59 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             SizedBox(
               height: 200,
-              child: Listener(
-                onPointerSignal: _handleTrendingPointerSignal,
-                child: ScrollConfiguration(
-                  behavior: MaterialScrollBehavior().copyWith(
-                    dragDevices: {
-                      PointerDeviceKind.touch,
-                      PointerDeviceKind.mouse,
-                      PointerDeviceKind.stylus,
-                    },
+              child: Stack(
+                children: [
+                  Listener(
+                    onPointerSignal: _handleTrendingPointerSignal,
+                    child: ScrollConfiguration(
+                      behavior: MaterialScrollBehavior().copyWith(
+                        dragDevices: {
+                          PointerDeviceKind.touch,
+                          PointerDeviceKind.mouse,
+                          PointerDeviceKind.stylus,
+                        },
+                      ),
+                      child: ListView.separated(
+                        controller: _trendingScrollController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _trendingDestinations.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final destination = _trendingDestinations[index];
+                          return SizedBox(
+                            width: 180,
+                            child: _TrendingDestinationCard(
+                              destination: destination,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                  child: ListView.separated(
-                    controller: _trendingScrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _trendingDestinations.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final destination = _trendingDestinations[index];
-                      return SizedBox(
-                        width: 180,
-                        child: _TrendingDestinationCard(
-                          destination: destination,
-                        ),
-                      );
-                    },
+                  Positioned(
+                    left: 4,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _CarouselArrowButton(
+                        icon: Icons.chevron_left,
+                        onTap: () => _scrollTrendingBy(-200),
+                      ),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    right: 4,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _CarouselArrowButton(
+                        icon: Icons.chevron_right,
+                        onTap: () => _scrollTrendingBy(200),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -790,6 +834,33 @@ class _TrendingDestinationCardState extends State<_TrendingDestinationCard> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CarouselArrowButton extends StatelessWidget {
+  const _CarouselArrowButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black45,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 34,
+          height: 34,
+          child: Icon(icon, color: Colors.white),
         ),
       ),
     );
