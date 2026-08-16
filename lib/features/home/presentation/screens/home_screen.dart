@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -20,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
   late final FlightRepository _flightRepository;
+  late final ScrollController _trendingScrollController;
   List<Flight> _suggestedFlights = [];
   bool _loadingSuggestions = true;
   String? _suggestionsError;
@@ -80,11 +82,95 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  static const _trendingDestinations = [
+    _TrendingDestination(
+      name: 'Belfast',
+      subtitle: 'Northern Ireland',
+      imageUrl:
+          'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80',
+    ),
+    _TrendingDestination(
+      name: 'Glasgow',
+      subtitle: 'Scotland',
+      imageUrl:
+          'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=900&q=80',
+    ),
+    _TrendingDestination(
+      name: 'Northumberland',
+      subtitle: 'England',
+      imageUrl:
+          'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=900&q=80',
+    ),
+    _TrendingDestination(
+      name: 'Edinburgh',
+      subtitle: 'Scotland',
+      imageUrl:
+          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
+    ),
+    _TrendingDestination(
+      name: 'Cornwall',
+      subtitle: 'England',
+      imageUrl:
+          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
     _flightRepository = getIt<FlightRepository>();
+    _trendingScrollController = ScrollController();
     _loadSuggestions();
+  }
+
+  @override
+  void dispose() {
+    _trendingScrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleTrendingPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+
+    if (!_trendingScrollController.hasClients) {
+      return;
+    }
+
+    final horizontalDelta =
+        event.scrollDelta.dx.abs() > event.scrollDelta.dy.abs()
+            ? event.scrollDelta.dx
+            : event.scrollDelta.dy;
+    if (horizontalDelta == 0) {
+      return;
+    }
+
+    final position = _trendingScrollController.position;
+    final targetOffset = (position.pixels + horizontalDelta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    _trendingScrollController.jumpTo(targetOffset.toDouble());
+  }
+
+  void _scrollTrendingBy(double delta) {
+    if (!_trendingScrollController.hasClients) {
+      return;
+    }
+
+    final position = _trendingScrollController.position;
+    final targetOffset = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    _trendingScrollController.animateTo(
+      targetOffset.toDouble(),
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
+    );
   }
 
   DateTime _tomorrow() {
@@ -108,7 +194,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final flights = await _flightRepository.searchFlights(criteria);
       if (mounted) {
         setState(() {
-          _suggestedFlights = flights.where((f) => f.price > 0).take(4).toList();
+          _suggestedFlights =
+              flights.where((f) => f.price > 0).take(4).toList();
           _loadingSuggestions = false;
         });
       }
@@ -218,6 +305,75 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             _buildFlightSuggestions(),
             const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Trending destinations', style: AppTextStyles.h4),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('View all'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 200,
+              child: Stack(
+                children: [
+                  Listener(
+                    onPointerSignal: _handleTrendingPointerSignal,
+                    child: ScrollConfiguration(
+                      behavior: MaterialScrollBehavior().copyWith(
+                        dragDevices: {
+                          PointerDeviceKind.touch,
+                          PointerDeviceKind.mouse,
+                          PointerDeviceKind.stylus,
+                        },
+                      ),
+                      child: ListView.separated(
+                        controller: _trendingScrollController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _trendingDestinations.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final destination = _trendingDestinations[index];
+                          return SizedBox(
+                            width: 180,
+                            child: _TrendingDestinationCard(
+                              destination: destination,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 4,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _CarouselArrowButton(
+                        icon: Icons.chevron_left,
+                        onTap: () => _scrollTrendingBy(-200),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 4,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _CarouselArrowButton(
+                        icon: Icons.chevron_right,
+                        onTap: () => _scrollTrendingBy(200),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       );
@@ -271,8 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(hotel.name,
-                                style: AppTextStyles.bodyLarge),
+                            Text(hotel.name, style: AppTextStyles.bodyLarge),
                             const SizedBox(height: 2),
                             Text(hotel.location,
                                 style: AppTextStyles.bodySmall),
@@ -300,8 +455,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size(64, 32),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                             ),
                             child: const Text('Book'),
                           ),
@@ -358,8 +513,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: AppColors.surfaceVariant,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.directions_car,
-                          color: AppColors.primary),
+                      child:
+                          Icon(Icons.directions_car, color: AppColors.primary),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -383,8 +538,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(64, 32),
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
                           child: const Text('Book'),
                         ),
@@ -478,14 +632,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: AppTextStyles.h2,
                         ),
                         const SizedBox(height: 2),
-                        Text(flight.origin,
-                            style: AppTextStyles.bodySmall),
+                        Text(flight.origin, style: AppTextStyles.bodySmall),
                       ],
                     ),
                     Expanded(
                       child: Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Column(
                           children: [
                             Text(
@@ -590,4 +742,127 @@ class _CarSuggestion {
   final String category;
   final double price;
   final int seats;
+}
+
+class _TrendingDestination {
+  const _TrendingDestination({
+    required this.name,
+    required this.subtitle,
+    required this.imageUrl,
+  });
+
+  final String name;
+  final String subtitle;
+  final String imageUrl;
+}
+
+class _TrendingDestinationCard extends StatefulWidget {
+  const _TrendingDestinationCard({required this.destination});
+
+  final _TrendingDestination destination;
+
+  @override
+  State<_TrendingDestinationCard> createState() =>
+      _TrendingDestinationCardState();
+}
+
+class _TrendingDestinationCardState extends State<_TrendingDestinationCard> {
+  bool _isHighlighted = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _isHighlighted ? 0.97 : 1,
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {},
+          onHighlightChanged: (value) {
+            if (_isHighlighted != value) {
+              setState(() => _isHighlighted = value);
+            }
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                widget.destination.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: AppColors.surfaceVariant,
+                    child: const Icon(Icons.image_not_supported),
+                  );
+                },
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black87,
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.destination.name,
+                        style: AppTextStyles.h4.copyWith(color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.destination.subtitle,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CarouselArrowButton extends StatelessWidget {
+  const _CarouselArrowButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black45,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 34,
+          height: 34,
+          child: Icon(icon, color: Colors.white),
+        ),
+      ),
+    );
+  }
 }
