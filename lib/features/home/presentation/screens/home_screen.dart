@@ -80,6 +80,39 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  static const _trendingDestinations = [
+    _TrendingDestination(
+      name: 'Belfast',
+      subtitle: 'Northern Ireland',
+      imageUrl:
+          'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80',
+    ),
+    _TrendingDestination(
+      name: 'Glasgow',
+      subtitle: 'Scotland',
+      imageUrl:
+          'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=900&q=80',
+    ),
+    _TrendingDestination(
+      name: 'Northumberland',
+      subtitle: 'England',
+      imageUrl:
+          'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=900&q=80',
+    ),
+    _TrendingDestination(
+      name: 'Edinburgh',
+      subtitle: 'Scotland',
+      imageUrl:
+          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
+    ),
+    _TrendingDestination(
+      name: 'Cornwall',
+      subtitle: 'England',
+      imageUrl:
+          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -108,7 +141,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final flights = await _flightRepository.searchFlights(criteria);
       if (mounted) {
         setState(() {
-          _suggestedFlights = flights.where((f) => f.price > 0).take(4).toList();
+          _suggestedFlights =
+              flights.where((f) => f.price > 0).take(4).toList();
           _loadingSuggestions = false;
         });
       }
@@ -218,6 +252,86 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             _buildFlightSuggestions(),
             const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Trending destinations', style: AppTextStyles.h4),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('View all'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 200,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _trendingDestinations.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final destination = _trendingDestinations[index];
+                  return SizedBox(
+                    width: 180,
+                    child: Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            destination.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: AppColors.surfaceVariant,
+                                child: const Icon(Icons.image_not_supported),
+                              );
+                            },
+                          ),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [
+                                    Colors.black87,
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    destination.name,
+                                    style: AppTextStyles.h4.copyWith(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    destination.subtitle,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       );
@@ -271,8 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(hotel.name,
-                                style: AppTextStyles.bodyLarge),
+                            Text(hotel.name, style: AppTextStyles.bodyLarge),
                             const SizedBox(height: 2),
                             Text(hotel.location,
                                 style: AppTextStyles.bodySmall),
@@ -300,8 +413,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size(64, 32),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                             ),
                             child: const Text('Book'),
                           ),
@@ -358,8 +471,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: AppColors.surfaceVariant,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.directions_car,
-                          color: AppColors.primary),
+                      child:
+                          Icon(Icons.directions_car, color: AppColors.primary),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -383,8 +496,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(64, 32),
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
                           child: const Text('Book'),
                         ),
@@ -478,14 +590,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: AppTextStyles.h2,
                         ),
                         const SizedBox(height: 2),
-                        Text(flight.origin,
-                            style: AppTextStyles.bodySmall),
+                        Text(flight.origin, style: AppTextStyles.bodySmall),
                       ],
                     ),
                     Expanded(
                       child: Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Column(
                           children: [
                             Text(
@@ -590,4 +700,16 @@ class _CarSuggestion {
   final String category;
   final double price;
   final int seats;
+}
+
+class _TrendingDestination {
+  const _TrendingDestination({
+    required this.name,
+    required this.subtitle,
+    required this.imageUrl,
+  });
+
+  final String name;
+  final String subtitle;
+  final String imageUrl;
 }
