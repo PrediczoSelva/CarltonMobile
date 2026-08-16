@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -265,70 +266,27 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             SizedBox(
               height: 200,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _trendingDestinations.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final destination = _trendingDestinations[index];
-                  return SizedBox(
-                    width: 180,
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.network(
-                            destination.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: AppColors.surfaceVariant,
-                                child: const Icon(Icons.image_not_supported),
-                              );
-                            },
-                          ),
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  colors: [
-                                    Colors.black87,
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    destination.name,
-                                    style: AppTextStyles.h4.copyWith(
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    destination.subtitle,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+              child: ScrollConfiguration(
+                behavior: MaterialScrollBehavior().copyWith(
+                  dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                    PointerDeviceKind.stylus,
+                  },
+                ),
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: _trendingDestinations.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final destination = _trendingDestinations[index];
+                    return SizedBox(
+                      width: 180,
+                      child: _TrendingDestinationCard(destination: destination),
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -712,4 +670,86 @@ class _TrendingDestination {
   final String name;
   final String subtitle;
   final String imageUrl;
+}
+
+class _TrendingDestinationCard extends StatefulWidget {
+  const _TrendingDestinationCard({required this.destination});
+
+  final _TrendingDestination destination;
+
+  @override
+  State<_TrendingDestinationCard> createState() =>
+      _TrendingDestinationCardState();
+}
+
+class _TrendingDestinationCardState extends State<_TrendingDestinationCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.97 : 1,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                widget.destination.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: AppColors.surfaceVariant,
+                    child: const Icon(Icons.image_not_supported),
+                  );
+                },
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black87,
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.destination.name,
+                        style: AppTextStyles.h4.copyWith(color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.destination.subtitle,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
