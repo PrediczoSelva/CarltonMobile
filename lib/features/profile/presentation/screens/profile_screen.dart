@@ -44,15 +44,32 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 16),
         Text(user.name, style: AppTextStyles.h3, textAlign: TextAlign.center),
         const SizedBox(height: 4),
-        Text(user.username, style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
+        Text(user.username,
+            style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
         const SizedBox(height: 4),
-        Text(user.role, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary), textAlign: TextAlign.center),
+        Text(user.role,
+            style: AppTextStyles.bodySmall
+                .copyWith(color: AppColors.textSecondary),
+            textAlign: TextAlign.center),
         const SizedBox(height: 24),
-        _ProfileTile(icon: Icons.person_outline, label: 'Personal details', onTap: () => context.push('/profile/personal-details')),
-        _ProfileTile(icon: Icons.favorite_border, label: 'Saved preferences', onTap: () {}),
-        _ProfileTile(icon: Icons.card_giftcard_outlined, label: 'My trips', onTap: () {}),
-        _ProfileTile(icon: Icons.settings_outlined, label: 'Settings', onTap: () => context.push('/profile/settings')),
-        _ProfileTile(icon: Icons.help_outline, label: 'Help & support', onTap: () {}),
+        _ProfileTile(
+            icon: Icons.person_outline,
+            label: 'Personal details',
+            onTap: () => context.push('/profile/personal-details')),
+        _ProfileTile(
+            icon: Icons.favorite_border,
+            label: 'Saved preferences',
+            onTap: () {}),
+        _ProfileTile(
+            icon: Icons.card_giftcard_outlined,
+            label: 'My Bookings',
+            onTap: () {}),
+        _ProfileTile(
+            icon: Icons.settings_outlined,
+            label: 'Settings',
+            onTap: () => context.push('/profile/settings')),
+        _ProfileTile(
+            icon: Icons.help_outline, label: 'Help & support', onTap: () {}),
         const SizedBox(height: 24),
         ElevatedButton.icon(
           onPressed: () {
@@ -80,7 +97,8 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _ProfileTile extends StatelessWidget {
-  const _ProfileTile({required this.icon, required this.label, required this.onTap});
+  const _ProfileTile(
+      {required this.icon, required this.label, required this.onTap});
 
   final IconData icon;
   final String label;
@@ -93,7 +111,8 @@ class _ProfileTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon, color: AppColors.primary),
         title: Text(label, style: AppTextStyles.bodyLarge),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+        trailing:
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
         onTap: onTap,
       ),
     );
