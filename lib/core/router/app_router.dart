@@ -100,11 +100,11 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const ProfileScreen(),
           routes: [
             GoRoute(
-              path: AppRoutes.personalDetails,
+              path: 'personal-details',
               builder: (context, state) => const PersonalDetailsScreen(),
             ),
             GoRoute(
-              path: AppRoutes.settings,
+              path: 'settings',
               builder: (context, state) => const SettingsScreen(),
             ),
           ],

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -55,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
         _ProfileTile(
             icon: Icons.person_outline,
             label: 'Personal details',
-            onTap: () => context.push('/profile/personal-details')),
+            onTap: () => context.push(AppRoutes.personalDetails)),
         _ProfileTile(
             icon: Icons.favorite_border,
             label: 'Saved preferences',
@@ -67,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
         _ProfileTile(
             icon: Icons.settings_outlined,
             label: 'Settings',
-            onTap: () => context.push('/profile/settings')),
+            onTap: () => context.push(AppRoutes.settings)),
         _ProfileTile(
             icon: Icons.help_outline, label: 'Help & support', onTap: () {}),
         const SizedBox(height: 24),
