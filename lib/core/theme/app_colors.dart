@@ -41,4 +41,17 @@ class AppColors {
 
   // Disabled
   static const Color disabled = Color(0xFFB8C0C9);
+
+  // Dark mode surfaces
+  static const Color backgroundDark = Color(0xFF0F1923);
+  static const Color surfaceDark = Color(0xFF1A2332);
+  static const Color surfaceVariantDark = Color(0xFF243447);
+
+  // Dark mode text
+  static const Color textPrimaryDark = Color(0xFFF0F4F8);
+  static const Color textSecondaryDark = Color(0xFFA0AEC0);
+
+  // Dark mode borders
+  static const Color borderDark = Color(0xFF2D3B4E);
+  static const Color dividerDark = Color(0xFF2D3B4E);
 }

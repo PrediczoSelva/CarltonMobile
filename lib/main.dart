@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -8,6 +9,8 @@ import 'core/di/injection.dart';
 import 'core/network/api_client.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/app_text_styles.dart';
+import 'core/theme/theme_notifier.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 
 Future<void> main() async {
@@ -41,11 +44,26 @@ Future<void> main() async {
   // await Firebase.initializeApp();
   // await setupPushNotifications();
 
-  runApp(const CarltonLeisureApp());
+  final themeNotifier = getIt<ThemeNotifier>();
+  final storage = getIt<FlutterSecureStorage>();
+  final savedTheme = await storage.read(key: 'theme_mode');
+  final isDark = savedTheme == 'dark';
+  themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
+  AppTextStyles.setDarkMode(isDark);
+
+  runApp(
+    ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, themeMode, child) {
+        return CarltonLeisureApp(themeMode: themeMode);
+      },
+    ),
+  );
 }
 
 class CarltonLeisureApp extends StatelessWidget {
-  const CarltonLeisureApp({super.key});
+  final ThemeMode themeMode;
+  const CarltonLeisureApp({super.key, required this.themeMode});
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +73,8 @@ class CarltonLeisureApp extends StatelessWidget {
         title: 'Carlton Leisure',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: themeMode,
         routerConfig: appRouter,
       ),
     );

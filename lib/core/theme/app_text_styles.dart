@@ -7,8 +7,14 @@ import 'app_colors.dart';
 /// brand font later by pointing it at a bundled font instead of Google Fonts.
 class AppTextStyles {
   AppTextStyles._();
+  static bool _isDark = false;
 
-  static TextStyle get _base => GoogleFonts.inter(color: AppColors.textPrimary);
+  static void setDarkMode(bool isDark) => _isDark = isDark;
+
+  static Color get _textPrimary => _isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+  static Color get _textSecondary => _isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
+
+  static TextStyle get _base => GoogleFonts.inter(color: _textPrimary);
 
   static TextStyle get h1 => _base.copyWith(fontSize: 32, fontWeight: FontWeight.w700, height: 1.2);
   static TextStyle get h2 => _base.copyWith(fontSize: 26, fontWeight: FontWeight.w700, height: 1.25);
@@ -21,7 +27,7 @@ class AppTextStyles {
         fontSize: 12,
         fontWeight: FontWeight.w400,
         height: 1.4,
-        color: AppColors.textSecondary,
+        color: _textSecondary,
       );
 
   static TextStyle get button => _base.copyWith(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.2);
@@ -35,5 +41,5 @@ class AppTextStyles {
         letterSpacing: 0.3,
       );
 
-  static TextStyle get caption => _base.copyWith(fontSize: 11, fontWeight: FontWeight.w400, color: AppColors.textSecondary);
+  static TextStyle get caption => _base.copyWith(fontSize: 11, fontWeight: FontWeight.w400, color: _textSecondary);
 }
