@@ -32,7 +32,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       final apiClient = getIt<ApiClient>();
       final response = await apiClient.get<dynamic>('/profile/personal');
       setState(() {
-        _profile = response.data as Map<String, dynamic>?;
+        _profile = response.data != null
+            ? Map<String, dynamic>.from(response.data as Map)
+            : null;
         _isLoading = false;
       });
     } catch (e) {

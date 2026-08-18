@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/theme_notifier.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -16,11 +19,21 @@ class SettingsScreen extends StatelessWidget {
           _SettingsSection(
             title: 'Appearance',
             children: [
-              SwitchListTile(
-                value: false,
-                onChanged: (value) {},
-                title: const Text('Dark mode'),
-                subtitle: const Text('Use dark theme across the app'),
+              ValueListenableBuilder<ThemeMode>(
+                valueListenable: getIt<ThemeNotifier>(),
+                builder: (context, themeMode, child) {
+                  return SwitchListTile(
+                    value: themeMode == ThemeMode.dark,
+                    onChanged: (value) async {
+                      final themeNotifier = getIt<ThemeNotifier>();
+                      themeNotifier.toggle(value);
+                      final storage = getIt<FlutterSecureStorage>();
+                      await storage.write(key: 'theme_mode', value: value ? 'dark' : 'light');
+                    },
+                    title: const Text('Dark mode'),
+                    subtitle: const Text('Use dark theme across the app'),
+                  );
+                },
               ),
               const _SettingsTile(
                 icon: Icons.language,

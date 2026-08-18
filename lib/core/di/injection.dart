@@ -2,6 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 
 import '../network/api_client.dart';
+import '../theme/theme_notifier.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource_impl.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -31,6 +32,9 @@ final GetIt getIt = GetIt.instance;
 Future<void> setupDependencyInjection() async {
   // Storage (used for user preferences, non-auth data)
   getIt.registerLazySingleton<FlutterSecureStorage>(() => const FlutterSecureStorage());
+
+  // Theme
+  getIt.registerLazySingleton<ThemeNotifier>(() => ThemeNotifier());
 
   // Networking
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
