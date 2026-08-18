@@ -330,6 +330,15 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
+                                            'Departure',
+                                            style: AppTextStyles.caption.copyWith(
+                                              color: AppColors.textSecondary,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
                                             booking.flight.origin,
                                             style: AppTextStyles.bodyLarge
                                                 .copyWith(
@@ -406,6 +415,15 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.end,
                                         children: [
+                                          Text(
+                                            'Destination',
+                                            style: AppTextStyles.caption.copyWith(
+                                              color: AppColors.textSecondary,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
                                           Text(
                                             booking.flight.destination,
                                             style: AppTextStyles.bodyLarge
