@@ -13,6 +13,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking.dart';
+import '../../../booking/domain/repositories/booking_repository.dart';
 import '../../../booking/presentation/bloc/booking_bloc.dart';
 import '../../../booking/presentation/bloc/booking_event.dart';
 import '../../../booking/presentation/bloc/booking_state.dart';
@@ -26,6 +27,7 @@ class MyTripsScreen extends StatefulWidget {
 
 class _MyTripsScreenState extends State<MyTripsScreen> {
   final Set<int> _downloadingIds = {};
+  final Set<int> _cancellingIds = {};
   int? _selectedBookingId;
   int? _hoveredBookingId;
 
@@ -57,6 +59,12 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
               return _buildEmpty();
             }
             return _buildList(state.bookings);
+          }
+          if (state is BookingCancelled) {
+            context.read<BookingBloc>().add(GetUserBookingsRequested());
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
           }
           if (state is BookingError) {
             return _buildError(state.message);
@@ -459,73 +467,97 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                               const SizedBox(height: 14),
                               Row(
                                 children: [
-                                  Expanded(
-                                    child: Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: [
-                                        _TripMetaChip(
-                                          icon: Icons.people_alt_outlined,
-                                          label:
-                                              '${booking.passengers.length} traveller${booking.passengers.length == 1 ? '' : 's'}',
-                                        ),
-                                        _TripMetaChip(
-                                          icon: Icons
-                                              .confirmation_number_outlined,
-                                          label: 'PNR ${booking.pnr}',
-                                        ),
-                                      ],
-                                    ),
+                                  _TripMetaChip(
+                                    icon: Icons
+                                        .confirmation_number_outlined,
+                                    label: 'PNR ${booking.pnr}',
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (booking.flight.aircraft.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets
-                                              .only(right: 12),
-                                          child: Text(
-                                            booking.flight.aircraft,
-                                            style: AppTextStyles.caption
-                                                .copyWith(
-                                              color: AppColors.textSecondary,
-                                            ),
-                                          ),
-                                        ),
-                                      TextButton.icon(
-                                        onPressed: () =>
-                                            _viewBookingDetails(booking),
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: AppColors.primary,
-                                          backgroundColor: AppColors.primary
-                                              .withOpacity(0.06),
-                                          padding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            side: BorderSide(
-                                              color: AppColors.primary
-                                                  .withOpacity(0.14),
-                                            ),
-                                          ),
-                                        ),
-                                        icon: const Icon(
-                                          Icons.visibility_outlined,
-                                          size: 18,
-                                        ),
-                                        label: Text(
-                                          'View',
-                                          style: AppTextStyles.bodySmall
-                                              .copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                  const Spacer(),
+                                  if (booking.flight.aircraft.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Text(
+                                        booking.flight.aircraft,
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: AppColors.textSecondary,
                                         ),
                                       ),
-                                    ],
+                                    ),
+                                  TextButton.icon(
+                                    onPressed: () =>
+                                        _viewBookingDetails(booking),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppColors.primary,
+                                      backgroundColor: AppColors.primary
+                                          .withOpacity(0.06),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                        side: BorderSide(
+                                          color: AppColors.primary
+                                              .withOpacity(0.14),
+                                        ),
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.visibility_outlined,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      'View',
+                                      style: AppTextStyles.bodySmall
+                                          .copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton.icon(
+                                    onPressed: _cancellingIds.contains(booking.id)
+                                        ? null
+                                        : () => _cancelBooking(booking),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppColors.error,
+                                      backgroundColor:
+                                          AppColors.error.withOpacity(0.08),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                        side: BorderSide(
+                                          color: AppColors.error
+                                              .withOpacity(0.2),
+                                        ),
+                                      ),
+                                    ),
+                                    icon: _cancellingIds.contains(booking.id)
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.error,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.cancel_outlined,
+                                            size: 18,
+                                          ),
+                                    label: Text(
+                                      _cancellingIds.contains(booking.id)
+                                          ? 'Cancelling...'
+                                          : 'Cancel',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -713,6 +745,133 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     } finally {
       if (mounted) {
         setState(() => _downloadingIds.remove(booking.id));
+      }
+    }
+  }
+
+  Future<void> _cancelBooking(Booking booking) async {
+    final now = DateTime.now();
+    final departure = booking.flight.departureTime;
+    final hoursToDeparture = departure.difference(now).inHours;
+
+    String refundPolicy;
+    String refundAmount;
+    if (booking.status.toLowerCase() == 'confirmed' && hoursToDeparture > 24) {
+      refundPolicy = 'Full refund';
+      refundAmount =
+          '${booking.currency} ${booking.totalPrice.toStringAsFixed(2)}';
+    } else if (booking.status.toLowerCase() == 'confirmed' &&
+        hoursToDeparture > 0) {
+      refundPolicy = 'Partial refund';
+      final refundValue = booking.totalPrice * 0.8;
+      refundAmount = '${booking.currency} ${refundValue.toStringAsFixed(2)}';
+    } else {
+      refundPolicy = 'Non-refundable';
+      refundAmount = '0.00';
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: AppColors.error),
+        title: Text(
+          'Cancel booking ${booking.pnr.isNotEmpty ? booking.pnr : booking.id.toString()}?',
+          style: AppTextStyles.h4,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This action cannot be undone.',
+              style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Refund policy',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    refundPolicy,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Estimated refund: $refundAmount',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep booking'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: const Text('Cancel booking'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    if (!mounted) return;
+    setState(() => _cancellingIds.add(booking.id));
+
+    try {
+      final repo = context.read<BookingRepository>();
+      await repo.cancelBooking(booking.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            refundPolicy == 'Non-refundable'
+                ? 'Booking cancelled. No refund applies.'
+                : 'Booking cancelled. Refund: $refundAmount',
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      context.read<BookingBloc>().add(GetUserBookingsRequested());
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cancellation failed: ${e.toString().replaceFirst('Exception: ', '')}',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _cancellingIds.remove(booking.id));
       }
     }
   }
