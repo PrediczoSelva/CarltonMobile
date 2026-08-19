@@ -339,7 +339,9 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            booking.flight.origin,
+                                            booking.flight.origin.isEmpty
+                                                ? '—'
+                                                : booking.flight.origin,
                                             style: AppTextStyles.bodyLarge
                                                 .copyWith(
                                               fontWeight: FontWeight.w700,
@@ -425,7 +427,9 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            booking.flight.destination,
+                                            booking.flight.destination.isEmpty
+                                                ? '—'
+                                                : booking.flight.destination,
                                             style: AppTextStyles.bodyLarge
                                                 .copyWith(
                                               fontWeight: FontWeight.w700,
