@@ -95,7 +95,7 @@ class Flight {
             json['departureAirport'],
           ) ??
           _s(route?['origin'], route?['originAirport'], route?['from'],
-              route?['departureAirport']) ??
+              route?['departureAirport'], route?['departure']) ??
           '',
       destination: _s(
             json['destination'],
@@ -103,9 +103,10 @@ class Flight {
             json['to'],
             json['arrivalAirport'],
             json['arrivalIata'],
+            json['arrival'],
           ) ??
           _s(route?['destination'], route?['destinationAirport'], route?['to'],
-              route?['arrivalAirport']) ??
+              route?['arrivalAirport'], route?['arrival']) ??
           '',
       departureTime: _dt(
               json['departureTime'],
