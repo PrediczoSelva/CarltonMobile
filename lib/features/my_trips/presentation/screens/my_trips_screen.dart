@@ -477,13 +477,56 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                                       ],
                                     ),
                                   ),
-                                  if (booking.flight.aircraft.isNotEmpty)
-                                    Text(
-                                      booking.flight.aircraft,
-                                      style: AppTextStyles.caption.copyWith(
-                                        color: AppColors.textSecondary,
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (booking.flight.aircraft.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets
+                                              .only(right: 12),
+                                          child: Text(
+                                            booking.flight.aircraft,
+                                            style: AppTextStyles.caption
+                                                .copyWith(
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ),
+                                      TextButton.icon(
+                                        onPressed: () =>
+                                            _viewBookingDetails(booking),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppColors.primary,
+                                          backgroundColor: AppColors.primary
+                                              .withOpacity(0.06),
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            side: BorderSide(
+                                              color: AppColors.primary
+                                                  .withOpacity(0.14),
+                                            ),
+                                          ),
+                                        ),
+                                        icon: const Icon(
+                                          Icons.visibility_outlined,
+                                          size: 18,
+                                        ),
+                                        label: Text(
+                                          'View',
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 14),
@@ -564,6 +607,15 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _viewBookingDetails(Booking booking) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _BookingDetailsSheet(booking: booking),
     );
   }
 
@@ -694,6 +746,186 @@ class _TripMetaChip extends StatelessWidget {
             style: AppTextStyles.caption.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookingDetailsSheet extends StatelessWidget {
+  const _BookingDetailsSheet({required this.booking});
+
+  final Booking booking;
+
+  @override
+  Widget build(BuildContext context) {
+    final flight = booking.flight;
+    final isConfirmed = booking.status.toLowerCase() == 'confirmed';
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Booking Details',
+                        style: AppTextStyles.h3,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'PNR ${booking.pnr}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isConfirmed
+                        ? AppColors.success.withOpacity(0.12)
+                        : AppColors.warning.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: isConfirmed
+                          ? AppColors.success.withOpacity(0.32)
+                          : AppColors.warning.withOpacity(0.45),
+                    ),
+                  ),
+                  child: Text(
+                    booking.status,
+                    style: AppTextStyles.badge.copyWith(
+                      color: isConfirmed ? AppColors.success : AppColors.textOnAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: AppColors.divider, height: 1),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _DetailRow(label: 'Flight', value: '${flight.airline} ${flight.flightCode}'),
+                _DetailRow(label: 'Route', value: '${flight.origin} → ${flight.destination}'),
+                _DetailRow(
+                  label: 'Departure',
+                  value: '${DateFormat('dd MMM yyyy').format(flight.departureTime)} at ${DateFormat('HH:mm').format(flight.departureTime)}',
+                ),
+                _DetailRow(
+                  label: 'Arrival',
+                  value: '${DateFormat('dd MMM yyyy').format(flight.arrivalTime)} at ${DateFormat('HH:mm').format(flight.arrivalTime)}',
+                ),
+                _DetailRow(label: 'Duration', value: flight.duration),
+                _DetailRow(label: 'Stops', value: flight.stopsText),
+                if (flight.aircraft.isNotEmpty)
+                  _DetailRow(label: 'Aircraft', value: flight.aircraft),
+                const SizedBox(height: 8),
+                const Divider(color: AppColors.divider, height: 1),
+                const SizedBox(height: 8),
+                _DetailRow(
+                  label: 'Travellers',
+                  value: '${booking.passengers.length}',
+                ),
+                if (booking.passengers.isNotEmpty)
+                  ...booking.passengers.map(
+                    (p) => Padding(
+                      padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
+                      child: Text(
+                        p.fullName,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (booking.contactEmail.isNotEmpty)
+                  _DetailRow(label: 'Email', value: booking.contactEmail),
+                if (booking.contactPhone.isNotEmpty)
+                  _DetailRow(label: 'Phone', value: booking.contactPhone),
+                const SizedBox(height: 8),
+                const Divider(color: AppColors.divider, height: 1),
+                const SizedBox(height: 8),
+                _DetailRow(
+                  label: 'Total Paid',
+                  value: '${booking.currency} ${booking.totalPrice.toStringAsFixed(2)}',
+                  valueStyle: AppTextStyles.price,
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.valueStyle,
+  });
+
+  final String label;
+  final String value;
+  final TextStyle? valueStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: valueStyle ?? AppTextStyles.bodyMedium,
             ),
           ),
         ],
