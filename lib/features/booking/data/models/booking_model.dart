@@ -49,8 +49,9 @@ class BookingModel extends Booking {
     return BookingModel(
       id: parseId(idValue),
       pnr: pnrValue as String? ?? '',
-      flight:
-          flightJson != null ? Flight.fromJson(flightJson) : _fallbackFlight(),
+      flight: flightJson != null
+          ? Flight.fromJson(flightJson)
+          : _flightFromBookingJson(json),
       passengers: (json['passengers'] as List<dynamic>?)
               ?.map((p) => PassengerModel.fromJson(p as Map<String, dynamic>))
               .toList() ??
@@ -66,19 +67,30 @@ class BookingModel extends Booking {
     );
   }
 
-  static Flight _fallbackFlight() => Flight(
-        id: 0,
-        airline: '',
-        flightCode: '',
-        origin: '',
-        destination: '',
-        departureTime: DateTime.now(),
-        arrivalTime: DateTime.now(),
-        duration: '',
-        stops: 0,
-        stopLocations: [],
-        price: 0,
-        currency: 'GBP',
-        aircraft: '',
-      );
+  static Flight _flightFromBookingJson(Map<String, dynamic> json) {
+    final parseId = int.tryParse('${json['flightId'] ?? 0}') ?? 0;
+    return Flight(
+      id: parseId,
+      airline: json['airline'] as String? ?? '',
+      flightCode: json['flightNumber'] as String? ?? '',
+      origin: json['departure'] as String? ?? '',
+      destination: json['destination'] as String? ?? '',
+      departureTime: DateTime.tryParse(json['departureTime'] as String? ?? '') ??
+          DateTime.now(),
+      arrivalTime:
+          DateTime.tryParse(json['arrivalTime'] as String? ?? '') ??
+          DateTime.now(),
+      duration: json['duration'] as String? ?? '',
+      stops: json['stops'] is int
+          ? json['stops'] as int
+          : int.tryParse('${json['stops']}') ?? 0,
+      stopLocations: (json['stopLocations'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      price: (json['totalPrice'] as num?)?.toDouble() ?? 0.0,
+      currency: json['currency'] as String? ?? 'GBP',
+      aircraft: json['aircraft'] as String? ?? '',
+    );
+  }
 }
