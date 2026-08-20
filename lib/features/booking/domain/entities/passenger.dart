@@ -1,4 +1,8 @@
 class Passenger {
+  static const int adultType = 0;
+  static const int childType = 1;
+  static const int infantType = 2;
+
   const Passenger({
     this.id,
     required this.firstName,
@@ -9,7 +13,10 @@ class Passenger {
     this.passportNumber,
     this.passportExpiry,
     this.country,
+    this.passengerType,
   });
+
+  final int? passengerType;
 
   final int? id;
   final String firstName;
@@ -31,6 +38,7 @@ class Passenger {
     String? passportNumber,
     DateTime? passportExpiry,
     String? country,
+    int? passengerType,
   }) {
     return Passenger(
       id: id ?? this.id,
@@ -42,6 +50,7 @@ class Passenger {
       passportNumber: passportNumber ?? this.passportNumber,
       passportExpiry: passportExpiry ?? this.passportExpiry,
       country: country ?? this.country,
+      passengerType: passengerType ?? this.passengerType,
     );
   }
 
@@ -60,6 +69,7 @@ class Passenger {
           ? DateTime.tryParse(json['passportExpiry'] as String)
           : null,
       country: json['country'] as String?,
+      passengerType: json['passengerType'] as int?,
     );
   }
 
@@ -73,6 +83,7 @@ class Passenger {
         if (passportNumber != null) 'passportNumber': passportNumber,
         if (passportExpiry != null) 'passportExpiry': passportExpiry!.toIso8601String(),
         if (country != null) 'country': country,
+        if (passengerType != null) 'passengerType': passengerType,
       };
 
   String get fullName => '$firstName $lastName';
