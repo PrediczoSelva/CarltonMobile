@@ -1,6 +1,7 @@
 import '../../domain/entities/booking.dart';
 import '../../domain/entities/passenger.dart';
 import '../../domain/repositories/booking_repository.dart';
+import '../../../../core/utils/country_code_mapper.dart';
 import '../models/atlas_verify_response.dart';
 import '../models/amadeus_verify_response.dart';
 import '../models/travelport_verify_response.dart';
@@ -12,6 +13,20 @@ class BookingRepositoryImpl implements BookingRepository {
   BookingRepositoryImpl(this._remoteDatasource);
 
   final BookingRemoteDatasource _remoteDatasource;
+
+  int _amadeusPassengerType(Passenger p) {
+    final type = p.passengerType ?? Passenger.adultType;
+    if (type == Passenger.infantType) return 2;
+    if (type == Passenger.childType) return 1;
+    return 0;
+  }
+
+  String _travelportPassengerType(Passenger p) {
+    final type = p.passengerType ?? Passenger.adultType;
+    if (type == Passenger.infantType) return 'INF';
+    if (type == Passenger.childType) return 'CHD';
+    return 'ADT';
+  }
 
   @override
   Future<Booking> createBooking({
@@ -115,10 +130,10 @@ class BookingRepositoryImpl implements BookingRepository {
           : '';
       return {
         'name': '$family/$given',
-        'passengerType': 0,
+        'passengerType': _amadeusPassengerType(p),
         'gender': 'M',
         'birthday': birthday,
-        if (p.country != null) 'nationality': p.country,
+        if (p.country != null) 'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
       };
     }).toList();
 
@@ -169,10 +184,10 @@ class BookingRepositoryImpl implements BookingRepository {
       return {
         'firstName': p.firstName,
         'lastName': p.lastName,
-        'passengerType': 0,
+        'passengerType': _amadeusPassengerType(p),
         'gender': 'M',
         'birthday': birthday,
-        if (p.country != null) 'nationality': p.country,
+        if (p.country != null) 'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
       };
     }).toList();
 
@@ -223,8 +238,8 @@ class BookingRepositoryImpl implements BookingRepository {
             ? '${p.dateOfBirth!.year}-${p.dateOfBirth!.month.toString().padLeft(2, '0')}-${p.dateOfBirth!.day.toString().padLeft(2, '0')}'
             : '',
         'passportNumber': p.passportNumber ?? '',
-        'nationality': p.country ?? 'GB',
-        'passengerType': 'ADT',
+        'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
+        'passengerType': _travelportPassengerType(p),
       };
     }).toList();
 
