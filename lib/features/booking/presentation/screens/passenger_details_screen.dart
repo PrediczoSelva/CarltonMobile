@@ -191,8 +191,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   }
 
   void _addNewTraveller() {
-    if (_selectedTravellerIds.length + 1 + _newTravellerForms.length >=
-        (_session.searchCriteria?.passengers ?? 9)) {
+    final selectedSavedTravellers = _selectedTravellerIds
+        .where((id) => id != _leadPassengerId)
+        .length;
+    final totalAfterAdd = 1 +
+        selectedSavedTravellers +
+        1 +
+        _newTravellerForms.length;
+
+    if (totalAfterAdd > (_session.searchCriteria?.passengers ?? 9)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
