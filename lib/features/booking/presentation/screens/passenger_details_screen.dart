@@ -133,6 +133,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   Future<void> _pickDate({
     required BuildContext context,
     required TextEditingController controller,
+    int? passengerType,
+    bool isExpiryDate = false,
   }) async {
     final initialDate = DateTime.tryParse(controller.text) ?? DateTime.now();
     final picked = await showDatePicker(
@@ -142,8 +144,49 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365 * 80)),
     );
     if (picked != null) {
-      controller.text =
+      final dateStr =
           '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      controller.text = dateStr;
+
+      if (isExpiryDate) {
+        if (picked.isBefore(DateTime.now())) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Expiry date must be a future date'),
+            ),
+          );
+        }
+      }
+
+      if (passengerType != null && !isExpiryDate) {
+        final travelDate = _session.searchCriteria?.departureDate ?? DateTime.now();
+        final age = travelDate.difference(picked).inDays ~/ 365;
+        if (passengerType == Passenger.infantType && age >= 2) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Infant must be under 2 years old on travel date (age: $age)',
+              ),
+            ),
+          );
+        } else if (passengerType == Passenger.childType && (age < 2 || age > 17)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Child must be between 2 and 17 years old on travel date (age: $age)',
+              ),
+            ),
+          );
+        } else if (passengerType == Passenger.adultType && age < 18) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Adult must be 18 years or older on travel date (age: $age)',
+              ),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -208,32 +251,58 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   const SizedBox(height: 16),
                   Text('Relationship', style: AppTextStyles.bodyLarge),
                   const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: controller.relationship.text.isEmpty
-                        ? null
-                        : controller.relationship.text,
-                    decoration: const InputDecoration(
-                      labelText: 'Select relationship',
-                    ),
-                    items: const [
-                      'Spouse',
-                      'Child',
-                      'Parent',
-                      'Sibling',
-                      'Friend',
-                      'Colleague',
-                    ]
-                        .map(
-                          (value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(value),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      controller.relationship.text = value ?? '';
-                    },
-                  ),
+                   DropdownButtonFormField<String>(
+                     value: controller.relationship.text.isEmpty
+                         ? null
+                         : controller.relationship.text,
+                     decoration: const InputDecoration(
+                       labelText: 'Select relationship',
+                     ),
+                     items: const [
+                       'Spouse',
+                       'Child',
+                       'Parent',
+                       'Sibling',
+                       'Friend',
+                       'Colleague',
+                     ]
+                         .map(
+                           (value) => DropdownMenuItem(
+                             value: value,
+                             child: Text(value),
+                           ),
+                         )
+                         .toList(),
+                     onChanged: (value) {
+                       controller.relationship.text = value ?? '';
+                     },
+                   ),
+                   const SizedBox(height: 16),
+                   Text('Passenger Type', style: AppTextStyles.bodyLarge),
+                   const SizedBox(height: 8),
+                   DropdownButtonFormField<String>(
+                     value: controller.passengerType.text.isEmpty
+                         ? null
+                         : controller.passengerType.text,
+                     decoration: const InputDecoration(
+                       labelText: 'Select type',
+                     ),
+                     items: const [
+                       'Adult',
+                       'Child',
+                       'Infant',
+                     ]
+                         .map(
+                           (value) => DropdownMenuItem(
+                             value: value,
+                             child: Text(value),
+                           ),
+                         )
+                         .toList(),
+                     onChanged: (value) {
+                       controller.passengerType.text = value ?? 'Adult';
+                     },
+                   ),
                   const SizedBox(height: 16),
                   Text('Personal Information', style: AppTextStyles.bodyLarge),
                   const SizedBox(height: 8),
@@ -247,18 +316,26 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                     decoration: const InputDecoration(labelText: 'Last name'),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: controller.dateOfBirth,
-                    readOnly: true,
-                    onTap: () => _pickDate(
-                      context: sheetContext,
-                      controller: controller.dateOfBirth,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Date of Birth',
-                      suffixIcon: Icon(Icons.calendar_today_outlined),
-                    ),
-                  ),
+                   TextField(
+                     controller: controller.dateOfBirth,
+                     readOnly: true,
+                     onTap: () {
+                       final type = switch (controller.passengerType.text) {
+                         'Child' => Passenger.childType,
+                         'Infant' => Passenger.infantType,
+                         _ => Passenger.adultType,
+                       };
+                       _pickDate(
+                         context: sheetContext,
+                         controller: controller.dateOfBirth,
+                         passengerType: type,
+                       );
+                     },
+                     decoration: const InputDecoration(
+                       labelText: 'Date of Birth',
+                       suffixIcon: Icon(Icons.calendar_today_outlined),
+                     ),
+                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: controller.nationality,
@@ -279,18 +356,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         const InputDecoration(labelText: 'Issue Number'),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: controller.passportExpiryDate,
-                    readOnly: true,
-                    onTap: () => _pickDate(
-                      context: sheetContext,
-                      controller: controller.passportExpiryDate,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Expiry Date',
-                      suffixIcon: Icon(Icons.calendar_today_outlined),
-                    ),
-                  ),
+                   TextField(
+                     controller: controller.passportExpiryDate,
+                     readOnly: true,
+                     onTap: () => _pickDate(
+                       context: sheetContext,
+                       controller: controller.passportExpiryDate,
+                       isExpiryDate: true,
+                     ),
+                     decoration: const InputDecoration(
+                       labelText: 'Expiry Date',
+                       suffixIcon: Icon(Icons.calendar_today_outlined),
+                     ),
+                   ),
                   const SizedBox(height: 16),
                   Text('Optional Details', style: AppTextStyles.bodyLarge),
                   const SizedBox(height: 8),
@@ -326,57 +404,143 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         child: const Text('Cancel'),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            final firstName = controller.firstName.text.trim();
-                            final lastName = controller.lastName.text.trim();
-                            if (firstName.isEmpty && lastName.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text('Please enter a traveller name'),
-                                ),
-                              );
-                              return;
-                            }
+                       Expanded(
+                         child: ElevatedButton(
+                           onPressed: () {
+                             final firstName = controller.firstName.text.trim();
+                             final lastName = controller.lastName.text.trim();
+                             if (firstName.isEmpty && lastName.isEmpty) {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 const SnackBar(
+                                   content:
+                                       Text('Please enter a traveller name'),
+                                 ),
+                               );
+                               return;
+                             }
 
-                            setState(() {
-                              _newTravellerForms.add(controller);
-                              _savedTravellers.add({
-                                'id': DateTime.now().millisecondsSinceEpoch,
-                                'title': controller.relationship.text
-                                        .trim()
-                                        .isNotEmpty
-                                    ? controller.relationship.text.trim()
-                                    : 'Add New Traveler',
-                                'firstName': firstName,
-                                'lastName': lastName,
-                                'dateOfBirth':
-                                    controller.dateOfBirth.text.trim(),
-                                'passportNumber':
-                                    controller.passportNumber.text.trim(),
-                                'issueNumber':
-                                    controller.issueNumber.text.trim(),
-                                'passportExpiryDate':
-                                    controller.passportExpiryDate.text.trim(),
-                                'nationality':
-                                    controller.nationality.text.trim(),
-                                'frequencyFlyerNo':
-                                    controller.frequencyFlyerNo.text.trim(),
-                                'knownTravellerNo':
-                                    controller.knownTravellerNo.text.trim(),
-                                'specialRequirement':
-                                    controller.specialRequirement.text.trim(),
-                                'passportCountry':
-                                    controller.nationality.text.trim(),
-                              });
-                              _selectedTravellerIds.add(
-                                _savedTravellers.last['id'] as int,
-                              );
-                            });
-                            Navigator.pop(sheetContext);
-                          },
+                             final dobText = controller.dateOfBirth.text.trim();
+                             final expiryText =
+                                 controller.passportExpiryDate.text.trim();
+                             final passportNumber =
+                                 controller.passportNumber.text.trim();
+                             final passengerTypeText =
+                                 controller.passengerType.text.trim();
+                             
+                             if (dobText.isEmpty) {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 const SnackBar(
+                                   content: Text('Please enter date of birth'),
+                                 ),
+                               );
+                               return;
+                             }
+
+                             final dob = DateTime.tryParse(dobText);
+                             if (dob == null || dob.isAfter(DateTime.now())) {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 const SnackBar(
+                                   content: Text('Please enter a valid date of birth'),
+                                 ),
+                               );
+                               return;
+                             }
+
+                             final travelDate =
+                                 _session.searchCriteria?.departureDate ??
+                                     DateTime.now();
+                             final age =
+                                 travelDate.difference(dob).inDays ~/ 365;
+                             final selectedType = switch (passengerTypeText) {
+                               'Child' => Passenger.childType,
+                               'Infant' => Passenger.infantType,
+                               _ => Passenger.adultType,
+                             };
+
+                             if (selectedType == Passenger.infantType &&
+                                 age >= 2) {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 SnackBar(
+                                   content: Text(
+                                     'Infant must be under 2 years old on travel date (current age: $age)',
+                                   ),
+                                 ),
+                               );
+                               return;
+                             }
+
+                             if (selectedType == Passenger.childType &&
+                                 (age < 2 || age > 17)) {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 SnackBar(
+                                   content: Text(
+                                     'Child must be between 2 and 17 years old on travel date (current age: $age)',
+                                   ),
+                                 ),
+                               );
+                               return;
+                             }
+
+                             if (selectedType == Passenger.adultType &&
+                                 age < 18) {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 SnackBar(
+                                   content: Text(
+                                     'Adult must be 18 years or older on travel date (current age: $age)',
+                                   ),
+                                 ),
+                               );
+                               return;
+                             }
+
+                             if (passportNumber.isNotEmpty &&
+                                 expiryText.isNotEmpty) {
+                               final expiry = DateTime.tryParse(expiryText);
+                               if (expiry == null || expiry.isBefore(DateTime.now())) {
+                                 ScaffoldMessenger.of(context).showSnackBar(
+                                   const SnackBar(
+                                     content: Text(
+                                         'Passport expiry date must be a future date'),
+                                   ),
+                                 );
+                                 return;
+                               }
+                             }
+
+                             setState(() {
+                               _newTravellerForms.add(controller);
+                               _savedTravellers.add({
+                                 'id': DateTime.now().millisecondsSinceEpoch,
+                                 'title': controller.relationship.text
+                                         .trim()
+                                         .isNotEmpty
+                                     ? controller.relationship.text.trim()
+                                     : 'Add New Traveler',
+                                 'passengerType': selectedType,
+                                 'firstName': firstName,
+                                 'lastName': lastName,
+                                 'dateOfBirth': dobText,
+                                 'passportNumber': passportNumber,
+                                 'issueNumber':
+                                     controller.issueNumber.text.trim(),
+                                 'passportExpiryDate': expiryText,
+                                 'nationality':
+                                     controller.nationality.text.trim(),
+                                 'frequencyFlyerNo':
+                                     controller.frequencyFlyerNo.text.trim(),
+                                 'knownTravellerNo':
+                                     controller.knownTravellerNo.text.trim(),
+                                 'specialRequirement':
+                                     controller.specialRequirement.text.trim(),
+                                 'passportCountry':
+                                     controller.nationality.text.trim(),
+                               });
+                               _selectedTravellerIds.add(
+                                 _savedTravellers.last['id'] as int,
+                               );
+                             });
+                             Navigator.pop(sheetContext);
+                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.textOnPrimary,
@@ -406,6 +570,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     });
   }
 
+  int _passengerTypeFromDob(DateTime? dob) {
+    if (dob == null) return Passenger.adultType;
+    final travelDate = _session.searchCriteria?.departureDate ?? DateTime.now();
+    final age = travelDate.difference(dob).inDays ~/ 365;
+    if (age < 2) return Passenger.infantType;
+    if (age <= 17) return Passenger.childType;
+    return Passenger.adultType;
+  }
+
   Passenger _buildLeadPassenger() {
     final p = _personalDetails;
     if (p == null) {
@@ -420,15 +593,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     }
     final fn = p['firstName'] as String? ?? '';
     final ln = p['lastName'] as String? ?? '';
+    final dob = _parseDate(p['dateOfBirth']);
     return Passenger(
       firstName: fn,
       lastName: ln,
       email: p['email'] as String?,
       phone: p['phone'] as String?,
-      dateOfBirth: _parseDate(p['dateOfBirth']),
+      dateOfBirth: dob,
       passportNumber: p['passportNumber'] as String?,
       passportExpiry: _parseDate(p['passportExpiryDate']),
       country: p['country'] as String? ?? p['nationality'] as String?,
+      passengerType: _passengerTypeFromDob(dob),
     );
   }
 
@@ -437,13 +612,18 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     final lastName = t['lastName'] as String? ?? '';
     final fn = firstName;
     final ln = lastName;
+    final dob = _parseDate(t['dateOfBirth']);
+    final passengerType = t['passengerType'] != null
+        ? t['passengerType'] as int
+        : _passengerTypeFromDob(dob);
     return Passenger(
       firstName: fn,
       lastName: ln,
-      dateOfBirth: _parseDate(t['dateOfBirth']),
+      dateOfBirth: dob,
       passportNumber: t['passportNumber'] as String?,
       passportExpiry: _parseDate(t['passportExpiryDate']),
       country: t['nationality'] as String? ?? t['passportCountry'] as String?,
+      passengerType: passengerType,
     );
   }
 
@@ -472,11 +652,26 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       final fn = form.firstName.text.trim();
       final ln = form.lastName.text.trim();
       if (fn.isEmpty && ln.isEmpty) continue;
+      final dob = _parseDate(form.dateOfBirth.text.trim());
+      final passengerType = switch (form.passengerType.text.trim()) {
+        'Child' => Passenger.childType,
+        'Infant' => Passenger.infantType,
+        _ => _passengerTypeFromDob(dob),
+      };
       passengers.add(Passenger(
         firstName: fn,
         lastName: ln,
         email: form.email.text.trim().isEmpty ? null : form.email.text.trim(),
         phone: form.phone.text.trim().isEmpty ? null : form.phone.text.trim(),
+        dateOfBirth: dob,
+        passportNumber: form.passportNumber.text.trim().isEmpty
+            ? null
+            : form.passportNumber.text.trim(),
+        passportExpiry: _parseDate(form.passportExpiryDate.text.trim()),
+        country: form.nationality.text.trim().isEmpty
+            ? null
+            : form.nationality.text.trim(),
+        passengerType: passengerType,
       ));
     }
 
@@ -951,6 +1146,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
 
 class _NewTravellerController {
   final relationship = TextEditingController();
+  final passengerType = TextEditingController(text: 'Adult');
   final firstName = TextEditingController();
   final lastName = TextEditingController();
   final dateOfBirth = TextEditingController();
@@ -966,6 +1162,7 @@ class _NewTravellerController {
 
   void dispose() {
     relationship.dispose();
+    passengerType.dispose();
     firstName.dispose();
     lastName.dispose();
     dateOfBirth.dispose();
