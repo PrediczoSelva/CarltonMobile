@@ -1079,7 +1079,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       }
     }
 
-    if (selectedWidgets.length == 1) {
+    if (selectedWidgets.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
