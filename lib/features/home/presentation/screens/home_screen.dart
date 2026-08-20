@@ -404,63 +404,9 @@ class _HomeScreenState extends State<HomeScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final hotel = _hotelSuggestions[index];
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(Icons.hotel, color: AppColors.primary),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(hotel.name, style: AppTextStyles.bodyLarge),
-                            const SizedBox(height: 2),
-                            Text(hotel.location,
-                                style: AppTextStyles.bodySmall),
-                            Row(
-                              children: [
-                                const Icon(Icons.star,
-                                    size: 16, color: AppColors.accent),
-                                const SizedBox(width: 4),
-                                Text(hotel.rating.toString(),
-                                    style: AppTextStyles.bodySmall),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'GBP ${hotel.price.toStringAsFixed(0)}',
-                            style: AppTextStyles.price,
-                          ),
-                          const SizedBox(height: 4),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(64, 32),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                            ),
-                            child: const Text('Book'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              return _SuggestedHotelCard(
+                hotel: hotel,
+                onBook: () {},
               );
             },
           ),
@@ -608,6 +554,157 @@ class _HomeScreenState extends State<HomeScreen> {
     session.outboundFlights = [flight];
     session.currency = flight.currency;
     context.push('/booking/passenger-details');
+  }
+}
+
+class _SuggestedHotelCard extends StatefulWidget {
+  const _SuggestedHotelCard({
+    required this.hotel,
+    required this.onBook,
+  });
+
+  final _HotelSuggestion hotel;
+  final VoidCallback onBook;
+
+  @override
+  State<_SuggestedHotelCard> createState() => _SuggestedHotelCardState();
+}
+
+class _SuggestedHotelCardState extends State<_SuggestedHotelCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hotel = widget.hotel;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _isHovered ? -4 : 0, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _isHovered
+                ? AppColors.accent.withOpacity(0.45)
+                : AppColors.border,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(_isHovered ? 0.17 : 0.09),
+              blurRadius: _isHovered ? 28 : 16,
+              offset: Offset(0, _isHovered ? 12 : 7),
+            ),
+          ],
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              AppColors.surface,
+            ],
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: widget.onBook,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          hotel.name,
+                          style: AppTextStyles.h4.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star,
+                                size: 14, color: AppColors.accent),
+                            const SizedBox(width: 4),
+                            Text(
+                              hotel.rating.toStringAsFixed(1),
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined,
+                          size: 16, color: AppColors.textSecondary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          hotel.location,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Text(
+                        'GBP ${hotel.price.toStringAsFixed(0)}',
+                        style: AppTextStyles.price.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      SizedBox(
+                        width: 110,
+                        child: ElevatedButton(
+                          onPressed: widget.onBook,
+                          style: ElevatedButton.styleFrom(
+                            elevation: _isHovered ? 1 : 0,
+                          ),
+                          child: const Text('Book'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
