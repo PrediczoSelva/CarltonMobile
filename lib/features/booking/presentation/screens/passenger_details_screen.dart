@@ -239,13 +239,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           style: AppTextStyles.h4,
                         ),
                       ),
-                      IconButton(
-                        onPressed: () {
-                          controller.dispose();
-                          Navigator.pop(sheetContext);
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
+                       IconButton(
+                         onPressed: () {
+                           Navigator.pop(sheetContext);
+                         },
+                         icon: const Icon(Icons.close),
+                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -403,13 +402,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      TextButton(
-                        onPressed: () {
-                          controller.dispose();
-                          Navigator.pop(sheetContext);
-                        },
-                        child: const Text('Cancel'),
-                      ),
+                       TextButton(
+                         onPressed: () {
+                           Navigator.pop(sheetContext);
+                         },
+                         child: const Text('Cancel'),
+                       ),
                       const SizedBox(width: 12),
                        Expanded(
                          child: ElevatedButton(
