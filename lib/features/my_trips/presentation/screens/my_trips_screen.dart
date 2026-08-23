@@ -25,18 +25,26 @@ class MyTripsScreen extends StatefulWidget {
   State<MyTripsScreen> createState() => _MyTripsScreenState();
 }
 
-class _MyTripsScreenState extends State<MyTripsScreen> {
+class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProviderStateMixin {
   final Set<int> _downloadingIds = {};
   final Set<int> _cancellingIds = {};
   int? _selectedBookingId;
   int? _hoveredBookingId;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BookingBloc>().add(GetUserBookingsRequested());
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -55,10 +63,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
             );
           }
           if (state is BookingsListLoaded) {
-            if (state.bookings.isEmpty) {
-              return _buildEmpty();
-            }
-            return _buildList(state.bookings);
+            return _buildTabbedView(state.bookings);
           }
           if (state is BookingCancelled) {
             context.read<BookingBloc>().add(GetUserBookingsRequested());
@@ -133,512 +138,582 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     );
   }
 
-  Widget _buildList(List<Booking> bookings) {
+  Widget _buildTabbedView(List<Booking> allBookings) {
+    final now = DateTime.now();
+    final upcoming = allBookings.where((b) {
+      final isCancelled = b.status.toLowerCase().contains('cancel');
+      final isPast = b.flight.departureTime.isBefore(now);
+      return !isCancelled && !isPast;
+    }).toList();
+    final finished = allBookings.where((b) {
+      final isCancelled = b.status.toLowerCase().contains('cancel');
+      final isPast = b.flight.departureTime.isBefore(now);
+      return !isCancelled && isPast;
+    }).toList();
+    final cancelled = allBookings.where((b) {
+      return b.status.toLowerCase().contains('cancel');
+    }).toList();
+
+    return Column(
+      children: [
+        _buildPortfolioHeader(allBookings),
+        const SizedBox(height: 4),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: TabBar(
+            controller: _tabController,
+            indicator: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelColor: AppColors.textOnPrimary,
+            unselectedLabelColor: AppColors.textSecondary,
+            labelStyle: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+            tabs: const [
+              Tab(text: 'Upcoming'),
+              Tab(text: 'Finished'),
+              Tab(text: 'Cancelled'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildBookingList(upcoming, showCancel: true),
+              _buildBookingList(finished, showCancel: false),
+              _buildBookingList(cancelled, showCancel: false),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPortfolioHeader(List<Booking> bookings) {
     final confirmedCount = bookings
         .where((booking) => booking.status.toLowerCase() == 'confirmed')
         .length;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primary.withOpacity(0.03),
-            AppColors.surface,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.primaryLight],
+                ),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.workspace_premium_rounded,
+                color: AppColors.textOnPrimary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Travel Portfolio',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      letterSpacing: 0.35,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '$confirmedCount confirmed of ${bookings.length} booking${bookings.length == 1 ? '' : 's'}',
+                    style: AppTextStyles.h4.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.06),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryLight],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.workspace_premium_rounded,
-                      color: AppColors.textOnPrimary,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Travel Portfolio',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            letterSpacing: 0.35,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '$confirmedCount confirmed of ${bookings.length} booking${bookings.length == 1 ? '' : 's'}',
-                          style: AppTextStyles.h4.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    );
+  }
+
+  Widget _buildBookingList(List<Booking> bookings, {required bool showCancel}) {
+    if (bookings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.airplane_ticket_outlined,
+              size: 56,
+              color: AppColors.textSecondary.withOpacity(0.6),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No trips here yet',
+              style: AppTextStyles.h4.copyWith(
+                color: AppColors.textSecondary,
               ),
             ),
-          ),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-              itemCount: bookings.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
-              itemBuilder: (context, index) {
-                final booking = bookings[index];
-                final isDownloading = _downloadingIds.contains(booking.id);
-                final isSelected = _selectedBookingId == booking.id;
-                final isHovered = _hoveredBookingId == booking.id;
+            const SizedBox(height: 8),
+            Text(
+              'Bookings will appear in this section when available',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
 
-                return MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  onEnter: (_) =>
-                      setState(() => _hoveredBookingId = booking.id),
-                  onExit: (_) => setState(() => _hoveredBookingId = null),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOutCubic,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [AppColors.background, AppColors.surface],
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+      itemCount: bookings.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      itemBuilder: (context, index) {
+        final booking = bookings[index];
+        final isDownloading = _downloadingIds.contains(booking.id);
+        final isSelected = _selectedBookingId == booking.id;
+        final isHovered = _hoveredBookingId == booking.id;
+
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hoveredBookingId = booking.id),
+          onExit: (_) => setState(() => _hoveredBookingId = null),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppColors.background, AppColors.surface],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.accentDark
+                    : (isHovered
+                        ? AppColors.primary.withOpacity(0.35)
+                        : AppColors.border),
+                width: isSelected ? 1.7 : 1.15,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isSelected
+                      ? AppColors.primary.withOpacity(0.12)
+                      : AppColors.primary.withOpacity(0.06),
+                  blurRadius: isSelected ? 20 : 14,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(24),
+              child: InkWell(
+                onTap: () =>
+                    setState(() => _selectedBookingId = booking.id),
+                borderRadius: BorderRadius.circular(24),
+                splashColor: AppColors.accent.withOpacity(0.14),
+                highlightColor: AppColors.primary.withOpacity(0.04),
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primaryLight,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.flight_rounded,
+                              size: 20,
+                              color: AppColors.textOnPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  booking.flight.airline.isNotEmpty
+                                      ? booking.flight.airline
+                                      : 'Flight booking',
+                                  style: AppTextStyles.h4.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  booking.flight.flightCode.isNotEmpty
+                                      ? booking.flight.flightCode
+                                      : 'Trip reference',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textSecondary,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _buildStatusChip(booking.status),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.accentDark
-                            : (isHovered
-                                ? AppColors.primary.withOpacity(0.35)
-                                : AppColors.border),
-                        width: isSelected ? 1.7 : 1.15,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isSelected
-                              ? AppColors.primary.withOpacity(0.12)
-                              : AppColors.primary.withOpacity(0.06),
-                          blurRadius: isSelected ? 20 : 14,
-                          offset: const Offset(0, 8),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: AppColors.divider),
                         ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(24),
-                      child: InkWell(
-                        onTap: () =>
-                            setState(() => _selectedBookingId = booking.id),
-                        borderRadius: BorderRadius.circular(24),
-                        splashColor: AppColors.accent.withOpacity(0.14),
-                        highlightColor: AppColors.primary.withOpacity(0.04),
-                        child: Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          AppColors.primary,
-                                          AppColors.primaryLight,
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: const Icon(
-                                      Icons.flight_rounded,
-                                      size: 20,
-                                      color: AppColors.textOnPrimary,
+                                  Text(
+                                    'Departure',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          booking.flight.airline.isNotEmpty
-                                              ? booking.flight.airline
-                                              : 'Flight booking',
-                                          style: AppTextStyles.h4.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          booking.flight.flightCode.isNotEmpty
-                                              ? booking.flight.flightCode
-                                              : 'Trip reference',
-                                          style: AppTextStyles.caption.copyWith(
-                                            color: AppColors.textSecondary,
-                                            letterSpacing: 0.4,
-                                          ),
-                                        ),
-                                      ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    booking.flight.origin.isEmpty
+                                        ? '—'
+                                        : booking.flight.origin,
+                                    style: AppTextStyles.bodyLarge
+                                        .copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
                                     ),
                                   ),
-                                  _buildStatusChip(booking.status),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceVariant,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(color: AppColors.divider),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Departure',
-                                            style: AppTextStyles.caption.copyWith(
-                                              color: AppColors.textSecondary,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            booking.flight.origin.isEmpty
-                                                ? '—'
-                                                : booking.flight.origin,
-                                            style: AppTextStyles.bodyLarge
-                                                .copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.primary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Text(
-                                            DateFormat('dd MMM').format(
-                                                booking.flight.departureTime),
-                                            style: AppTextStyles.bodySmall,
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            DateFormat('HH:mm').format(
-                                                booking.flight.departureTime),
-                                            style: AppTextStyles.h4.copyWith(
-                                              color: AppColors.textPrimary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10),
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            booking.flight.duration.isNotEmpty
-                                                ? booking.flight.duration
-                                                : 'Flight time',
-                                            style: AppTextStyles.bodySmall
-                                                .copyWith(
-                                              color: AppColors.textSecondary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Container(
-                                                width: 20,
-                                                height: 1,
-                                                color: AppColors.border,
-                                              ),
-                                              const Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                    horizontal: 7),
-                                                child: Icon(
-                                                  Icons.flight_takeoff_rounded,
-                                                  size: 16,
-                                                  color: AppColors.primary,
-                                                ),
-                                              ),
-                                              Container(
-                                                width: 20,
-                                                height: 1,
-                                                color: AppColors.border,
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            booking.flight.stopsText,
-                                            style: AppTextStyles.caption,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            'Destination',
-                                            style: AppTextStyles.caption.copyWith(
-                                              color: AppColors.textSecondary,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            booking.flight.destination.isEmpty
-                                                ? '—'
-                                                : booking.flight.destination,
-                                            style: AppTextStyles.bodyLarge
-                                                .copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.primary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Text(
-                                            DateFormat('dd MMM').format(
-                                                booking.flight.arrivalTime),
-                                            style: AppTextStyles.bodySmall,
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            DateFormat('HH:mm').format(
-                                                booking.flight.arrivalTime),
-                                            style: AppTextStyles.h4.copyWith(
-                                              color: AppColors.textPrimary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              Row(
-                                children: [
-                                  _TripMetaChip(
-                                    icon: Icons
-                                        .confirmation_number_outlined,
-                                    label: 'PNR ${booking.pnr}',
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    DateFormat('dd MMM').format(
+                                        booking.flight.departureTime),
+                                    style: AppTextStyles.bodySmall,
                                   ),
-                                  const Spacer(),
-                                  if (booking.flight.aircraft.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 12),
-                                      child: Text(
-                                        booking.flight.aircraft,
-                                        style: AppTextStyles.caption.copyWith(
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ),
-                                  TextButton.icon(
-                                    onPressed: () =>
-                                        _viewBookingDetails(booking),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: AppColors.primary,
-                                      backgroundColor: AppColors.primary
-                                          .withOpacity(0.06),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10),
-                                        side: BorderSide(
-                                          color: AppColors.primary
-                                              .withOpacity(0.14),
-                                        ),
-                                      ),
-                                    ),
-                                    icon: const Icon(
-                                      Icons.visibility_outlined,
-                                      size: 18,
-                                    ),
-                                    label: Text(
-                                      'View',
-                                      style: AppTextStyles.bodySmall
-                                          .copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  TextButton.icon(
-                                    onPressed: _cancellingIds.contains(booking.id)
-                                        ? null
-                                        : () => _cancelBooking(booking),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: AppColors.error,
-                                      backgroundColor:
-                                          AppColors.error.withOpacity(0.08),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10),
-                                        side: BorderSide(
-                                          color: AppColors.error
-                                              .withOpacity(0.2),
-                                        ),
-                                      ),
-                                    ),
-                                    icon: _cancellingIds.contains(booking.id)
-                                        ? const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: AppColors.error,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.cancel_outlined,
-                                            size: 18,
-                                          ),
-                                    label: Text(
-                                      _cancellingIds.contains(booking.id)
-                                          ? 'Cancelling...'
-                                          : 'Cancel',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    DateFormat('HH:mm').format(
+                                        booking.flight.departureTime),
+                                    style: AppTextStyles.h4.copyWith(
+                                      color: AppColors.textPrimary,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 14),
-                              const Divider(
-                                  color: AppColors.divider, height: 1),
-                              const SizedBox(height: 14),
-                              Row(
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10),
+                              child: Column(
                                 children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                  Text(
+                                    booking.flight.duration.isNotEmpty
+                                        ? booking.flight.duration
+                                        : 'Flight time',
+                                    style: AppTextStyles.bodySmall
+                                        .copyWith(
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
                                     children: [
-                                      Text(
-                                        'Total trip',
-                                        style: AppTextStyles.caption.copyWith(
-                                          fontWeight: FontWeight.w600,
+                                      Container(
+                                        width: 20,
+                                        height: 1,
+                                        color: AppColors.border,
+                                      ),
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 7),
+                                        child: Icon(
+                                          Icons.flight_takeoff_rounded,
+                                          size: 16,
+                                          color: AppColors.primary,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${booking.currency} ${booking.totalPrice.toStringAsFixed(0)}',
-                                        style: AppTextStyles.price,
+                                      Container(
+                                        width: 20,
+                                        height: 1,
+                                        color: AppColors.border,
                                       ),
                                     ],
                                   ),
-                                  const Spacer(),
-                                  TextButton.icon(
-                                    onPressed: isDownloading
-                                        ? null
-                                        : () => _downloadConfirmation(booking),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: AppColors.primary,
-                                      backgroundColor:
-                                          AppColors.primary.withOpacity(0.06),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 10,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        side: BorderSide(
-                                          color: AppColors.primary
-                                              .withOpacity(0.14),
-                                        ),
-                                      ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    booking.flight.stopsText,
+                                    style: AppTextStyles.caption,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Destination',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
                                     ),
-                                    icon: isDownloading
-                                        ? const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: AppColors.primary,
-                                            ),
-                                          )
-                                        : const Icon(Icons.download_rounded,
-                                            size: 18),
-                                    label: Text(
-                                      isDownloading
-                                          ? 'Downloading...'
-                                          : 'E-ticket',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    booking.flight.destination.isEmpty
+                                        ? '—'
+                                        : booking.flight.destination,
+                                    style: AppTextStyles.bodyLarge
+                                        .copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    DateFormat('dd MMM').format(
+                                        booking.flight.arrivalTime),
+                                    style: AppTextStyles.bodySmall,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    DateFormat('HH:mm').format(
+                                        booking.flight.arrivalTime),
+                                    style: AppTextStyles.h4.copyWith(
+                                      color: AppColors.textPrimary,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          _TripMetaChip(
+                            icon: Icons
+                                .confirmation_number_outlined,
+                            label: 'PNR ${booking.pnr}',
+                          ),
+                          const Spacer(),
+                          if (booking.flight.aircraft.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Text(
+                                booking.flight.aircraft,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          TextButton.icon(
+                            onPressed: () =>
+                                _viewBookingDetails(booking),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              backgroundColor: AppColors.primary
+                                  .withOpacity(0.06),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(10),
+                                side: BorderSide(
+                                  color: AppColors.primary
+                                      .withOpacity(0.14),
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.visibility_outlined,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'View',
+                              style: AppTextStyles.bodySmall
+                                  .copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (showCancel) ...[
+                            const SizedBox(width: 8),
+                            TextButton.icon(
+                              onPressed: _cancellingIds.contains(booking.id)
+                                  ? null
+                                  : () => _cancelBooking(booking),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.error,
+                                backgroundColor:
+                                    AppColors.error.withOpacity(0.08),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(10),
+                                  side: BorderSide(
+                                    color: AppColors.error
+                                        .withOpacity(0.2),
+                                  ),
+                                ),
+                              ),
+                              icon: _cancellingIds.contains(booking.id)
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.error,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.cancel_outlined,
+                                      size: 18,
+                                    ),
+                              label: Text(
+                                _cancellingIds.contains(booking.id)
+                                    ? 'Cancelling...'
+                                    : 'Cancel',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      const Divider(
+                          color: AppColors.divider, height: 1),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Total trip',
+                                style: AppTextStyles.caption.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${booking.currency} ${booking.totalPrice.toStringAsFixed(0)}',
+                                style: AppTextStyles.price,
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: isDownloading
+                                ? null
+                                : () => _downloadConfirmation(booking),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              backgroundColor:
+                                  AppColors.primary.withOpacity(0.06),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: AppColors.primary
+                                      .withOpacity(0.14),
+                                ),
+                              ),
+                            ),
+                            icon: isDownloading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  )
+                                : const Icon(Icons.download_rounded,
+                                    size: 18),
+                            label: Text(
+                              isDownloading
+                                  ? 'Downloading...'
+                                  : 'E-ticket',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -652,34 +727,52 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
   }
 
   Widget _buildStatusChip(String status) {
-    final isConfirmed = status.toLowerCase() == 'confirmed';
+    final lower = status.toLowerCase();
+    final isCancelled = lower.contains('cancel');
+    final isConfirmed = lower == 'confirmed';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isConfirmed
-            ? AppColors.success.withOpacity(0.12)
-            : AppColors.warning.withOpacity(0.2),
+        color: isCancelled
+            ? AppColors.error.withOpacity(0.12)
+            : isConfirmed
+                ? AppColors.success.withOpacity(0.12)
+                : AppColors.warning.withOpacity(0.2),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: isConfirmed
-              ? AppColors.success.withOpacity(0.32)
-              : AppColors.warning.withOpacity(0.45),
+          color: isCancelled
+              ? AppColors.error.withOpacity(0.32)
+              : isConfirmed
+                  ? AppColors.success.withOpacity(0.32)
+                  : AppColors.warning.withOpacity(0.45),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isConfirmed ? Icons.check_circle_rounded : Icons.schedule_rounded,
+            isCancelled
+                ? Icons.cancel_rounded
+                : isConfirmed
+                    ? Icons.check_circle_rounded
+                    : Icons.schedule_rounded,
             size: 12,
-            color: isConfirmed ? AppColors.success : AppColors.textOnAccent,
+            color: isCancelled
+                ? AppColors.error
+                : isConfirmed
+                    ? AppColors.success
+                    : AppColors.textOnAccent,
           ),
           const SizedBox(width: 5),
           Text(
             status,
             style: AppTextStyles.badge.copyWith(
-              color: isConfirmed ? AppColors.success : AppColors.textOnAccent,
+              color: isCancelled
+                  ? AppColors.error
+                  : isConfirmed
+                      ? AppColors.success
+                      : AppColors.textOnAccent,
             ),
           ),
         ],
@@ -921,7 +1014,9 @@ class _BookingDetailsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final flight = booking.flight;
-    final isConfirmed = booking.status.toLowerCase() == 'confirmed';
+    final lower = booking.status.toLowerCase();
+    final isCancelled = lower.contains('cancel');
+    final isConfirmed = lower == 'confirmed';
 
     return Container(
       constraints: BoxConstraints(
@@ -970,20 +1065,28 @@ class _BookingDetailsSheet extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isConfirmed
-                        ? AppColors.success.withOpacity(0.12)
-                        : AppColors.warning.withOpacity(0.2),
+                    color: isCancelled
+                        ? AppColors.error.withOpacity(0.12)
+                        : isConfirmed
+                            ? AppColors.success.withOpacity(0.12)
+                            : AppColors.warning.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: isConfirmed
-                          ? AppColors.success.withOpacity(0.32)
-                          : AppColors.warning.withOpacity(0.45),
+                      color: isCancelled
+                          ? AppColors.error.withOpacity(0.32)
+                          : isConfirmed
+                              ? AppColors.success.withOpacity(0.32)
+                              : AppColors.warning.withOpacity(0.45),
                     ),
                   ),
                   child: Text(
                     booking.status,
                     style: AppTextStyles.badge.copyWith(
-                      color: isConfirmed ? AppColors.success : AppColors.textOnAccent,
+                      color: isCancelled
+                          ? AppColors.error
+                          : isConfirmed
+                              ? AppColors.success
+                              : AppColors.textOnAccent,
                     ),
                   ),
                 ),
