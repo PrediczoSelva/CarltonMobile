@@ -35,4 +35,14 @@ class WalletRepositoryImpl implements WalletRepository {
   Future<void> confirmTopUp({required String paymentIntentId}) {
     return _remoteDatasource.confirmTopUp(paymentIntentId: paymentIntentId);
   }
+
+  @override
+  Future<Map<String, dynamic>> getRedemptionConfig() {
+    return _remoteDatasource.getRedemptionConfig();
+  }
+
+  @override
+  Future<void> redeemPoints({required int pointsToRedeem}) {
+    return _remoteDatasource.redeemPoints(pointsToRedeem: pointsToRedeem);
+  }
 }
