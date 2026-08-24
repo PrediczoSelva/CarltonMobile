@@ -23,6 +23,11 @@ import '../../features/payment/data/datasources/payment_remote_datasource.dart';
 import '../../features/payment/data/datasources/payment_remote_datasource_impl.dart';
 import '../../features/payment/data/repositories/payment_repository_impl.dart';
 import '../../features/payment/domain/repositories/payment_repository.dart';
+import '../../features/wallet/data/datasources/wallet_remote_datasource.dart';
+import '../../features/wallet/data/datasources/wallet_remote_datasource_impl.dart';
+import '../../features/wallet/data/repositories/wallet_repository_impl.dart';
+import '../../features/wallet/domain/repositories/wallet_repository.dart';
+import '../../features/wallet/presentation/bloc/wallet_bloc.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -82,5 +87,16 @@ Future<void> setupDependencyInjection() async {
   );
   getIt.registerLazySingleton<PaymentRepository>(
     () => PaymentRepositoryImpl(getIt<PaymentRemoteDatasource>()),
+  );
+
+  // Wallet
+  getIt.registerLazySingleton<WalletRemoteDatasource>(
+    () => WalletRemoteDatasourceImpl(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<WalletRepository>(
+    () => WalletRepositoryImpl(getIt<WalletRemoteDatasource>()),
+  );
+  getIt.registerFactory<WalletBloc>(
+    () => WalletBloc(getIt<WalletRepository>()),
   );
 }
