@@ -8,6 +8,7 @@ import '../../../../core/di/injection.dart';
 import '../bloc/wallet_bloc.dart';
 import '../bloc/wallet_event.dart';
 import '../bloc/wallet_state.dart';
+import 'top_up_screen.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -147,7 +148,7 @@ class _BalanceCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () => _showTopUpModal(context),
               icon: const Icon(Icons.add),
               label: const Text('Top Up Wallet'),
               style: ElevatedButton.styleFrom(
@@ -161,6 +162,15 @@ class _BalanceCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showTopUpModal(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TopUpScreen(currencyCode: balance.currencyCode),
+        fullscreenDialog: true,
       ),
     );
   }
