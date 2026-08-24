@@ -17,4 +17,22 @@ class WalletRepositoryImpl implements WalletRepository {
   Future<List<WalletTransaction>> getTransactions() {
     return _remoteDatasource.getTransactions();
   }
+
+  @override
+  Future<String> createTopUpPaymentIntent({
+    required double amount,
+    required String currency,
+    int? savedCardId,
+  }) {
+    return _remoteDatasource.createTopUpPaymentIntent(
+      amount: amount,
+      currency: currency,
+      savedCardId: savedCardId,
+    );
+  }
+
+  @override
+  Future<void> confirmTopUp({required String paymentIntentId}) {
+    return _remoteDatasource.confirmTopUp(paymentIntentId: paymentIntentId);
+  }
 }
