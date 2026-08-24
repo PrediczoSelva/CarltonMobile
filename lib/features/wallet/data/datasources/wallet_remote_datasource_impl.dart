@@ -43,6 +43,41 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
     }
   }
 
+  @override
+  Future<String> createTopUpPaymentIntent({
+    required double amount,
+    required String currency,
+    int? savedCardId,
+  }) async {
+    try {
+      final data = <String, dynamic>{
+        'amount': amount,
+        'currency': currency,
+        if (savedCardId != null) 'savedPaymentMethodId': savedCardId,
+      };
+      final response = await _apiClient.post<dynamic>(
+        '/wallet/topup/payment-intent',
+        data: data,
+      );
+      final responseData = response.data as Map<String, dynamic>;
+      return responseData['clientSecret'] as String;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<void> confirmTopUp({required String paymentIntentId}) async {
+    try {
+      await _apiClient.post<dynamic>(
+        '/wallet/topup/confirm',
+        data: {'stripePaymentIntentId': paymentIntentId},
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   Exception _handleDioError(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
