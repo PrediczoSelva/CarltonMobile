@@ -9,6 +9,7 @@ import '../bloc/wallet_bloc.dart';
 import '../bloc/wallet_event.dart';
 import '../bloc/wallet_state.dart';
 import 'top_up_screen.dart';
+import 'redeem_screen.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -277,7 +278,7 @@ class _LoyaltyCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () => _navigateToRedeemScreen(context),
               icon: const Icon(Icons.redeem),
               label: const Text('Redeem Points'),
               style: ElevatedButton.styleFrom(
@@ -291,6 +292,18 @@ class _LoyaltyCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _navigateToRedeemScreen(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => RedeemScreen(
+          availablePoints: balance.loyaltyPoints,
+          currencyCode: balance.currencyCode,
+        ),
+        fullscreenDialog: true,
       ),
     );
   }
