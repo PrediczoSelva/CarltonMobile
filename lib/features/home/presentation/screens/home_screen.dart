@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
   late final FlightRepository _flightRepository;
   late final ScrollController _trendingScrollController;
+  late final ScrollController _promotionalScrollController;
   List<Flight> _suggestedFlights = [];
   bool _loadingSuggestions = true;
   String? _suggestionsError;
@@ -115,17 +116,62 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  static const _promotionalUpdates = [
+    _PromotionalUpdate(
+      title: 'Summer Sale',
+      subtitle: '20% OFF on all international flights',
+      discount: '20% OFF',
+      imageUrl:
+          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
+      validUntil: 'Valid until Aug 31',
+    ),
+    _PromotionalUpdate(
+      title: 'Early Bird Discount',
+      subtitle: 'Save up to £100 on advance bookings',
+      discount: 'UPTO £100',
+      imageUrl:
+          'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=900&q=80',
+      validUntil: 'Valid until Sep 15',
+    ),
+    _PromotionalUpdate(
+      title: 'Family Package',
+      subtitle: '15% OFF on group bookings of 4+',
+      discount: '15% OFF',
+      imageUrl:
+          'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=80',
+      validUntil: 'Valid until Oct 01',
+    ),
+    _PromotionalUpdate(
+      title: 'Weekend Getaway',
+      subtitle: 'Special rates from £99 per night',
+      discount: 'FROM £99',
+      imageUrl:
+          'https://images.unsplash.com/photo-1523906834658-6e24ef2386f8?auto=format&fit=crop&w=900&q=80',
+      validUntil: 'Valid until Sep 30',
+    ),
+    _PromotionalUpdate(
+      title: 'Last Minute Deal',
+      subtitle: 'Up to 30% OFF on flights this week',
+      discount: '30% OFF',
+      imageUrl:
+          'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=900&q=80',
+      validUntil: 'Valid until Aug 25',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
     _flightRepository = getIt<FlightRepository>();
     _trendingScrollController = ScrollController();
+    _promotionalScrollController = ScrollController();
     _loadSuggestions();
   }
 
   @override
   void dispose() {
     _trendingScrollController.dispose();
+    _promotionalScrollController.dispose();
     super.dispose();
   }
 
@@ -167,6 +213,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     _trendingScrollController.animateTo(
+      targetOffset.toDouble(),
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _handlePromotionalPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+
+    if (!_promotionalScrollController.hasClients) {
+      return;
+    }
+
+    final horizontalDelta =
+        event.scrollDelta.dx.abs() > event.scrollDelta.dy.abs()
+            ? event.scrollDelta.dx
+            : event.scrollDelta.dy;
+    if (horizontalDelta == 0) {
+      return;
+    }
+
+    final position = _promotionalScrollController.position;
+    final targetOffset = (position.pixels + horizontalDelta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    _promotionalScrollController.jumpTo(targetOffset.toDouble());
+  }
+
+  void _scrollPromotionalBy(double delta) {
+    if (!_promotionalScrollController.hasClients) {
+      return;
+    }
+
+    final position = _promotionalScrollController.position;
+    final targetOffset = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    _promotionalScrollController.animateTo(
       targetOffset.toDouble(),
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOut,
@@ -363,6 +453,75 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _CarouselArrowButton(
                         icon: Icons.chevron_right,
                         onTap: () => _scrollTrendingBy(200),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Promotional updates', style: AppTextStyles.h4),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('View all'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 200,
+              child: Stack(
+                children: [
+                  Listener(
+                    onPointerSignal: _handlePromotionalPointerSignal,
+                    child: ScrollConfiguration(
+                      behavior: MaterialScrollBehavior().copyWith(
+                        dragDevices: {
+                          PointerDeviceKind.touch,
+                          PointerDeviceKind.mouse,
+                          PointerDeviceKind.stylus,
+                        },
+                      ),
+                      child: ListView.separated(
+                        controller: _promotionalScrollController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _promotionalUpdates.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final promotion = _promotionalUpdates[index];
+                          return SizedBox(
+                            width: 180,
+                            child: _PromotionalUpdateCard(
+                              promotion: promotion,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 4,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _CarouselArrowButton(
+                        icon: Icons.chevron_left,
+                        onTap: () => _scrollPromotionalBy(-200),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 4,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _CarouselArrowButton(
+                        icon: Icons.chevron_right,
+                        onTap: () => _scrollPromotionalBy(200),
                       ),
                     ),
                   ),
@@ -982,6 +1141,22 @@ class _TrendingDestination {
   final String imageUrl;
 }
 
+class _PromotionalUpdate {
+  const _PromotionalUpdate({
+    required this.title,
+    required this.subtitle,
+    required this.discount,
+    required this.imageUrl,
+    required this.validUntil,
+  });
+
+  final String title;
+  final String subtitle;
+  final String discount;
+  final String imageUrl;
+  final String validUntil;
+}
+
 class _TrendingDestinationCard extends StatefulWidget {
   const _TrendingDestinationCard({required this.destination});
 
@@ -1055,6 +1230,122 @@ class _TrendingDestinationCardState extends State<_TrendingDestinationCard> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PromotionalUpdateCard extends StatefulWidget {
+  const _PromotionalUpdateCard({required this.promotion});
+
+  final _PromotionalUpdate promotion;
+
+  @override
+  State<_PromotionalUpdateCard> createState() =>
+      _PromotionalUpdateCardState();
+}
+
+class _PromotionalUpdateCardState extends State<_PromotionalUpdateCard> {
+  bool _isHighlighted = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _isHighlighted ? 0.97 : 1,
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {},
+          onHighlightChanged: (value) {
+            if (_isHighlighted != value) {
+              setState(() => _isHighlighted = value);
+            }
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                widget.promotion.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: AppColors.surfaceVariant,
+                    child: const Icon(Icons.image_not_supported),
+                  );
+                },
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black87,
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.promotion.title,
+                        style: AppTextStyles.h4.copyWith(color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.promotion.subtitle,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.promotion.validUntil,
+                        style: AppTextStyles.caption.copyWith(
+                          color: Colors.white60,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    widget.promotion.discount,
+                    style: AppTextStyles.badge,
                   ),
                 ),
               ),
