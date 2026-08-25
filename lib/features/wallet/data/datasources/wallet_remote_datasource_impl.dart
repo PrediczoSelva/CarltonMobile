@@ -78,6 +78,28 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
     }
   }
 
+  @override
+  Future<Map<String, dynamic>> getRedemptionConfig() async {
+    try {
+      final response = await _apiClient.get<dynamic>('/loyalty/config');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<void> redeemPoints({required int pointsToRedeem}) async {
+    try {
+      await _apiClient.post<dynamic>(
+        '/wallet/redeem',
+        data: {'pointsToRedeem': pointsToRedeem},
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   Exception _handleDioError(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:

@@ -10,4 +10,6 @@ abstract class WalletRemoteDatasource {
     int? savedCardId,
   });
   Future<void> confirmTopUp({required String paymentIntentId});
+  Future<Map<String, dynamic>> getRedemptionConfig();
+  Future<void> redeemPoints({required int pointsToRedeem});
 }
