@@ -21,6 +21,9 @@ import '../../features/flight/presentation/screens/flight_results_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/home/presentation/screens/messages_screen.dart';
 import '../../features/home/presentation/screens/notifications_screen.dart';
+import '../../features/hotels/presentation/screens/hotel_details_screen.dart';
+import '../../features/hotels/presentation/screens/hotel_offers_screen.dart';
+import '../../features/hotels/presentation/screens/hotel_search_results_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -41,6 +44,9 @@ abstract class AppRoutes {
   static const flightSearch = '/flights/search';
   static const search = '/search';
   static const flightResults = '/flights/results';
+  static const hotelResults = '/hotels/results';
+  static const hotelDetails = '/hotels';
+  static const hotelOffers = '/hotels';
   static const passengerDetails = '/booking/passenger-details';
   static const bookingSummary = '/booking/summary';
   static const servicePackSelection = '/booking/service-pack';
@@ -95,6 +101,26 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: AppRoutes.flightResults,
           builder: (context, state) => const FlightResultsScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.hotelResults,
+          builder: (context, state) => const HotelSearchResultsScreen(),
+        ),
+        GoRoute(
+          path: '${AppRoutes.hotelDetails}/:hotelId',
+          builder: (context, state) {
+            final hotelId = state.pathParameters['hotelId'] ?? '';
+            return HotelDetailsScreen(hotelId: hotelId);
+          },
+          routes: [
+            GoRoute(
+              path: 'offers',
+              builder: (context, state) {
+                final hotelId = state.pathParameters['hotelId'] ?? '';
+                return HotelOffersScreen(hotelId: hotelId);
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: AppRoutes.myTrips,

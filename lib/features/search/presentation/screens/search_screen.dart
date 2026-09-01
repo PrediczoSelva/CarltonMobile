@@ -8,6 +8,7 @@ import '../../../flight/presentation/widgets/flight_search_form.dart';
 import '../../../hotels/presentation/screens/hotel_search_form.dart';
 import '../../../cars/presentation/screens/car_search_form.dart';
 import '../../../flight/presentation/bloc/flight_bloc.dart';
+import '../../../hotels/presentation/bloc/hotel_bloc.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -67,7 +68,10 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
             create: (_) => getIt<FlightSearchBloc>(),
             child: const FlightSearchForm(),
           ),
-          const HotelSearchForm(),
+          BlocProvider(
+            create: (_) => getIt<HotelSearchBloc>(),
+            child: const HotelSearchForm(),
+          ),
           const CarSearchForm(),
         ],
       ),

@@ -19,6 +19,11 @@ import '../../features/flight/data/datasources/flight_remote_datasource_impl.dar
 import '../../features/flight/data/repositories/flight_repository_impl.dart';
 import '../../features/flight/domain/repositories/flight_repository.dart';
 import '../../features/flight/presentation/bloc/flight_bloc.dart';
+import '../../features/hotels/data/datasources/hotel_remote_datasource.dart';
+import '../../features/hotels/data/datasources/hotel_remote_datasource_impl.dart';
+import '../../features/hotels/data/repositories/hotel_repository_impl.dart';
+import '../../features/hotels/domain/repositories/hotel_repository.dart';
+import '../../features/hotels/presentation/bloc/hotel_bloc.dart';
 import '../../features/payment/data/datasources/payment_remote_datasource.dart';
 import '../../features/payment/data/datasources/payment_remote_datasource_impl.dart';
 import '../../features/payment/data/repositories/payment_repository_impl.dart';
@@ -67,6 +72,17 @@ Future<void> setupDependencyInjection() async {
   );
   getIt.registerFactory<FlightSearchBloc>(
     () => FlightSearchBloc(getIt<FlightRepository>()),
+  );
+
+  // Hotel
+  getIt.registerLazySingleton<HotelRemoteDatasource>(
+    () => HotelRemoteDatasourceImpl(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<HotelRepository>(
+    () => HotelRepositoryImpl(getIt<HotelRemoteDatasource>()),
+  );
+  getIt.registerFactory<HotelSearchBloc>(
+    () => HotelSearchBloc(getIt<HotelRepository>()),
   );
 
   // Booking
