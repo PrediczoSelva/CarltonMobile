@@ -35,13 +35,29 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   final _contactEmailConfirmController = TextEditingController();
   final _contactPhoneController = TextEditingController();
   final _contactCountryController = TextEditingController(text: 'Sri Lanka');
+  final _leadPassportNumberController = TextEditingController();
+  final _leadPassportExpiryController = TextEditingController();
+
+  String? _passportNumberError;
+  String? _passportExpiryError;
 
   @override
   void initState() {
     super.initState();
     _session = getIt<BookingSession>();
     _apiClient = getIt<ApiClient>();
+    _leadPassportNumberController.addListener(_clearPassportErrors);
+    _leadPassportExpiryController.addListener(_clearPassportErrors);
     _loadData();
+  }
+
+  void _clearPassportErrors() {
+    if (_passportNumberError != null || _passportExpiryError != null) {
+      setState(() {
+        _passportNumberError = null;
+        _passportExpiryError = null;
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -49,15 +65,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       final response = await _apiClient.get<dynamic>('/profile/personal');
       if (response.data != null && response.data is Map) {
         _personalDetails = response.data as Map<String, dynamic>;
-        final email = _personalDetails!['email'] as String? ?? '';
-        final phone = _personalDetails!['phone'] as String? ?? '';
-        final country = _personalDetails!['country'] as String? ??
-            _personalDetails!['nationality'] as String? ??
-            'Sri Lanka';
-        _contactEmailController.text = email;
-        _contactEmailConfirmController.text = email;
-        _contactPhoneController.text = phone;
-        _contactCountryController.text = country;
+      final email = _personalDetails!['email'] as String? ?? '';
+      final phone = _personalDetails!['phone'] as String? ?? '';
+      final country = _personalDetails!['country'] as String? ??
+          _personalDetails!['nationality'] as String? ??
+          'Sri Lanka';
+      final passportNumber = _personalDetails!['passportNumber'] as String? ?? '';
+      final passportExpiry = _personalDetails!['passportExpiryDate'] as String? ?? '';
+      _contactEmailController.text = email;
+      _contactEmailConfirmController.text = email;
+      _contactPhoneController.text = phone;
+      _contactCountryController.text = country;
+      _leadPassportNumberController.text = passportNumber;
+      _leadPassportExpiryController.text = passportExpiry;
       }
     } catch (_) {}
 
@@ -137,28 +157,35 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     bool isExpiryDate = false,
   }) async {
     final initialDate = DateTime.tryParse(controller.text) ?? DateTime.now();
+    final travelDate = _session.searchCriteria?.departureDate;
+    final firstDate = isExpiryDate && travelDate != null
+        ? DateTime(travelDate.year, travelDate.month + 6, travelDate.day)
+        : DateTime(1900);
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: DateTime(1900),
+      firstDate: firstDate,
       lastDate: DateTime.now().add(const Duration(days: 365 * 80)),
     );
     if (picked != null) {
+      if (isExpiryDate && travelDate != null) {
+        final minExpiry = DateTime(travelDate.year, travelDate.month + 6, travelDate.day);
+        if (picked.isBefore(minExpiry)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Passport must be valid for at least 6 months beyond the travel date',
+              ),
+            ),
+          );
+          return;
+        }
+      }
       final dateStr =
           '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
       controller.text = dateStr;
 
-      if (isExpiryDate) {
-        if (picked.isBefore(DateTime.now())) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Expiry date must be a future date'),
-            ),
-          );
-        }
-      }
-
-      if (passengerType != null && !isExpiryDate) {
+      if (passengerType != null) {
         final travelDate = _session.searchCriteria?.departureDate ?? DateTime.now();
         final age = travelDate.difference(picked).inDays ~/ 365;
         if (passengerType == Passenger.infantType && age >= 2) {
@@ -594,20 +621,41 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         firstName = parts.isNotEmpty ? parts.first : '';
         lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
       }
-      return Passenger(firstName: firstName, lastName: lastName);
+      return Passenger(
+        firstName: firstName,
+        lastName: lastName,
+        country: _contactCountryController.text.trim().isNotEmpty
+            ? _contactCountryController.text.trim()
+            : null,
+        passportNumber: _leadPassportNumberController.text.trim().isNotEmpty
+            ? _leadPassportNumberController.text.trim()
+            : null,
+        passportExpiry: _parseDate(_leadPassportExpiryController.text.trim()),
+      );
     }
     final fn = p['firstName'] as String? ?? '';
     final ln = p['lastName'] as String? ?? '';
     final dob = _parseDate(p['dateOfBirth']);
+    final country = p['country'] as String? ?? p['nationality'] as String?;
+    final passportNumber = _leadPassportNumberController.text.trim().isNotEmpty
+        ? _leadPassportNumberController.text.trim()
+        : (p['passportNumber'] as String? ?? '');
+    final passportExpiry = _leadPassportExpiryController.text.trim().isNotEmpty
+        ? _parseDate(_leadPassportExpiryController.text.trim())
+        : _parseDate(p['passportExpiryDate']);
     return Passenger(
       firstName: fn,
       lastName: ln,
       email: p['email'] as String?,
       phone: p['phone'] as String?,
       dateOfBirth: dob,
-      passportNumber: p['passportNumber'] as String?,
-      passportExpiry: _parseDate(p['passportExpiryDate']),
-      country: p['country'] as String? ?? p['nationality'] as String?,
+      passportNumber: passportNumber.isNotEmpty ? passportNumber : null,
+      passportExpiry: passportExpiry,
+      country: country?.isNotEmpty == true
+          ? country
+          : (_contactCountryController.text.trim().isNotEmpty
+              ? _contactCountryController.text.trim()
+              : null),
       passengerType: _passengerTypeFromDob(dob),
     );
   }
@@ -689,6 +737,48 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       return;
     }
 
+    _passportNumberError = null;
+    _passportExpiryError = null;
+
+    final leadPassenger = passengers.first;
+    if (leadPassenger.passportNumber == null ||
+        leadPassenger.passportNumber!.trim().isEmpty) {
+      setState(() {
+        _passportNumberError = 'Passport number is required for lead passenger';
+      });
+      return;
+    }
+
+    if (leadPassenger.passportExpiry == null) {
+      setState(() {
+        _passportExpiryError = 'Passport expiry date is required for lead passenger';
+      });
+      return;
+    }
+
+    if (leadPassenger.passportExpiry!.isBefore(DateTime.now())) {
+      setState(() {
+        _passportExpiryError = 'Passport expiry date must be in the future';
+      });
+      return;
+    }
+
+    final travelDate = _session.searchCriteria?.departureDate;
+    if (travelDate != null) {
+      final sixMonthsAfterTravel = DateTime(
+        travelDate.year,
+        travelDate.month + 6,
+        travelDate.day,
+      );
+      if (leadPassenger.passportExpiry!.isBefore(sixMonthsAfterTravel)) {
+        setState(() {
+          _passportExpiryError =
+              'Passport must be valid for at least 6 months beyond the travel date';
+        });
+        return;
+      }
+    }
+
     final email = _contactEmailController.text.trim();
     if (email.isNotEmpty &&
         email != _contactEmailConfirmController.text.trim()) {
@@ -747,6 +837,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _contactEmailConfirmController.dispose();
     _contactPhoneController.dispose();
     _contactCountryController.dispose();
+    _leadPassportNumberController.dispose();
+    _leadPassportExpiryController.dispose();
     super.dispose();
   }
 
@@ -906,6 +998,54 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                     decoration: const InputDecoration(
                         labelText: 'Country of Residence'),
                   ),
+                  const SizedBox(height: 16),
+                  Text('Passenger Documents', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Lead passenger passport details',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _leadPassportNumberController,
+                    decoration: const InputDecoration(
+                      labelText: 'Passport Number',
+                    ),
+                  ),
+                  if (_passportNumberError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 12),
+                      child: Text(
+                        _passportNumberError!,
+                        style: const TextStyle(color: AppColors.error, fontSize: 13),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _leadPassportExpiryController,
+                    readOnly: true,
+                    onTap: () {
+                      _pickDate(
+                        context: context,
+                        controller: _leadPassportExpiryController,
+                        isExpiryDate: true,
+                      );
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Passport Expiry Date',
+                      suffixIcon: Icon(Icons.calendar_today_outlined),
+                    ),
+                  ),
+                  if (_passportExpiryError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 12),
+                      child: Text(
+                        _passportExpiryError!,
+                        style: const TextStyle(color: AppColors.error, fontSize: 13),
+                      ),
+                    ),
                   const SizedBox(height: 24),
                   PrimaryButton(
                     label: 'Continue',

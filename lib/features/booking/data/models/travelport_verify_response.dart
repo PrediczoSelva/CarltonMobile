@@ -7,10 +7,16 @@ class TravelportVerifyResponse {
 
   factory TravelportVerifyResponse.fromJson(Map<String, dynamic> json) {
     return TravelportVerifyResponse(
-      fareKey: json['fareKey'] as String? ?? '',
-      currency: json['currency'] as String? ?? 'GBP',
+      fareKey: json['fareKey'] as String? ??
+          json['FareKey'] as String? ??
+          '',
+      currency: json['currency'] as String? ??
+          json['Currency'] as String? ??
+          'GBP',
       quotedTotal: (json['totalPrice'] as num?)?.toDouble() ??
+          (json['TotalPrice'] as num?)?.toDouble() ??
           (json['price'] as num?)?.toDouble() ??
+          (json['Price'] as num?)?.toDouble() ??
           0.0,
     );
   }

@@ -106,6 +106,7 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     required String bookingClass,
     required double quotedTotal,
     String? flightSnapshotJson,
+    String source = 'MOBILE',
     String? stripePaymentIntentId,
     bool isGuest = false,
   }) async {
@@ -121,8 +122,11 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'contact': contact,
           'bookingClass': bookingClass,
           'quotedTotal': quotedTotal,
+          'source': source,
           if (flightSnapshotJson != null)
             'flightSnapshotJson': flightSnapshotJson,
+          if (stripePaymentIntentId != null && stripePaymentIntentId.isNotEmpty)
+            'stripePaymentIntentId': stripePaymentIntentId,
         },
       );
       final data = response.data as Map<String, dynamic>;
@@ -172,6 +176,7 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     required double quotedTotal,
     String? flightSnapshotJson,
     bool isGuest = false,
+    String source = 'MOBILE',
   }) async {
     final path =
         isGuest ? '$_basePath/amadeus/guest/book' : '$_basePath/amadeus/book';
@@ -186,8 +191,11 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'contact': contact,
           'bookingClass': bookingClass,
           'quotedTotal': quotedTotal,
+          'source': source,
           if (flightSnapshotJson != null)
             'flightSnapshotJson': flightSnapshotJson,
+          if (stripePaymentIntentId.isNotEmpty)
+            'stripePaymentIntentId': stripePaymentIntentId,
         },
       );
       final data = response.data as Map<String, dynamic>;
@@ -258,6 +266,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'providerBaseFare': providerBaseFare,
           if (flightSnapshotJson != null)
             'flightSnapshotJson': flightSnapshotJson,
+          'stripePaymentIntentId': stripePaymentIntentId ?? '',
+          'isGuest': isGuest,
         },
       );
       debugPrint('[Travelport] book response: ${response.data}');

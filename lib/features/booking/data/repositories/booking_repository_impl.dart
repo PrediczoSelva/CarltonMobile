@@ -13,6 +13,7 @@ class BookingRepositoryImpl implements BookingRepository {
   BookingRepositoryImpl(this._remoteDatasource);
 
   final BookingRemoteDatasource _remoteDatasource;
+  final Map<String, String> _amadeusVerifyIdCache = {};
 
   int _amadeusPassengerType(Passenger p) {
     final type = p.passengerType ?? Passenger.adultType;
@@ -160,6 +161,7 @@ class BookingRepositoryImpl implements BookingRepository {
       flightSnapshotJson: flightSnapshotJson,
       stripePaymentIntentId: stripePaymentIntentId,
       isGuest: isGuest,
+      source: 'MOBILE',
     );
   }
 
@@ -176,10 +178,14 @@ class BookingRepositoryImpl implements BookingRepository {
     required double quotedTotal,
     String? flightSnapshotJson,
     bool isGuest = false,
+    String source = 'MOBILE',
   }) async {
     final amadeusPassengers = passengers.map((p) {
       final birthday = p.dateOfBirth != null
           ? '${p.dateOfBirth!.day.toString().padLeft(2, '0')}${_monthAbbrev(p.dateOfBirth!.month)}${p.dateOfBirth!.year.toString().substring(2)}'
+          : '';
+      final passportExpiry = p.passportExpiry != null
+          ? '${p.passportExpiry!.year}-${p.passportExpiry!.month.toString().padLeft(2, '0')}-${p.passportExpiry!.day.toString().padLeft(2, '0')}'
           : '';
       return {
         'firstName': p.firstName,
@@ -187,24 +193,39 @@ class BookingRepositoryImpl implements BookingRepository {
         'passengerType': _amadeusPassengerType(p),
         'gender': 'M',
         'birthday': birthday,
+        'passportNumber': p.passportNumber ?? '',
+        'passportExpiry': passportExpiry,
         if (p.country != null) 'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
       };
     }).toList();
 
-    final verify = await _remoteDatasource.amadeusVerify(
-      amadeusOfferToken: amadeusOfferToken,
-      adultCount: passengers.length,
-      childCount: 0,
-      infantCount: 0,
-    );
+    String effectiveVerifyId = verifyId;
+    if (effectiveVerifyId.isEmpty) {
+      effectiveVerifyId = _amadeusVerifyIdCache[amadeusOfferToken] ?? '';
+    }
+    if (effectiveVerifyId.isEmpty) {
+      final verify = await _remoteDatasource.amadeusVerify(
+        amadeusOfferToken: amadeusOfferToken,
+        adultCount: passengers.length,
+        childCount: 0,
+        infantCount: 0,
+      );
+      effectiveVerifyId = verify.verifyId;
+      _amadeusVerifyIdCache[amadeusOfferToken] = effectiveVerifyId;
+    }
+
+    final contactName = passengers.isNotEmpty
+        ? '${passengers.first.lastName}/${passengers.first.firstName}'
+        : 'Customer';
 
     return _remoteDatasource.amadeusBook(
       amadeusOfferToken: amadeusOfferToken,
-      verifyId: verify.verifyId,
+      verifyId: effectiveVerifyId,
       stripePaymentIntentId: stripePaymentIntentId,
       baseFareTotal: baseFareTotal,
       passengers: amadeusPassengers,
       contact: {
+        'name': contactName,
         'email': contactEmail,
         'mobile': contactPhone,
       },
@@ -212,6 +233,7 @@ class BookingRepositoryImpl implements BookingRepository {
       quotedTotal: quotedTotal,
       flightSnapshotJson: flightSnapshotJson,
       isGuest: isGuest,
+      source: source,
     );
   }
 
@@ -238,16 +260,31 @@ class BookingRepositoryImpl implements BookingRepository {
             ? '${p.dateOfBirth!.year}-${p.dateOfBirth!.month.toString().padLeft(2, '0')}-${p.dateOfBirth!.day.toString().padLeft(2, '0')}'
             : '',
         'passportNumber': p.passportNumber ?? '',
+        'passportExpiry': p.passportExpiry != null
+            ? '${p.passportExpiry!.year}-${p.passportExpiry!.month.toString().padLeft(2, '0')}-${p.passportExpiry!.day.toString().padLeft(2, '0')}'
+            : '',
         'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
         'passengerType': _travelportPassengerType(p),
+        if (p.email != null && p.email!.isNotEmpty) 'email': p.email,
+        if (p.phone != null && p.phone!.isNotEmpty) 'phone': p.phone,
       };
     }).toList();
 
+    final adults = passengers
+        .where((p) => (p.passengerType ?? Passenger.adultType) == Passenger.adultType)
+        .length;
+    final children = passengers
+        .where((p) => (p.passengerType ?? Passenger.adultType) == Passenger.childType)
+        .length;
+    final infants = passengers
+        .where((p) => (p.passengerType ?? Passenger.adultType) == Passenger.infantType)
+        .length;
+
     final verify = await _remoteDatasource.travelportVerify(
       fareKey: fareKey,
-      adults: passengers.length,
-      children: 0,
-      infants: 0,
+      adults: adults,
+      children: children,
+      infants: infants,
     );
 
     return _remoteDatasource.travelportBook(
@@ -255,7 +292,7 @@ class BookingRepositoryImpl implements BookingRepository {
       segmentKeys: segmentKeys,
       passengers: travelportPassengers,
       contact: {
-        'phone': contactPhone,
+        'mobile': contactPhone,
         'email': contactEmail,
       },
       bookingClass: bookingClass,

@@ -27,6 +27,7 @@ abstract class BookingRemoteDatasource {
     String? flightSnapshotJson,
     String? stripePaymentIntentId,
     bool isGuest = false,
+    String source = 'MOBILE',
   });
 
   Future<AmadeusVerifyResponse> amadeusVerify({
@@ -46,6 +47,7 @@ abstract class BookingRemoteDatasource {
     required double quotedTotal,
     String? flightSnapshotJson,
     bool isGuest = false,
+    String source = 'MOBILE',
   });
 
   Future<TravelportVerifyResponse> travelportVerify({

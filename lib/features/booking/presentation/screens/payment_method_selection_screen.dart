@@ -29,6 +29,11 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
       icon: Icons.account_balance_wallet,
     ),
     _PaymentMethod(
+      id: 'wallet',
+      title: 'Carlton Wallet',
+      icon: Icons.wallet,
+    ),
+    _PaymentMethod(
       id: 'superpay',
       title: 'Super Pay',
       icon: Icons.payments,
