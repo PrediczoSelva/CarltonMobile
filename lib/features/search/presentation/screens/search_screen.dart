@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection.dart';
 import '../../../flight/presentation/widgets/flight_search_form.dart';
 import '../../../hotels/presentation/screens/hotel_search_form.dart';
@@ -17,8 +18,11 @@ class SearchScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Search'),
-          bottom: const TabBar(
-            tabs: [
+          bottom: TabBar(
+            indicatorColor: AppColors.accent,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: const [
               Tab(text: 'Flights'),
               Tab(text: 'Hotels'),
               Tab(text: 'Cars'),
