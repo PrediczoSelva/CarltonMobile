@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             TextField(
               readOnly: true,
-              onTap: () => context.push('/flights/search'),
+              onTap: () => context.push('/search'),
               decoration: InputDecoration(
                 hintText: 'Search flights',
                 prefixIcon: const Icon(Icons.search),
@@ -383,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text('Suggested flights', style: AppTextStyles.h4),
                 TextButton(
-                  onPressed: () => context.push('/flights/search'),
+                  onPressed: () => context.push('/search'),
                   child: const Text('See all'),
                 ),
               ],

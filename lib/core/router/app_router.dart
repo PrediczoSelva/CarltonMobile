@@ -16,15 +16,16 @@ import '../../features/booking/presentation/screens/payment_method_selection_scr
 import '../../features/booking/presentation/screens/payment_processing_screen.dart';
 import '../../features/booking/presentation/screens/passenger_details_screen.dart';
 import '../../features/flight/presentation/bloc/flight_bloc.dart';
-import '../../features/flight/presentation/screens/flight_results_screen.dart';
 import '../../features/flight/presentation/screens/flight_search_screen.dart';
+import '../../features/flight/presentation/screens/flight_results_screen.dart';
+import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/home/presentation/screens/messages_screen.dart';
 import '../../features/home/presentation/screens/notifications_screen.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
+import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
 
 abstract class AppRoutes {
@@ -38,6 +39,7 @@ abstract class AppRoutes {
   static const settings = '/profile/settings';
   static const wallet = '/profile/wallet';
   static const flightSearch = '/flights/search';
+  static const search = '/search';
   static const flightResults = '/flights/results';
   static const passengerDetails = '/booking/passenger-details';
   static const bookingSummary = '/booking/summary';
@@ -78,6 +80,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: AppRoutes.home,
           builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.search,
+          builder: (context, state) => const SearchScreen(),
         ),
         GoRoute(
           path: AppRoutes.flightSearch,
@@ -180,7 +186,7 @@ class _MainShellState extends State<MainShell> {
 
   static const _routes = [
     AppRoutes.home,
-    AppRoutes.flightSearch,
+    AppRoutes.search,
     AppRoutes.myTrips,
     AppRoutes.profile,
   ];
