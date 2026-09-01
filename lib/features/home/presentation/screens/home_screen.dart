@@ -569,7 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final hotel = _hotelSuggestions[index];
               return _SuggestedHotelCard(
                 hotel: hotel,
-                onBook: () {},
+                onBook: () => context.push('/search?tab=1'),
               );
             },
           ),
