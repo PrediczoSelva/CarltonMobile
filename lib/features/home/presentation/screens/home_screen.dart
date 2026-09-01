@@ -541,6 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 8),
           TextField(
             readOnly: true,
+            onTap: () => context.push('/search?tab=1'),
             decoration: InputDecoration(
               hintText: 'Search hotels',
               prefixIcon: const Icon(Icons.search),
@@ -552,7 +553,10 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Suggested hotels', style: AppTextStyles.h4),
-              TextButton(onPressed: () {}, child: const Text('See all')),
+              TextButton(
+                onPressed: () => context.push('/search?tab=1'),
+                child: const Text('See all'),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -578,22 +582,26 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
         const SizedBox(height: 8),
-        TextField(
-          readOnly: true,
-          decoration: InputDecoration(
-            hintText: 'Search cars',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: const Icon(Icons.tune),
+          TextField(
+            readOnly: true,
+            onTap: () => context.push('/search?tab=2'),
+            decoration: InputDecoration(
+              hintText: 'Search cars',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: const Icon(Icons.tune),
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Suggested cars', style: AppTextStyles.h4),
-            TextButton(onPressed: () {}, child: const Text('See all')),
-          ],
-        ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Suggested cars', style: AppTextStyles.h4),
+              TextButton(
+                onPressed: () => context.push('/search?tab=2'),
+                child: const Text('See all'),
+              ),
+            ],
+          ),
         const SizedBox(height: 12),
         ListView.separated(
           shrinkWrap: true,
