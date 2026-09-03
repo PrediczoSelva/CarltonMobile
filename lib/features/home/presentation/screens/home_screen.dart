@@ -10,6 +10,8 @@ import '../../../booking/domain/entities/booking_session.dart';
 import '../../../flight/domain/entities/flight.dart';
 import '../../../flight/domain/entities/flight_search_criteria.dart';
 import '../../../flight/domain/repositories/flight_repository.dart';
+import '../../../hotels/domain/entities/hotel.dart';
+import '../../../hotels/domain/repositories/hotel_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
   late final FlightRepository _flightRepository;
+  late final HotelRepository _hotelRepository;
   late final ScrollController _trendingScrollController;
   late final ScrollController _promotionalScrollController;
   List<Flight> _suggestedFlights = [];
@@ -29,32 +32,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const _tabs = ['Flights', 'Hotels', 'Cars'];
 
-  static const _hotelSuggestions = [
-    _HotelSuggestion(
-      name: 'Shangri-La Colombo',
-      location: 'Colombo, Sri Lanka',
-      price: 45000,
-      rating: 4.8,
-    ),
-    _HotelSuggestion(
-      name: 'Taj Samudra',
-      location: 'Colombo, Sri Lanka',
-      price: 52000,
-      rating: 4.6,
-    ),
-    _HotelSuggestion(
-      name: 'Cinnamon Grand',
-      location: 'Colombo, Sri Lanka',
-      price: 48000,
-      rating: 4.7,
-    ),
-    _HotelSuggestion(
-      name: 'Heritance Kandalama',
-      location: 'Dambulla, Sri Lanka',
-      price: 38000,
-      rating: 4.5,
-    ),
-  ];
+  List<_HotelSuggestion> _hotelSuggestions = [];
+  bool _loadingHotels = true;
+  String? _hotelsError;
 
   static const _carSuggestions = [
     _CarSuggestion(
@@ -163,9 +143,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _flightRepository = getIt<FlightRepository>();
+    _hotelRepository = getIt<HotelRepository>();
     _trendingScrollController = ScrollController();
     _promotionalScrollController = ScrollController();
     _loadSuggestions();
+    _loadHotelSuggestions();
   }
 
   @override
@@ -294,6 +276,33 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _loadingSuggestions = false;
           _suggestionsError = e.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _loadHotelSuggestions() async {
+    setState(() {
+      _loadingHotels = true;
+      _hotelsError = null;
+    });
+    try {
+      final hotels = await _hotelRepository.listHotels(destination: 'Colombo', maxResults: 10);
+      if (mounted) {
+        setState(() {
+          _hotelSuggestions = hotels
+              .where((h) => h.hotelName.isNotEmpty)
+              .take(4)
+              .map((h) => _HotelSuggestion.fromHotel(h))
+              .toList();
+          _loadingHotels = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingHotels = false;
+          _hotelsError = e.toString();
         });
       }
     }
@@ -560,19 +569,45 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _hotelSuggestions.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final hotel = _hotelSuggestions[index];
-              return _SuggestedHotelCard(
-                hotel: hotel,
-                onBook: () => context.push('/search?tab=1'),
-              );
-            },
-          ),
+          if (_loadingHotels)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            )
+          else if (_hotelsError != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  'Could not load suggestions: $_hotelsError',
+                  style: AppTextStyles.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          else if (_hotelSuggestions.isEmpty)
+            Center(
+              child: Text(
+                'No hotels available at the moment.',
+                style: AppTextStyles.bodyMedium,
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _hotelSuggestions.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final hotel = _hotelSuggestions[index];
+                return _SuggestedHotelCard(
+                  hotel: hotel,
+                  onBook: () => context.push('/search?tab=1'),
+                );
+              },
+            ),
           const SizedBox(height: 24),
         ],
       );
@@ -1121,6 +1156,15 @@ class _HotelSuggestion {
   final String location;
   final double price;
   final double rating;
+
+  factory _HotelSuggestion.fromHotel(Hotel hotel) {
+    return _HotelSuggestion(
+      name: hotel.hotelName,
+      location: hotel.city ?? hotel.address ?? '',
+      price: hotel.price ?? 0.0,
+      rating: (hotel.starRating ?? 0).toDouble(),
+    );
+  }
 }
 
 class _CarSuggestion {

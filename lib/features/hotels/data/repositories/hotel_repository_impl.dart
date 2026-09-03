@@ -12,4 +12,9 @@ class HotelRepositoryImpl implements HotelRepository {
   Future<List<Hotel>> searchHotels(HotelSearchCriteria criteria) {
     return _remoteDatasource.searchHotels(criteria);
   }
+
+  @override
+  Future<List<Hotel>> listHotels({String? destination, int maxResults = 10}) {
+    return _remoteDatasource.listHotels(destination: destination, maxResults: maxResults);
+  }
 }

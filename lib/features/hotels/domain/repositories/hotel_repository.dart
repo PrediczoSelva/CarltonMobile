@@ -3,4 +3,5 @@ import '../entities/hotel_search_criteria.dart';
 
 abstract class HotelRepository {
   Future<List<Hotel>> searchHotels(HotelSearchCriteria criteria);
+  Future<List<Hotel>> listHotels({String? destination, int maxResults = 10});
 }

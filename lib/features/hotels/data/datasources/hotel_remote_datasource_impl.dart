@@ -51,4 +51,46 @@ class HotelRemoteDatasourceImpl implements HotelRemoteDatasource {
       throw Exception('Failed to search hotels. Try again.');
     }
   }
+
+  @override
+  Future<List<Hotel>> listHotels({String? destination, int maxResults = 10}) async {
+    try {
+      final now = DateTime.now();
+      final checkIn = DateTime(now.year, now.month, now.day + 1);
+      final checkOut = DateTime(now.year, now.month, now.day + 2);
+
+      final response = await _apiClient.get<dynamic>(
+        '$_basePath/search',
+        query: {
+          'Destination': destination ?? '',
+          'CheckIn': DateFormat('yyyy-MM-dd').format(checkIn),
+          'CheckOut': DateFormat('yyyy-MM-dd').format(checkOut),
+          'Adults': 2,
+          'Rooms': 1,
+          'Currency': 'GBP',
+          'Limit': maxResults,
+        },
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final hotelsList = data['hotels'] as List<dynamic>? ?? [];
+        return hotelsList
+            .map((json) => Hotel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400) {
+        return [];
+      }
+      if (e.response?.statusCode == 404) {
+        return [];
+      }
+      throw Exception('Failed to load hotels. Try again.');
+    } catch (e) {
+      throw Exception('Failed to load hotels. Try again.');
+    }
+  }
 }
