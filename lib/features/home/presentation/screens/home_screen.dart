@@ -410,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SizedBox(
-              height: 48,
+              height: 60,
               child: Stack(
                 children: [
                   Listener(
@@ -438,8 +438,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               _scrollTabToVisible(i);
                             },
                             child: Container(
-                              width: 110,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              width: 130,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
                                 color: selected
                                     ? AppColors.accent
@@ -500,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final controller = _tabScrollController;
-    final itemWidth = 110.0;
+    final itemWidth = 130.0;
     const separatorWidth = 8.0;
     final itemStart = index * (itemWidth + separatorWidth);
     final itemEnd = itemStart + itemWidth;
