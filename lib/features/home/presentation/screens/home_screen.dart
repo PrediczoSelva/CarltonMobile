@@ -21,13 +21,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
   late final FlightRepository _flightRepository;
+  late final ScrollController _tabScrollController;
   late final ScrollController _trendingScrollController;
   late final ScrollController _promotionalScrollController;
   List<Flight> _suggestedFlights = [];
   bool _loadingSuggestions = true;
   String? _suggestionsError;
 
-  static const _tabs = ['Flights', 'Hotels', 'Cars'];
+  static const _tabs = ['Flights', 'Hotels', 'Cars', 'Cruise'];
 
   static const _hotelSuggestions = [
     _HotelSuggestion(
@@ -80,6 +81,45 @@ class _HomeScreenState extends State<HomeScreen> {
       category: 'Hatchback',
       price: 550,
       seats: 4,
+    ),
+  ];
+
+  static const _cruiseSuggestions = [
+    _CruiseSuggestion(
+      name: 'Symphony of the Seas',
+      destination: 'Eastern Caribbean & Bahamas',
+      duration: '7 nights',
+      sailingDate: '12 Apr 2026',
+      price: 1250,
+      imageUrl:
+          'https://images.unsplash.com/photo-1544565919-13132f0b682e?auto=format&fit=crop&w=900&q=80',
+    ),
+    _CruiseSuggestion(
+      name: 'Harmony of the Seas',
+      destination: 'Western Mediterranean',
+      duration: '10 nights',
+      sailingDate: '03 Jun 2026',
+      price: 1890,
+      imageUrl:
+          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
+    ),
+    _CruiseSuggestion(
+      name: 'Costa Del Mar',
+      destination: 'Alaska Inside Passage',
+      duration: '14 nights',
+      sailingDate: '22 May 2026',
+      price: 2100,
+      imageUrl:
+          'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=900&q=80',
+    ),
+    _CruiseSuggestion(
+      name: 'Norwegian Escape',
+      destination: 'Hawaii Island Hopper',
+      duration: '12 nights',
+      sailingDate: '08 Jul 2026',
+      price: 2450,
+      imageUrl:
+          'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80',
     ),
   ];
 
@@ -163,6 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _flightRepository = getIt<FlightRepository>();
+    _tabScrollController = ScrollController();
     _trendingScrollController = ScrollController();
     _promotionalScrollController = ScrollController();
     _loadSuggestions();
@@ -171,6 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _trendingScrollController.dispose();
+    _tabScrollController.dispose();
     _promotionalScrollController.dispose();
     super.dispose();
   }
@@ -263,6 +305,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _handleTabPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+
+    if (!_tabScrollController.hasClients) {
+      return;
+    }
+
+    final horizontalDelta =
+        event.scrollDelta.dx.abs() > event.scrollDelta.dy.abs()
+            ? event.scrollDelta.dx
+            : event.scrollDelta.dy;
+    if (horizontalDelta == 0) {
+      return;
+    }
+
+    final position = _tabScrollController.position;
+    final targetOffset = (position.pixels + horizontalDelta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    _tabScrollController.jumpTo(targetOffset.toDouble());
+  }
+
+  void _scrollTabsBy(double delta) {
+    if (!_tabScrollController.hasClients) {
+      return;
+    }
+
+    final position = _tabScrollController.position;
+    final targetOffset = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    _tabScrollController.animateTo(
+      targetOffset.toDouble(),
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
+    );
+  }
+
   DateTime _tomorrow() {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day + 1);
@@ -322,42 +408,125 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: List.generate(_tabs.length, (i) {
-                final selected = i == _tabIndex;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _tabIndex = i),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? AppColors.accent
-                            : AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(10),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              height: 48,
+              child: Stack(
+                children: [
+                  Listener(
+                    onPointerSignal: _handleTabPointerSignal,
+                    child: ScrollConfiguration(
+                      behavior: MaterialScrollBehavior().copyWith(
+                        dragDevices: {
+                          PointerDeviceKind.touch,
+                          PointerDeviceKind.mouse,
+                          PointerDeviceKind.stylus,
+                        },
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _tabs[i],
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: selected
-                              ? AppColors.textOnAccent
-                              : AppColors.textSecondary,
-                        ),
+                      child: ListView.separated(
+                        controller: _tabScrollController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        itemCount: _tabs.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, i) {
+                          final selected = i == _tabIndex;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() => _tabIndex = i);
+                              _scrollTabToVisible(i);
+                            },
+                            child: Container(
+                              width: 110,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.accent
+                                    : AppColors.surfaceVariant,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                _tabs[i],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: selected
+                                      ? AppColors.textOnAccent
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
-                );
-              }),
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _CarouselArrowButton(
+                        icon: Icons.chevron_left,
+                        onTap: () => _scrollTabsBy(-160),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _CarouselArrowButton(
+                        icon: Icons.chevron_right,
+                        onTap: () => _scrollTabsBy(160),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Expanded(child: _buildBody()),
         ],
       ),
     );
+  }
+
+  void _scrollTabToVisible(int index) {
+    if (!_tabScrollController.hasClients) {
+      return;
+    }
+
+    final controller = _tabScrollController;
+    final itemWidth = 110.0;
+    const separatorWidth = 8.0;
+    final itemStart = index * (itemWidth + separatorWidth);
+    final itemEnd = itemStart + itemWidth;
+
+    final viewportWidth = controller.position.viewportDimension;
+    final currentPixels = controller.position.pixels;
+    final maxPixels = controller.position.maxScrollExtent;
+
+    final fullyVisibleStart = itemStart - currentPixels;
+    final fullyVisibleEnd = itemEnd - currentPixels;
+
+    double? target;
+    const edgePadding = 16.0;
+    if (fullyVisibleStart < edgePadding) {
+      target = (itemStart - edgePadding).clamp(0.0, maxPixels);
+    } else if (fullyVisibleEnd > viewportWidth - edgePadding) {
+      target = (itemEnd - viewportWidth + edgePadding).clamp(0.0, maxPixels);
+    }
+
+    if (target != null && (target - currentPixels).abs() > 1) {
+      controller.animateTo(
+        target.toDouble(),
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   Widget _buildBody() {
@@ -574,6 +743,90 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    if (_tabIndex == 2) {
+      return ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          const SizedBox(height: 8),
+          TextField(
+            readOnly: true,
+            decoration: InputDecoration(
+              hintText: 'Search cars',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: const Icon(Icons.tune),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Suggested cars', style: AppTextStyles.h4),
+              TextButton(onPressed: () {}, child: const Text('See all')),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _carSuggestions.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final car = _carSuggestions[index];
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.directions_car,
+                            color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(car.name, style: AppTextStyles.bodyLarge),
+                            const SizedBox(height: 2),
+                            Text('${car.category} • ${car.seats} seats',
+                                style: AppTextStyles.bodySmall),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('GBP ${car.price.toStringAsFixed(0)}',
+                              style: AppTextStyles.price),
+                          const SizedBox(height: 4),
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(64, 32),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                            ),
+                            child: const Text('Book'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
@@ -581,7 +834,7 @@ class _HomeScreenState extends State<HomeScreen> {
         TextField(
           readOnly: true,
           decoration: InputDecoration(
-            hintText: 'Search cars',
+            hintText: 'Search cruises',
             prefixIcon: const Icon(Icons.search),
             suffixIcon: const Icon(Icons.tune),
           ),
@@ -590,7 +843,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Suggested cars', style: AppTextStyles.h4),
+            Text('Suggested cruises', style: AppTextStyles.h4),
             TextButton(onPressed: () {}, child: const Text('See all')),
           ],
         ),
@@ -598,56 +851,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: _carSuggestions.length,
+          itemCount: _cruiseSuggestions.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final car = _carSuggestions[index];
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child:
-                          Icon(Icons.directions_car, color: AppColors.primary),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(car.name, style: AppTextStyles.bodyLarge),
-                          const SizedBox(height: 2),
-                          Text('${car.category} • ${car.seats} seats',
-                              style: AppTextStyles.bodySmall),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('GBP ${car.price.toStringAsFixed(0)}',
-                            style: AppTextStyles.price),
-                        const SizedBox(height: 4),
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(64, 32),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
-                          child: const Text('Book'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            final cruise = _cruiseSuggestions[index];
+            return _SuggestedCruiseCard(
+              cruise: cruise,
+              onBook: () {},
             );
           },
         ),
@@ -1101,6 +1311,190 @@ class _SuggestedFlightCardState extends State<_SuggestedFlightCard> {
   }
 }
 
+class _SuggestedCruiseCard extends StatefulWidget {
+  const _SuggestedCruiseCard({
+    required this.cruise,
+    required this.onBook,
+  });
+
+  final _CruiseSuggestion cruise;
+  final VoidCallback onBook;
+
+  @override
+  State<_SuggestedCruiseCard> createState() => _SuggestedCruiseCardState();
+}
+
+class _SuggestedCruiseCardState extends State<_SuggestedCruiseCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cruise = widget.cruise;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _isHovered ? -4 : 0, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _isHovered
+                ? AppColors.accent.withOpacity(0.45)
+                : AppColors.border,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(_isHovered ? 0.17 : 0.09),
+              blurRadius: _isHovered ? 28 : 16,
+              offset: Offset(0, _isHovered ? 12 : 7),
+            ),
+          ],
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              AppColors.surface,
+            ],
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: widget.onBook,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  child: SizedBox(
+                    height: 100,
+                    width: double.infinity,
+                    child: Image.network(
+                      cruise.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.surfaceVariant,
+                          child: const Icon(Icons.image_not_supported),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              cruise.name,
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              cruise.duration,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on_outlined,
+                              size: 16, color: AppColors.textSecondary),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              cruise.destination,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today_outlined,
+                              size: 16, color: AppColors.textSecondary),
+                          const SizedBox(width: 6),
+                          Text(
+                            cruise.sailingDate,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Text(
+                            'GBP ${cruise.price.toStringAsFixed(0)}',
+                            style: AppTextStyles.price.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            width: 110,
+                            child: ElevatedButton(
+                              onPressed: widget.onBook,
+                              style: ElevatedButton.styleFrom(
+                                elevation: _isHovered ? 1 : 0,
+                              ),
+                              child: const Text('Book'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HotelSuggestion {
   const _HotelSuggestion({
     required this.name,
@@ -1127,6 +1521,24 @@ class _CarSuggestion {
   final String category;
   final double price;
   final int seats;
+}
+
+class _CruiseSuggestion {
+  const _CruiseSuggestion({
+    required this.name,
+    required this.destination,
+    required this.duration,
+    required this.sailingDate,
+    required this.price,
+    required this.imageUrl,
+  });
+
+  final String name;
+  final String destination;
+  final String duration;
+  final String sailingDate;
+  final double price;
+  final String imageUrl;
 }
 
 class _TrendingDestination {
@@ -1247,8 +1659,7 @@ class _PromotionalUpdateCard extends StatefulWidget {
   final _PromotionalUpdate promotion;
 
   @override
-  State<_PromotionalUpdateCard> createState() =>
-      _PromotionalUpdateCardState();
+  State<_PromotionalUpdateCard> createState() => _PromotionalUpdateCardState();
 }
 
 class _PromotionalUpdateCardState extends State<_PromotionalUpdateCard> {
