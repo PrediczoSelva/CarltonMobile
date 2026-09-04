@@ -193,6 +193,12 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       quotedTotal: quotedTotal,
       flightSnapshotJson: jsonEncode(flight.toJson()),
       isGuest: false,
+      paypalOrderId: session.paypalOrderId,
+      paypalCaptureId: session.paypalCaptureId,
+      payWithWallet: session.payWithWallet,
+      walletUserId: session.walletPayUserId,
+      barclaycardReference: session.barclaycardReference,
+      barclaycardLast4: session.barclaycardLast4,
     );
   }
 

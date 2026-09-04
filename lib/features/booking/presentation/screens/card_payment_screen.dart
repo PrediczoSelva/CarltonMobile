@@ -173,48 +173,43 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
       String? stripeIntentId;
       String? paymentStatus;
 
-      if (isProviderFlight) {
-        stripeIntentId = null;
-        paymentStatus = null;
-      } else {
-        final paymentRepository = getIt<PaymentRepository>();
-        final paymentIntent = await paymentRepository.createFlightPaymentIntent(
-          flightId: flight.id,
-          amount: amount,
-          summary: 'Carlton flight booking (flight ${flight.flightCode})',
-        );
+      final paymentRepository = getIt<PaymentRepository>();
+      final paymentIntent = await paymentRepository.createFlightPaymentIntent(
+        flightId: flight.id,
+        amount: amount,
+        summary: 'Carlton flight booking (flight ${flight.flightCode})',
+      );
 
-        if (paymentIntent.clientSecret.isEmpty) {
-          throw Exception('Unable to create payment session. Please try again.');
-        }
+      if (paymentIntent.clientSecret.isEmpty) {
+        throw Exception('Unable to create payment session. Please try again.');
+      }
 
-        final expiryParts = _expiryController.text.split('/');
-        final expiryMonth = int.parse(expiryParts[0]);
-        final expiryYear = int.parse('20${expiryParts[1]}');
+      final expiryParts = _expiryController.text.split('/');
+      final expiryMonth = int.parse(expiryParts[0]);
+      final expiryYear = int.parse('20${expiryParts[1]}');
 
-        await Stripe.instance.dangerouslyUpdateCardDetails(
-          CardDetails(
-            number: _cardNumberController.text.replaceAll(' ', ''),
-            expirationMonth: expiryMonth,
-            expirationYear: expiryYear,
-            cvc: _cvvController.text,
-          ),
-        );
+      await Stripe.instance.dangerouslyUpdateCardDetails(
+        CardDetails(
+          number: _cardNumberController.text.replaceAll(' ', ''),
+          expirationMonth: expiryMonth,
+          expirationYear: expiryYear,
+          cvc: _cvvController.text,
+        ),
+      );
 
-        final confirmedIntent = await Stripe.instance.confirmPayment(
-          paymentIntentClientSecret: paymentIntent.clientSecret,
-          data: PaymentMethodParams.card(
-            paymentMethodData: PaymentMethodData(
-              billingDetails: BillingDetails(
-                name: _nameController.text.trim(),
-              ),
+      final confirmedIntent = await Stripe.instance.confirmPayment(
+        paymentIntentClientSecret: paymentIntent.clientSecret,
+        data: PaymentMethodParams.card(
+          paymentMethodData: PaymentMethodData(
+            billingDetails: BillingDetails(
+              name: _nameController.text.trim(),
             ),
           ),
-        );
+        ),
+      );
 
-        stripeIntentId = confirmedIntent.id;
-        paymentStatus = 'succeeded';
-      }
+      stripeIntentId = confirmedIntent.id;
+      paymentStatus = 'succeeded';
 
       final lastFour = _cardNumberController.text.replaceAll(' ', '').substring(
             _cardNumberController.text.replaceAll(' ', '').length - 4,

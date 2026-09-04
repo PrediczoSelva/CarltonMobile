@@ -18,6 +18,12 @@ class BookingSession {
   String? paymentMethod;
   String? paymentMetadataJson;
   String? stripePaymentIntentId;
+  String? paypalOrderId;
+  String? paypalCaptureId;
+  bool payWithWallet = false;
+  int? walletPayUserId;
+  String? barclaycardReference;
+  String? barclaycardLast4;
   double? totalPrice;
   String? currency;
   String? bookingReference;
@@ -55,6 +61,12 @@ class BookingSession {
     paymentMethod = null;
     paymentMetadataJson = null;
     stripePaymentIntentId = null;
+    paypalOrderId = null;
+    paypalCaptureId = null;
+    payWithWallet = false;
+    walletPayUserId = null;
+    barclaycardReference = null;
+    barclaycardLast4 = null;
     totalPrice = null;
     currency = null;
     bookingReference = null;

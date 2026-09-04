@@ -78,6 +78,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         quotedTotal: event.quotedTotal,
         flightSnapshotJson: event.flightSnapshotJson,
         isGuest: event.isGuest,
+        paypalOrderId: event.paypalOrderId,
+        paypalCaptureId: event.paypalCaptureId,
+        payWithWallet: event.payWithWallet,
+        walletUserId: event.walletUserId,
+        barclaycardReference: event.barclaycardReference,
+        barclaycardLast4: event.barclaycardLast4,
       );
       emit(BookingSuccess(booking));
     } catch (e) {

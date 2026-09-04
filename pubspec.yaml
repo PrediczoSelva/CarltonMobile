@@ -48,6 +48,7 @@ dependencies:
   # Payments
   flutter_stripe: ^11.1.0
   flutter_paypal_payment: ^1.0.7
+  webview_flutter: ^4.10.0
 
   # PDF generation & file handling
   pdf: ^3.1.2

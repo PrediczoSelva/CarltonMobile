@@ -58,6 +58,12 @@ abstract class BookingRepository {
     required double quotedTotal,
     String? flightSnapshotJson,
     bool isGuest = false,
+    String? paypalOrderId,
+    String? paypalCaptureId,
+    bool payWithWallet = false,
+    int? walletUserId,
+    String? barclaycardReference,
+    String? barclaycardLast4,
   });
 
   Future<TravelportVerifyResponse> travelportVerify({
