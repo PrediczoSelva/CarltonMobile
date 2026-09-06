@@ -59,6 +59,12 @@ class CreateAmadeusBookingRequested extends BookingEvent {
     required this.quotedTotal,
     this.flightSnapshotJson,
     this.isGuest = false,
+    this.paypalOrderId,
+    this.paypalCaptureId,
+    this.payWithWallet = false,
+    this.walletUserId,
+    this.barclaycardReference,
+    this.barclaycardLast4,
   });
 
   final String amadeusOfferToken;
@@ -72,6 +78,12 @@ class CreateAmadeusBookingRequested extends BookingEvent {
   final double quotedTotal;
   final String? flightSnapshotJson;
   final bool isGuest;
+  final String? paypalOrderId;
+  final String? paypalCaptureId;
+  final bool payWithWallet;
+  final int? walletUserId;
+  final String? barclaycardReference;
+  final String? barclaycardLast4;
 }
 
 class CreateTravelportBookingRequested extends BookingEvent {

@@ -35,6 +35,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   final _contactEmailConfirmController = TextEditingController();
   final _contactPhoneController = TextEditingController();
   final _contactCountryController = TextEditingController(text: 'Sri Lanka');
+  final _leadPassportNumberController = TextEditingController();
+  final _leadPassportExpiryController = TextEditingController();
 
   @override
   void initState() {
@@ -58,6 +60,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         _contactEmailConfirmController.text = email;
         _contactPhoneController.text = phone;
         _contactCountryController.text = country;
+        _leadPassportNumberController.text =
+            _personalDetails!['passportNumber'] as String? ?? '';
+        _leadPassportExpiryController.text =
+            _personalDetails!['passportExpiryDate'] as String? ?? '';
       }
     } catch (_) {}
 
@@ -594,7 +600,14 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         firstName = parts.isNotEmpty ? parts.first : '';
         lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
       }
-      return Passenger(firstName: firstName, lastName: lastName);
+      return Passenger(
+        firstName: firstName,
+        lastName: lastName,
+        passportNumber: _leadPassportNumberController.text.trim().isEmpty
+            ? null
+            : _leadPassportNumberController.text.trim(),
+        passportExpiry: _parseDate(_leadPassportExpiryController.text.trim()),
+      );
     }
     final fn = p['firstName'] as String? ?? '';
     final ln = p['lastName'] as String? ?? '';
@@ -605,8 +618,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       email: p['email'] as String?,
       phone: p['phone'] as String?,
       dateOfBirth: dob,
-      passportNumber: p['passportNumber'] as String?,
-      passportExpiry: _parseDate(p['passportExpiryDate']),
+      passportNumber: _leadPassportNumberController.text.trim().isEmpty
+          ? (p['passportNumber'] as String?)
+          : _leadPassportNumberController.text.trim(),
+      passportExpiry: _leadPassportExpiryController.text.trim().isEmpty
+          ? _parseDate(p['passportExpiryDate'])
+          : _parseDate(_leadPassportExpiryController.text.trim()),
       country: p['country'] as String? ?? p['nationality'] as String?,
       passengerType: _passengerTypeFromDob(dob),
     );
@@ -689,6 +706,20 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       return;
     }
 
+    final leadPassportNumber = _leadPassportNumberController.text.trim();
+    final leadPassportExpiryText = _leadPassportExpiryController.text.trim();
+    if (leadPassportNumber.isNotEmpty && leadPassportExpiryText.isNotEmpty) {
+      final leadExpiry = DateTime.tryParse(leadPassportExpiryText);
+      if (leadExpiry == null || leadExpiry.isBefore(DateTime.now())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Lead passenger passport expiry date must be a future date'),
+          ),
+        );
+        return;
+      }
+    }
+
     final email = _contactEmailController.text.trim();
     if (email.isNotEmpty &&
         email != _contactEmailConfirmController.text.trim()) {
@@ -747,6 +778,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _contactEmailConfirmController.dispose();
     _contactPhoneController.dispose();
     _contactCountryController.dispose();
+    _leadPassportNumberController.dispose();
+    _leadPassportExpiryController.dispose();
     super.dispose();
   }
 
@@ -861,6 +894,43 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Lead Passenger Passport Details',
+                            style: AppTextStyles.bodyLarge),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _leadPassportNumberController,
+                          decoration: const InputDecoration(
+                            labelText: 'Passport Number',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _leadPassportExpiryController,
+                          readOnly: true,
+                          onTap: () => _pickDate(
+                            context: context,
+                            controller: _leadPassportExpiryController,
+                            isExpiryDate: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Passport Expiry Date',
+                            suffixIcon: Icon(Icons.calendar_today_outlined),
                           ),
                         ),
                       ],

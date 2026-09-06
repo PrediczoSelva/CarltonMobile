@@ -176,6 +176,12 @@ class BookingRepositoryImpl implements BookingRepository {
     required double quotedTotal,
     String? flightSnapshotJson,
     bool isGuest = false,
+    String? paypalOrderId,
+    String? paypalCaptureId,
+    bool payWithWallet = false,
+    int? walletUserId,
+    String? barclaycardReference,
+    String? barclaycardLast4,
   }) async {
     final amadeusPassengers = passengers.map((p) {
       final birthday = p.dateOfBirth != null
@@ -188,6 +194,8 @@ class BookingRepositoryImpl implements BookingRepository {
         'gender': 'M',
         'birthday': birthday,
         if (p.country != null) 'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
+        if (p.passportNumber != null && p.passportNumber!.isNotEmpty) 'passportNumber': p.passportNumber,
+        if (p.passportExpiry != null) 'passportExpiry': '${p.passportExpiry!.year.toString().padLeft(4, '0')}-${p.passportExpiry!.month.toString().padLeft(2, '0')}-${p.passportExpiry!.day.toString().padLeft(2, '0')}',
       };
     }).toList();
 
@@ -212,6 +220,12 @@ class BookingRepositoryImpl implements BookingRepository {
       quotedTotal: quotedTotal,
       flightSnapshotJson: flightSnapshotJson,
       isGuest: isGuest,
+      paypalOrderId: paypalOrderId,
+      paypalCaptureId: paypalCaptureId,
+      payWithWallet: payWithWallet,
+      walletUserId: walletUserId,
+      barclaycardReference: barclaycardReference,
+      barclaycardLast4: barclaycardLast4,
     );
   }
 

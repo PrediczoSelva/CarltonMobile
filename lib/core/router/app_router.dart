@@ -12,6 +12,9 @@ import '../../features/booking/presentation/screens/booking_confirmation_screen.
 import '../../features/booking/presentation/screens/booking_summary_screen.dart';
 import '../../features/booking/presentation/screens/service_pack_selection_screen.dart';
 import '../../features/booking/presentation/screens/card_payment_screen.dart';
+import '../../features/booking/presentation/screens/wallet_payment_screen.dart';
+import '../../features/booking/presentation/screens/paypal_payment_screen.dart';
+import '../../features/booking/presentation/screens/barclays_payment_screen.dart';
 import '../../features/booking/presentation/screens/payment_method_selection_screen.dart';
 import '../../features/booking/presentation/screens/payment_processing_screen.dart';
 import '../../features/booking/presentation/screens/passenger_details_screen.dart';
@@ -44,6 +47,9 @@ abstract class AppRoutes {
   static const servicePackSelection = '/booking/service-pack';
   static const paymentMethodSelection = '/booking/payment-method';
   static const cardPayment = '/booking/payment/card';
+  static const walletPayment = '/booking/payment/wallet';
+  static const paypalPayment = '/booking/payment/paypal';
+  static const barclaysPayment = '/booking/payment/barclays';
   static const paymentProcessing = '/booking/payment/process';
   static const bookingConfirmation = '/booking/confirmation';
   static const myTrips = '/my-trips';
@@ -134,6 +140,18 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: AppRoutes.cardPayment,
           builder: (context, state) => const CardPaymentScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.walletPayment,
+          builder: (context, state) => const WalletPaymentScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.paypalPayment,
+          builder: (context, state) => const PayPalPaymentScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.barclaysPayment,
+          builder: (context, state) => const BarclaysPaymentScreen(),
         ),
         GoRoute(
           path: AppRoutes.paymentProcessing,

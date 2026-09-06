@@ -172,6 +172,12 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     required double quotedTotal,
     String? flightSnapshotJson,
     bool isGuest = false,
+    String? paypalOrderId,
+    String? paypalCaptureId,
+    bool payWithWallet = false,
+    int? walletUserId,
+    String? barclaycardReference,
+    String? barclaycardLast4,
   }) async {
     final path =
         isGuest ? '$_basePath/amadeus/guest/book' : '$_basePath/amadeus/book';
@@ -188,6 +194,18 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'quotedTotal': quotedTotal,
           if (flightSnapshotJson != null)
             'flightSnapshotJson': flightSnapshotJson,
+          if (stripePaymentIntentId.isNotEmpty)
+            'stripePaymentIntentId': stripePaymentIntentId,
+          if (paypalOrderId != null && paypalOrderId.isNotEmpty)
+            'paypalOrderId': paypalOrderId,
+          if (paypalCaptureId != null && paypalCaptureId.isNotEmpty)
+            'paypalCaptureId': paypalCaptureId,
+          if (payWithWallet) 'payWithWallet': payWithWallet,
+          if (walletUserId != null) 'userId': walletUserId,
+          if (barclaycardReference != null && barclaycardReference.isNotEmpty)
+            'barclaycardReference': barclaycardReference,
+          if (barclaycardLast4 != null && barclaycardLast4.isNotEmpty)
+            'barclaycardLast4': barclaycardLast4,
         },
       );
       final data = response.data as Map<String, dynamic>;

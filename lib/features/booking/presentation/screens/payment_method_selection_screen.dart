@@ -29,9 +29,9 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
       icon: Icons.account_balance_wallet,
     ),
     _PaymentMethod(
-      id: 'superpay',
-      title: 'Super Pay',
-      icon: Icons.payments,
+      id: 'wallet',
+      title: 'Wallet',
+      icon: Icons.wallet,
     ),
     _PaymentMethod(
       id: 'barclays',
@@ -46,10 +46,21 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
     final session = getIt<BookingSession>();
     session.paymentMethod = _selectedMethod;
 
-    if (_selectedMethod == 'card') {
-      context.push('/booking/payment/card');
-    } else {
-      context.push('/booking/payment/process');
+    switch (_selectedMethod) {
+      case 'card':
+        context.push('/booking/payment/card');
+        break;
+      case 'paypal':
+        context.push('/booking/payment/paypal');
+        break;
+      case 'wallet':
+        context.push('/booking/payment/wallet');
+        break;
+      case 'barclays':
+        context.push('/booking/payment/barclays');
+        break;
+      default:
+        context.push('/booking/payment/process');
     }
   }
 

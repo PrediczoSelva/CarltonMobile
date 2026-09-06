@@ -11,8 +11,18 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
   FlightRemoteDatasourceImpl(this._apiClient);
 
   final ApiClient _apiClient;
+  final Map<String, (List<Flight>, DateTime)> _cache = {};
+  static const Duration _cacheTtl = Duration(minutes: 5);
 
   static const String _basePath = '/flights';
+
+  String _cacheKey(FlightSearchCriteria criteria) {
+    final dateStr = DateFormat('yyyy-MM-dd').format(criteria.departureDate);
+    final returnStr = criteria.returnDate != null
+        ? DateFormat('yyyy-MM-dd').format(criteria.returnDate!)
+        : '';
+    return '${criteria.originCode}|${criteria.destinationCode}|$dateStr|$returnStr|${criteria.passengers}';
+  }
 
   List<dynamic> _extractList(dynamic data) {
     if (data == null) return [];
@@ -28,6 +38,15 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
 
   @override
   Future<List<Flight>> searchFlights(FlightSearchCriteria criteria) async {
+    final key = _cacheKey(criteria);
+    final cached = _cache[key];
+    if (cached != null && DateTime.now().difference(cached.$2) < _cacheTtl) {
+      if (kDebugMode) {
+        debugPrint('[FlightSearch] cache hit for $key');
+      }
+      return cached.$1;
+    }
+
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(criteria.departureDate);
       final response = await _apiClient.post<dynamic>(
@@ -43,17 +62,18 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
       );
 
       final flights = _parseFlights(response.data);
+      _cache[key] = (flights, DateTime.now());
       if (kDebugMode) {
-        print('[FlightSearch] searchFlights: ${flights.length} flights from /api/flights/search/all');
+        debugPrint('[FlightSearch] searchFlights: ${flights.length} flights from /api/flights/search/all');
         for (final f in flights) {
-          print('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
+          debugPrint('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
         }
       }
       return flights;
     } on DioException catch (e) {
       final code = e.response?.statusCode;
       if (kDebugMode) {
-        print('[FlightSearch] DioException: $code, data: ${e.response?.data}');
+        debugPrint('[FlightSearch] DioException: $code, data: ${e.response?.data}');
       }
       if (code == 503) {
         throw Exception('Flight search service is temporarily unavailable. Please try again.');
@@ -71,7 +91,7 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
       throw Exception('Failed to search flights. Try again.');
     } catch (e) {
       if (kDebugMode) {
-        print('[FlightSearch] Error: $e');
+        debugPrint('[FlightSearch] Error: $e');
       }
       throw Exception('Failed to search flights. Try again.');
     }
@@ -83,21 +103,21 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
       final response = await _apiClient.get<dynamic>(_basePath);
       final flights = _parseFlights(response.data);
       if (kDebugMode && flights.isNotEmpty) {
-        print('[FlightSearch] getAllFlights: ${flights.length} catalog flights loaded');
+        debugPrint('[FlightSearch] getAllFlights: ${flights.length} catalog flights loaded');
         for (final f in flights) {
-          print('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
+          debugPrint('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
         }
       }
       return flights;
     } on DioException catch (e) {
       if (kDebugMode) {
-        print('[FlightSearch] getAllFlights error: ${e.response?.statusCode}, ${e.response?.data}');
+        debugPrint('[FlightSearch] getAllFlights error: ${e.response?.statusCode}, ${e.response?.data}');
       }
       if (e.response?.statusCode == 404) return [];
       throw Exception('Failed to load flights.');
     } catch (e) {
       if (kDebugMode) {
-        print('[FlightSearch] getAllFlights error: $e');
+        debugPrint('[FlightSearch] getAllFlights error: $e');
       }
       return [];
     }
