@@ -9,6 +9,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../domain/entities/flight.dart';
 import '../../domain/entities/flight_search_criteria.dart';
@@ -67,6 +68,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   static const String _addNewTravellerValue = '__add_new__';
 
   List<Map<String, dynamic>> _savedTravellers = [];
+  Map<String, dynamic>? _loggedInTraveller;
   String? _selectedTravellerId;
   late final ApiClient _apiClient;
 
@@ -333,14 +335,37 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   }
 
   Future<void> _loadSavedTravellers() async {
+    // Load the logged-in user's personal details first
+    try {
+      final response = await _apiClient.get<dynamic>('/profile/personal');
+      if (response.data != null && response.data is Map) {
+        _loggedInTraveller =
+            (response.data as Map<String, dynamic>)..['id'] = -1;
+      }
+    } catch (_) {
+      // Fallback: use cached auth user from secure storage
+      try {
+        final user = await getIt<AuthRepository>().getCurrentUser();
+        _loggedInTraveller = {
+          'id': -1,
+          'firstName': '',
+          'lastName': '',
+          'name': user.name,
+        };
+      } catch (_) {}
+    }
+
+    // Load saved travelers (excluding the logged-in user)
     try {
       final response = await _apiClient.get<dynamic>('/profile/travellers');
       if (response.data != null && response.data is List) {
         _savedTravellers = (response.data as List)
             .map((e) => e as Map<String, dynamic>)
+            .where((t) => (t['id'] != null && t['id'] != -1))
             .toList();
       }
     } catch (_) {}
+
     if (!mounted) {
       return;
     }
@@ -357,7 +382,13 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       if (ln.isNotEmpty) ln,
     ];
     final name = parts.join(' ').trim();
-    return name.isNotEmpty ? name : 'Traveller';
+    if (name.isNotEmpty) return name;
+
+    final fallbackName = t['name'] as String? ?? '';
+    if (fallbackName.isNotEmpty) return fallbackName;
+
+    final username = t['username'] as String? ?? '';
+    return username.isNotEmpty ? username : 'Traveller';
   }
 
   void _showAddTravellerSheet() {
@@ -573,6 +604,11 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                         suffixIcon: Icon(Icons.arrow_drop_down),
                       ),
                       items: [
+                        if (_loggedInTraveller != null)
+                          DropdownMenuItem<String>(
+                            value: '-1',
+                            child: Text(_travellerName(_loggedInTraveller!)),
+                          ),
                         ..._savedTravellers.map((t) => DropdownMenuItem<String>(
                               value: (t['id'] ?? 0).toString(),
                               child: Text(_travellerName(t)),
