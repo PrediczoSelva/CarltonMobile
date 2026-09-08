@@ -519,6 +519,20 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     session.searchCriteria = state.criteria;
     session.outboundFlights = state.flights;
 
+    if (_selectedTravellerId != null) {
+      if (_selectedTravellerId == '-1') {
+        session.selectedTraveller = _loggedInTraveller;
+      } else {
+        final id = int.tryParse(_selectedTravellerId!);
+        if (id != null) {
+          session.selectedTraveller = _savedTravellers.firstWhere(
+            (t) => (t['id'] ?? 0) == id,
+            orElse: () => <String, dynamic>{},
+          );
+        }
+      }
+    }
+
     if (state.flights.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No flights found for your search.')),
