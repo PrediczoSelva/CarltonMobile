@@ -30,7 +30,7 @@ class BookingSession {
   String? pnr;
   String? bookingStatus;
   int? bookingId;
-  Map<String, dynamic>? selectedTraveller;
+  List<Map<String, dynamic>>? selectedTravelers;
 
   bool get hasPassengerData => passengers.isNotEmpty;
 
@@ -74,6 +74,6 @@ class BookingSession {
     pnr = null;
     bookingStatus = null;
     bookingId = null;
-    selectedTraveller = null;
+    selectedTravelers = null;
   }
 }
