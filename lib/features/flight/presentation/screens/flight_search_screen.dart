@@ -782,8 +782,9 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                         ],
                       ),
                     ),
-                     DropdownButtonFormField<String>(
-                       value: _cabinClass,
+                    const SizedBox(height: 24),
+                    DropdownButtonFormField<String>(
+                      value: _cabinClass,
                       decoration: const InputDecoration(
                         labelText: 'Cabin Class',
                         suffixIcon: Icon(Icons.arrow_drop_down),
