@@ -56,8 +56,8 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
           'to': criteria.destinationCode,
           'date': dateStr,
           'adults': criteria.passengers,
-          'tripType': criteria.returnDate != null ? 'round-trip' : 'one-way',
-          'cabinClass': 'Economy',
+           'tripType': criteria.returnDate != null ? 'round-trip' : 'one-way',
+           'cabinClass': criteria.cabinClass,
         },
       );
 

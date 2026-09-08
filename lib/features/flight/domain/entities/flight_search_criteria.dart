@@ -5,6 +5,7 @@ class FlightSearchCriteria {
     required this.departureDate,
     this.returnDate,
     this.passengers = 1,
+    this.cabinClass = 'Economy',
   });
 
   final String origin;
@@ -12,6 +13,7 @@ class FlightSearchCriteria {
   final DateTime departureDate;
   final DateTime? returnDate;
   final int passengers;
+  final String cabinClass;
 
   Map<String, dynamic> toJson() => {
         'origin': origin,
@@ -19,6 +21,7 @@ class FlightSearchCriteria {
         'departureDate': departureDate.toIso8601String(),
         'returnDate': returnDate?.toIso8601String(),
         'passengers': passengers,
+        'cabinClass': cabinClass,
       };
 
   String get originCode {
