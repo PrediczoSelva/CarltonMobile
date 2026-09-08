@@ -91,8 +91,36 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       ];
     }
 
+     _autoSelectPreviousTravellers();
+
     if (mounted) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  void _autoSelectPreviousTravellers() {
+    final travelers = _session.selectedTravelers;
+    if (travelers == null || travelers.isEmpty) return;
+
+    for (final traveller in travelers) {
+      final travellerId = traveller['id'];
+
+      if (travellerId == -1) {
+        _selectedTravellerIds.add(_leadPassengerId);
+      } else {
+        final existingIndex = _savedTravellers.indexWhere(
+          (t) => (t['id'] ?? 0) == travellerId,
+        );
+        if (existingIndex != -1) {
+          final id = _savedTravellers[existingIndex]['id'] as int? ?? 0;
+          if (id > 0) {
+            _selectedTravellerIds.add(id);
+          }
+        } else if (travellerId != null && travellerId is int) {
+          _savedTravellers.add(traveller);
+          _selectedTravellerIds.add(travellerId);
+        }
+      }
     }
   }
 
