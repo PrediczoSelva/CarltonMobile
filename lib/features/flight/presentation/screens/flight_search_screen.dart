@@ -982,6 +982,9 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
           title: const Text('Search'),
           bottom: const TabBar(
             isScrollable: true,
+            labelColor: AppColors.textOnPrimary,
+            unselectedLabelColor: Color(0xFFDCE8F5),
+            indicatorColor: AppColors.accent,
             tabs: [
               Tab(icon: Icon(Icons.flight_outlined), text: 'Flights'),
               Tab(icon: Icon(Icons.hotel_outlined), text: 'Hotels'),
