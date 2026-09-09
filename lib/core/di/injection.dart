@@ -19,6 +19,8 @@ import '../../features/flight/data/datasources/flight_remote_datasource_impl.dar
 import '../../features/flight/data/repositories/flight_repository_impl.dart';
 import '../../features/flight/domain/repositories/flight_repository.dart';
 import '../../features/flight/presentation/bloc/flight_bloc.dart';
+import '../../features/cruise/data/repositories/cruise_repository.dart';
+import '../../features/cruise/data/repositories/cruise_repository_impl.dart';
 import '../../features/hotel/data/repositories/hotel_repository.dart';
 import '../../features/hotel/data/repositories/hotel_repository_impl.dart';
 import '../../features/payment/data/datasources/payment_remote_datasource.dart';
@@ -75,6 +77,11 @@ Future<void> setupDependencyInjection() async {
   // Hotels
   getIt.registerLazySingleton<HotelRepository>(
     () => HotelRepositoryImpl(getIt<ApiClient>()),
+  );
+
+  // Cruises
+  getIt.registerLazySingleton<CruiseRepository>(
+    () => CruiseRepositoryImpl(getIt<ApiClient>()),
   );
 
   // Booking

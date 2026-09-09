@@ -13,6 +13,7 @@ import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../booking/domain/entities/passenger.dart';
 import '../../../hotel/presentation/screens/hotel_search_tab.dart';
+import '../../../cruise/presentation/screens/cruise_search_tab.dart';
 import '../../domain/entities/flight.dart';
 import '../../domain/entities/flight_search_criteria.dart';
 import '../../domain/repositories/flight_repository.dart';
@@ -1197,11 +1198,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                     title: 'Search cars',
                     description: 'Choose a car for your journey.',
                   ),
-                  _buildOtherSearchSection(
-                    icon: Icons.directions_boat_outlined,
-                    title: 'Search cruises',
-                    description: 'Discover your next cruise adventure.',
-                  ),
+                  const CruiseSearchTab(),
                 ],
               );
             },
