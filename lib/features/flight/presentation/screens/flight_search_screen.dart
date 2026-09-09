@@ -58,6 +58,10 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
 
   DateTime? _departure;
   DateTime? _return;
+  String _tripType = 'round-trip';
+  TimeOfDay? _outboundTime;
+  TimeOfDay? _returnTime;
+  late final List<_MultiCityLeg> _multiCityLegs;
   String _cabinClass = 'Economy';
 
   static const List<String> _cabinClassOptions = [
@@ -80,6 +84,10 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   @override
   void initState() {
     super.initState();
+    _multiCityLegs = [
+      _MultiCityLeg(),
+      _MultiCityLeg(),
+    ];
     _flightRepository = getIt<FlightRepository>();
     _apiClient = getIt<ApiClient>();
     _session = getIt<BookingSession>();
@@ -113,6 +121,9 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     _toController.dispose();
     _fromFocusNode.dispose();
     _toFocusNode.dispose();
+    for (final leg in _multiCityLegs) {
+      leg.dispose();
+    }
     super.dispose();
   }
 
@@ -338,6 +349,159 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
         }
       });
     }
+  }
+
+  Future<void> _pickTime({required bool isReturn}) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: isReturn
+          ? (_returnTime ?? const TimeOfDay(hour: 12, minute: 0))
+          : (_outboundTime ?? const TimeOfDay(hour: 8, minute: 0)),
+    );
+    if (!mounted || picked == null) return;
+    setState(() {
+      if (isReturn) {
+        _returnTime = picked;
+      } else {
+        _outboundTime = picked;
+      }
+    });
+  }
+
+  Future<void> _pickMultiCityDate(_MultiCityLeg leg) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: leg.date ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (!mounted || picked == null) return;
+    setState(() => leg.date = picked);
+  }
+
+  String _formatTime(TimeOfDay? time) {
+    if (time == null) return 'Any time';
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute ${time.period == DayPeriod.am ? 'AM' : 'PM'}';
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Select date';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Widget _buildTripTypeSelector() {
+    return SegmentedButton<String>(
+      segments: const [
+        ButtonSegment(
+            value: 'round-trip',
+            label: Text('Round Trip'),
+            icon: Icon(Icons.sync_alt)),
+        ButtonSegment(
+            value: 'one-way',
+            label: Text('One Way'),
+            icon: Icon(Icons.arrow_forward)),
+        ButtonSegment(
+            value: 'multi-city',
+            label: Text('Multi-City'),
+            icon: Icon(Icons.alt_route)),
+      ],
+      selected: {_tripType},
+      onSelectionChanged: (selection) {
+        final next = selection.first;
+        setState(() {
+          _tripType = next;
+          if (next == 'one-way' || next == 'multi-city') {
+            _return = null;
+            _returnTime = null;
+          }
+        });
+      },
+    );
+  }
+
+  Widget _buildTimeField(String label, TimeOfDay? time, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: const Icon(Icons.schedule_outlined),
+        ),
+        child: Text(_formatTime(time)),
+      ),
+    );
+  }
+
+  Widget _buildMultiCityFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ..._multiCityLegs.asMap().entries.map((entry) {
+          final index = entry.key;
+          final leg = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Flight ${index + 1}', style: AppTextStyles.h4),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: leg.from,
+                  decoration: const InputDecoration(
+                    labelText: 'From',
+                    prefixIcon: Icon(Icons.flight_takeoff_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: leg.to,
+                  decoration: const InputDecoration(
+                    labelText: 'To',
+                    prefixIcon: Icon(Icons.flight_land_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => _pickMultiCityDate(leg),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Departure date',
+                      prefixIcon: Icon(Icons.calendar_today_outlined),
+                    ),
+                    child: Text(_formatDate(leg.date)),
+                  ),
+                ),
+                if (_multiCityLegs.length > 2)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => setState(() {
+                        final removed = _multiCityLegs.removeAt(index);
+                        removed.dispose();
+                      }),
+                      icon: const Icon(Icons.remove_circle_outline),
+                      label: const Text('Remove flight'),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }),
+        if (_multiCityLegs.length < 6)
+          OutlinedButton.icon(
+            onPressed: () => setState(() => _multiCityLegs.add(_MultiCityLeg(
+                  from: _multiCityLegs.last.to.text,
+                ))),
+            icon: const Icon(Icons.add),
+            label: const Text('Add another flight'),
+          ),
+      ],
+    );
   }
 
   Future<void> _loadSavedTravellers() async {
@@ -867,22 +1031,72 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   }
 
   void _searchFlights() {
-    if (_fromController.text.trim().isEmpty ||
-        _toController.text.trim().isEmpty ||
-        _departure == null) {
+    if (_tripType == 'multi-city') {
+      final hasIncompleteLeg = _multiCityLegs.any(
+        (leg) =>
+            leg.from.text.trim().isEmpty ||
+            leg.to.text.trim().isEmpty ||
+            leg.date == null,
+      );
+      if (hasIncompleteLeg) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please complete every city pair')),
+        );
+        return;
+      }
+    }
+
+    final hasBasicSearchFields = _tripType == 'multi-city'
+        ? true
+        : _fromController.text.trim().isNotEmpty &&
+            _toController.text.trim().isNotEmpty &&
+            _departure != null;
+    if (!hasBasicSearchFields) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields')),
       );
       return;
     }
 
+    if (_tripType == 'round-trip' && _return == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a return date')),
+      );
+      return;
+    }
+
+    final firstLeg = _multiCityLegs.first;
+    final multiCityLegs = _tripType == 'multi-city'
+        ? _multiCityLegs
+            .map(
+              (leg) => FlightSegmentCriteria(
+                origin: leg.from.text.trim(),
+                destination: leg.to.text.trim(),
+                departureDate: leg.date!,
+              ),
+            )
+            .toList(growable: false)
+        : const <FlightSegmentCriteria>[];
+
     final criteria = FlightSearchCriteria(
-      origin: _fromController.text.trim(),
-      destination: _toController.text.trim(),
-      departureDate: _departure!,
-      returnDate: _return,
+      origin: _tripType == 'multi-city'
+          ? firstLeg.from.text.trim()
+          : _fromController.text.trim(),
+      destination: _tripType == 'multi-city'
+          ? firstLeg.to.text.trim()
+          : _toController.text.trim(),
+      departureDate: _tripType == 'multi-city' ? firstLeg.date! : _departure!,
+      returnDate: _tripType == 'round-trip' ? _return : null,
       passengers: _passengerSelections.length,
       cabinClass: _cabinClass,
+      tripType: _tripType,
+      outboundTime: _outboundTime == null
+          ? null
+          : '${_outboundTime!.hour.toString().padLeft(2, '0')}:${_outboundTime!.minute.toString().padLeft(2, '0')}',
+      returnTime: _tripType == 'round-trip' && _returnTime != null
+          ? '${_returnTime!.hour.toString().padLeft(2, '0')}:${_returnTime!.minute.toString().padLeft(2, '0')}'
+          : null,
+      multiCityLegs: multiCityLegs,
     );
 
     context.read<FlightSearchBloc>().add(FlightSearchRequested(criteria));
@@ -1025,51 +1239,73 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildLocationInput(
-                            label: 'From',
-                            hint: 'City or airport',
-                            controller: _fromController,
-                            focusNode: _fromFocusNode,
-                            suggestions: _fromSuggestions,
-                            showSuggestions: _showFromSuggestions,
-                            isFromField: true,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildLocationInput(
-                            label: 'To',
-                            hint: 'City or airport',
-                            controller: _toController,
-                            focusNode: _toFocusNode,
-                            suggestions: _toSuggestions,
-                            showSuggestions: _showToSuggestions,
-                            isFromField: false,
-                          ),
-                          const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () => _pickDate(isDeparture: true),
-                            child: InputDecorator(
-                              decoration:
-                                  const InputDecoration(labelText: 'Departure'),
-                              child: Text(
-                                _departure == null
-                                    ? 'Select date'
-                                    : '${_departure!.day}/${_departure!.month}/${_departure!.year}',
+                          _buildTripTypeSelector(),
+                          const SizedBox(height: 20),
+                          if (_tripType == 'multi-city')
+                            _buildMultiCityFields()
+                          else ...[
+                            _buildLocationInput(
+                              label: 'From',
+                              hint: 'City or airport',
+                              controller: _fromController,
+                              focusNode: _fromFocusNode,
+                              suggestions: _fromSuggestions,
+                              showSuggestions: _showFromSuggestions,
+                              isFromField: true,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildLocationInput(
+                              label: 'To',
+                              hint: 'City or airport',
+                              controller: _toController,
+                              focusNode: _toFocusNode,
+                              suggestions: _toSuggestions,
+                              showSuggestions: _showToSuggestions,
+                              isFromField: false,
+                            ),
+                            const SizedBox(height: 16),
+                            InkWell(
+                              onTap: () => _pickDate(isDeparture: true),
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                    labelText: 'Departure'),
+                                child: Text(
+                                  _departure == null
+                                      ? 'Select date'
+                                      : '${_departure!.day}/${_departure!.month}/${_departure!.year}',
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () => _pickDate(isDeparture: false),
-                            child: InputDecorator(
-                              decoration:
-                                  const InputDecoration(labelText: 'Return'),
-                              child: Text(
-                                _return == null
-                                    ? 'Optional'
-                                    : '${_return!.day}/${_return!.month}/${_return!.year}',
+                            if (_tripType == 'round-trip') ...[
+                              const SizedBox(height: 16),
+                              InkWell(
+                                onTap: () => _pickDate(isDeparture: false),
+                                child: InputDecorator(
+                                  decoration: const InputDecoration(
+                                      labelText: 'Return'),
+                                  child: Text(
+                                    _return == null
+                                        ? 'Select date'
+                                        : '${_return!.day}/${_return!.month}/${_return!.year}',
+                                  ),
+                                ),
                               ),
+                            ],
+                            const SizedBox(height: 16),
+                            _buildTimeField(
+                              'Outbound time',
+                              _outboundTime,
+                              () => _pickTime(isReturn: false),
                             ),
-                          ),
+                            if (_tripType == 'round-trip') ...[
+                              const SizedBox(height: 16),
+                              _buildTimeField(
+                                'Return time',
+                                _returnTime,
+                                () => _pickTime(isReturn: true),
+                              ),
+                            ],
+                          ],
                           const SizedBox(height: 16),
                           Container(
                             decoration: BoxDecoration(
@@ -1236,5 +1472,18 @@ class _NewTravellerController {
     frequencyFlyerNo.dispose();
     knownTravellerNo.dispose();
     specialRequirement.dispose();
+  }
+}
+
+class _MultiCityLeg {
+  _MultiCityLeg({String from = ''}) : from = TextEditingController(text: from);
+
+  final TextEditingController from;
+  final TextEditingController to = TextEditingController();
+  DateTime? date;
+
+  void dispose() {
+    from.dispose();
+    to.dispose();
   }
 }

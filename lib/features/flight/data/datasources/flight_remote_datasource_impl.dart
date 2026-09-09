@@ -21,7 +21,7 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
     final returnStr = criteria.returnDate != null
         ? DateFormat('yyyy-MM-dd').format(criteria.returnDate!)
         : '';
-    return '${criteria.originCode}|${criteria.destinationCode}|$dateStr|$returnStr|${criteria.passengers}';
+    return '${criteria.originCode}|${criteria.destinationCode}|$dateStr|$returnStr|${criteria.passengers}|${criteria.tripType}|${criteria.outboundTime}|${criteria.returnTime}|${criteria.multiCityLegs.map((leg) => '${leg.origin}-${leg.destination}-${leg.departureDate.toIso8601String()}').join(',')}';
   }
 
   List<dynamic> _extractList(dynamic data) {
@@ -56,33 +56,41 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
           'to': criteria.destinationCode,
           'date': dateStr,
           'adults': criteria.passengers,
-           'tripType': criteria.returnDate != null ? 'round-trip' : 'one-way',
-           'cabinClass': criteria.cabinClass,
+          'tripType': criteria.tripType,
+          'cabinClass': criteria.cabinClass,
+          'outboundTime': criteria.outboundTime,
+          'returnTime': criteria.returnTime,
+          'legs': criteria.multiCityLegs.map((leg) => leg.toJson()).toList(),
         },
       );
 
       final flights = _parseFlights(response.data);
       _cache[key] = (flights, DateTime.now());
       if (kDebugMode) {
-        debugPrint('[FlightSearch] searchFlights: ${flights.length} flights from /api/flights/search/all');
+        debugPrint(
+            '[FlightSearch] searchFlights: ${flights.length} flights from /api/flights/search/all');
         for (final f in flights) {
-          debugPrint('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
+          debugPrint(
+              '[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
         }
       }
       return flights;
     } on DioException catch (e) {
       final code = e.response?.statusCode;
       if (kDebugMode) {
-        debugPrint('[FlightSearch] DioException: $code, data: ${e.response?.data}');
+        debugPrint(
+            '[FlightSearch] DioException: $code, data: ${e.response?.data}');
       }
       if (code == 503) {
-        throw Exception('Flight search service is temporarily unavailable. Please try again.');
+        throw Exception(
+            'Flight search service is temporarily unavailable. Please try again.');
       }
       if (code == 400) {
         final msg = e.response?.data is Map
             ? (e.response?.data as Map)['message'] as String?
             : null;
-        throw Exception(msg ?? 'Invalid search parameters. Please check your input.');
+        throw Exception(
+            msg ?? 'Invalid search parameters. Please check your input.');
       }
       if (code == 401) {
         throw Exception('Please log in to continue.');
@@ -103,15 +111,18 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
       final response = await _apiClient.get<dynamic>(_basePath);
       final flights = _parseFlights(response.data);
       if (kDebugMode && flights.isNotEmpty) {
-        debugPrint('[FlightSearch] getAllFlights: ${flights.length} catalog flights loaded');
+        debugPrint(
+            '[FlightSearch] getAllFlights: ${flights.length} catalog flights loaded');
         for (final f in flights) {
-          debugPrint('[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
+          debugPrint(
+              '[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
         }
       }
       return flights;
     } on DioException catch (e) {
       if (kDebugMode) {
-        debugPrint('[FlightSearch] getAllFlights error: ${e.response?.statusCode}, ${e.response?.data}');
+        debugPrint(
+            '[FlightSearch] getAllFlights error: ${e.response?.statusCode}, ${e.response?.data}');
       }
       if (e.response?.statusCode == 404) return [];
       throw Exception('Failed to load flights.');
@@ -125,7 +136,9 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
 
   List<Flight> _parseFlights(dynamic data) {
     final list = _extractList(data);
-    return list.map((json) => Flight.fromJson(json as Map<String, dynamic>)).toList();
+    return list
+        .map((json) => Flight.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -134,7 +147,8 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
       final response = await _apiClient.get<dynamic>('$_basePath/$id');
       if (response.data == null) return null;
       final list = _extractList(response.data);
-      if (list.isNotEmpty) return Flight.fromJson(list.first as Map<String, dynamic>);
+      if (list.isNotEmpty)
+        return Flight.fromJson(list.first as Map<String, dynamic>);
       if (response.data is Map<String, dynamic>) {
         return Flight.fromJson(response.data as Map<String, dynamic>);
       }
