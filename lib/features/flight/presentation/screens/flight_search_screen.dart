@@ -12,6 +12,7 @@ import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../booking/domain/entities/passenger.dart';
+import '../../../hotel/presentation/screens/hotel_search_tab.dart';
 import '../../domain/entities/flight.dart';
 import '../../domain/entities/flight_search_criteria.dart';
 import '../../domain/repositories/flight_repository.dart';
@@ -1181,11 +1182,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                       ),
                     ),
                   ),
-                  _buildOtherSearchSection(
-                    icon: Icons.hotel_outlined,
-                    title: 'Search hotels',
-                    description: 'Find the right stay for your trip.',
-                  ),
+                  const HotelSearchTab(),
                   _buildOtherSearchSection(
                     icon: Icons.directions_car_outlined,
                     title: 'Search cars',

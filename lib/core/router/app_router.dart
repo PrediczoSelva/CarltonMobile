@@ -24,6 +24,7 @@ import '../../features/flight/presentation/screens/flight_search_screen.dart';
 import '../../features/home/presentation/screens/messages_screen.dart';
 import '../../features/home/presentation/screens/notifications_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -95,6 +96,19 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: AppRoutes.flightResults,
           builder: (context, state) => const FlightResultsScreen(),
+        ),
+        GoRoute(
+          path: '/hotels/results',
+          builder: (context, state) {
+            final args = state.extra;
+            if (args is! HotelSearchResultArgs) {
+              return const Scaffold(
+                body: Center(
+                    child: Text('Hotel search results are unavailable.')),
+              );
+            }
+            return HotelResultsScreen(args: args);
+          },
         ),
         GoRoute(
           path: AppRoutes.myTrips,
