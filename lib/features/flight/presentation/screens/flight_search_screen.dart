@@ -976,8 +976,17 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final requestedTab = GoRouterState.of(context).uri.queryParameters['tab'];
+    final initialTabIndex = switch (requestedTab) {
+      'hotels' => 1,
+      'cars' => 2,
+      'cruise' => 3,
+      _ => 0,
+    };
+
     return DefaultTabController(
       length: 4,
+      initialIndex: initialTabIndex,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Search'),
