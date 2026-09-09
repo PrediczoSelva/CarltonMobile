@@ -25,17 +25,18 @@ class MyTripsScreen extends StatefulWidget {
   State<MyTripsScreen> createState() => _MyTripsScreenState();
 }
 
-class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProviderStateMixin {
+class _MyTripsScreenState extends State<MyTripsScreen>
+    with TickerProviderStateMixin {
   final Set<int> _downloadingIds = {};
   final Set<int> _cancellingIds = {};
   int? _selectedBookingId;
   int? _hoveredBookingId;
-  late TabController _tabController;
+  late TabController _serviceTabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _serviceTabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BookingBloc>().add(GetUserBookingsRequested());
     });
@@ -43,7 +44,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _serviceTabController.dispose();
     super.dispose();
   }
 
@@ -156,43 +157,162 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
 
     return Column(
       children: [
-        _buildPortfolioHeader(allBookings),
-        const SizedBox(height: 4),
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(14),
-          ),
+          color: AppColors.primary,
           child: TabBar(
-            controller: _tabController,
-            indicator: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            indicatorSize: TabBarIndicatorSize.tab,
+            controller: _serviceTabController,
+            isScrollable: true,
             labelColor: AppColors.textOnPrimary,
-            unselectedLabelColor: AppColors.textSecondary,
-            labelStyle: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+            unselectedLabelColor: const Color(0xFFDCE8F5),
+            indicatorColor: AppColors.accent,
             tabs: const [
-              Tab(text: 'Upcoming'),
-              Tab(text: 'Finished'),
-              Tab(text: 'Cancelled'),
+              Tab(icon: Icon(Icons.flight_outlined), text: 'Flights'),
+              Tab(icon: Icon(Icons.hotel_outlined), text: 'Hotels'),
+              Tab(icon: Icon(Icons.directions_car_outlined), text: 'Cars'),
+              Tab(icon: Icon(Icons.directions_boat_outlined), text: 'Cruise'),
             ],
           ),
         ),
-        const SizedBox(height: 10),
         Expanded(
           child: TabBarView(
-            controller: _tabController,
+            controller: _serviceTabController,
             children: [
-              _buildBookingList(upcoming, showCancel: true),
-              _buildBookingList(finished, showCancel: false),
-              _buildBookingList(cancelled, showCancel: false),
+              _buildFlightBookings(
+                allBookings,
+                upcoming,
+                cancelled,
+                finished,
+              ),
+              _buildServiceBookings(
+                icon: Icons.hotel_outlined,
+                label: 'hotel',
+              ),
+              _buildServiceBookings(
+                icon: Icons.directions_car_outlined,
+                label: 'car',
+              ),
+              _buildServiceBookings(
+                icon: Icons.directions_boat_outlined,
+                label: 'cruise',
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFlightBookings(
+    List<Booking> allBookings,
+    List<Booking> upcoming,
+    List<Booking> cancelled,
+    List<Booking> finished,
+  ) {
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          _buildPortfolioHeader(allBookings),
+          const SizedBox(height: 4),
+          _buildStatusTabs(),
+          const SizedBox(height: 10),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildBookingList(upcoming, showCancel: true),
+                _buildBookingList(cancelled, showCancel: false),
+                _buildBookingList(finished, showCancel: false),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceBookings({
+    required IconData icon,
+    required String label,
+  }) {
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          const SizedBox(height: 14),
+          _buildStatusTabs(),
+          const SizedBox(height: 10),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildServiceEmptyState(
+                    icon: icon, label: label, status: 'upcoming'),
+                _buildServiceEmptyState(
+                    icon: icon, label: label, status: 'cancelled'),
+                _buildServiceEmptyState(
+                    icon: icon, label: label, status: 'finished'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusTabs() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: TabBar(
+        indicator: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: AppColors.textOnPrimary,
+        unselectedLabelColor: AppColors.textSecondary,
+        labelStyle:
+            AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+        tabs: const [
+          Tab(text: 'Upcoming'),
+          Tab(text: 'Cancelled'),
+          Tab(text: 'Finished'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceEmptyState({
+    required IconData icon,
+    required String label,
+    required String status,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 56, color: AppColors.textSecondary.withOpacity(0.6)),
+            const SizedBox(height: 16),
+            Text(
+              'No $status $label bookings',
+              style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$label bookings will appear here when available',
+              style: AppTextStyles.bodySmall
+                  .copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -341,8 +461,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(24),
               child: InkWell(
-                onTap: () =>
-                    setState(() => _selectedBookingId = booking.id),
+                onTap: () => setState(() => _selectedBookingId = booking.id),
                 borderRadius: BorderRadius.circular(24),
                 splashColor: AppColors.accent.withOpacity(0.14),
                 highlightColor: AppColors.primary.withOpacity(0.04),
@@ -429,22 +548,21 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                                     booking.flight.origin.isEmpty
                                         ? '—'
                                         : booking.flight.origin,
-                                    style: AppTextStyles.bodyLarge
-                                        .copyWith(
+                                    style: AppTextStyles.bodyLarge.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.primary,
                                     ),
                                   ),
                                   const SizedBox(height: 5),
                                   Text(
-                                    DateFormat('dd MMM').format(
-                                        booking.flight.departureTime),
+                                    DateFormat('dd MMM')
+                                        .format(booking.flight.departureTime),
                                     style: AppTextStyles.bodySmall,
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    DateFormat('HH:mm').format(
-                                        booking.flight.departureTime),
+                                    DateFormat('HH:mm')
+                                        .format(booking.flight.departureTime),
                                     style: AppTextStyles.h4.copyWith(
                                       color: AppColors.textPrimary,
                                     ),
@@ -453,16 +571,15 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
                               child: Column(
                                 children: [
                                   Text(
                                     booking.flight.duration.isNotEmpty
                                         ? booking.flight.duration
                                         : 'Flight time',
-                                    style: AppTextStyles.bodySmall
-                                        .copyWith(
+                                    style: AppTextStyles.bodySmall.copyWith(
                                       color: AppColors.textSecondary,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -476,8 +593,8 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                                         color: AppColors.border,
                                       ),
                                       const Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 7),
+                                        padding:
+                                            EdgeInsets.symmetric(horizontal: 7),
                                         child: Icon(
                                           Icons.flight_takeoff_rounded,
                                           size: 16,
@@ -516,22 +633,21 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                                     booking.flight.destination.isEmpty
                                         ? '—'
                                         : booking.flight.destination,
-                                    style: AppTextStyles.bodyLarge
-                                        .copyWith(
+                                    style: AppTextStyles.bodyLarge.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.primary,
                                     ),
                                   ),
                                   const SizedBox(height: 5),
                                   Text(
-                                    DateFormat('dd MMM').format(
-                                        booking.flight.arrivalTime),
+                                    DateFormat('dd MMM')
+                                        .format(booking.flight.arrivalTime),
                                     style: AppTextStyles.bodySmall,
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    DateFormat('HH:mm').format(
-                                        booking.flight.arrivalTime),
+                                    DateFormat('HH:mm')
+                                        .format(booking.flight.arrivalTime),
                                     style: AppTextStyles.h4.copyWith(
                                       color: AppColors.textPrimary,
                                     ),
@@ -546,8 +662,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                       Row(
                         children: [
                           _TripMetaChip(
-                            icon: Icons
-                                .confirmation_number_outlined,
+                            icon: Icons.confirmation_number_outlined,
                             label: 'PNR ${booking.pnr}',
                           ),
                           const Spacer(),
@@ -562,22 +677,19 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                               ),
                             ),
                           TextButton.icon(
-                            onPressed: () =>
-                                _viewBookingDetails(booking),
+                            onPressed: () => _viewBookingDetails(booking),
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.primary,
-                              backgroundColor: AppColors.primary
-                                  .withOpacity(0.06),
+                              backgroundColor:
+                                  AppColors.primary.withOpacity(0.06),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 8,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(10),
                                 side: BorderSide(
-                                  color: AppColors.primary
-                                      .withOpacity(0.14),
+                                  color: AppColors.primary.withOpacity(0.14),
                                 ),
                               ),
                             ),
@@ -587,8 +699,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                             ),
                             label: Text(
                               'View',
-                              style: AppTextStyles.bodySmall
-                                  .copyWith(
+                              style: AppTextStyles.bodySmall.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -608,11 +719,9 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                                   vertical: 8,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(10),
                                   side: BorderSide(
-                                    color: AppColors.error
-                                        .withOpacity(0.2),
+                                    color: AppColors.error.withOpacity(0.2),
                                   ),
                                 ),
                               ),
@@ -642,8 +751,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                         ],
                       ),
                       const SizedBox(height: 14),
-                      const Divider(
-                          color: AppColors.divider, height: 1),
+                      const Divider(color: AppColors.divider, height: 1),
                       const SizedBox(height: 14),
                       Row(
                         children: [
@@ -679,8 +787,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 side: BorderSide(
-                                  color: AppColors.primary
-                                      .withOpacity(0.14),
+                                  color: AppColors.primary.withOpacity(0.14),
                                 ),
                               ),
                             ),
@@ -693,12 +800,9 @@ class _MyTripsScreenState extends State<MyTripsScreen> with SingleTickerProvider
                                       color: AppColors.primary,
                                     ),
                                   )
-                                : const Icon(Icons.download_rounded,
-                                    size: 18),
+                                : const Icon(Icons.download_rounded, size: 18),
                             label: Text(
-                              isDownloading
-                                  ? 'Downloading...'
-                                  : 'E-ticket',
+                              isDownloading ? 'Downloading...' : 'E-ticket',
                               style: AppTextStyles.bodySmall.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1063,7 +1167,8 @@ class _BookingDetailsSheet extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isCancelled
                         ? AppColors.error.withOpacity(0.12)
@@ -1101,15 +1206,21 @@ class _BookingDetailsSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _DetailRow(label: 'Flight', value: '${flight.airline} ${flight.flightCode}'),
-                _DetailRow(label: 'Route', value: '${flight.origin} → ${flight.destination}'),
+                _DetailRow(
+                    label: 'Flight',
+                    value: '${flight.airline} ${flight.flightCode}'),
+                _DetailRow(
+                    label: 'Route',
+                    value: '${flight.origin} → ${flight.destination}'),
                 _DetailRow(
                   label: 'Departure',
-                  value: '${DateFormat('dd MMM yyyy').format(flight.departureTime)} at ${DateFormat('HH:mm').format(flight.departureTime)}',
+                  value:
+                      '${DateFormat('dd MMM yyyy').format(flight.departureTime)} at ${DateFormat('HH:mm').format(flight.departureTime)}',
                 ),
                 _DetailRow(
                   label: 'Arrival',
-                  value: '${DateFormat('dd MMM yyyy').format(flight.arrivalTime)} at ${DateFormat('HH:mm').format(flight.arrivalTime)}',
+                  value:
+                      '${DateFormat('dd MMM yyyy').format(flight.arrivalTime)} at ${DateFormat('HH:mm').format(flight.arrivalTime)}',
                 ),
                 _DetailRow(label: 'Duration', value: flight.duration),
                 _DetailRow(label: 'Stops', value: flight.stopsText),
@@ -1125,7 +1236,8 @@ class _BookingDetailsSheet extends StatelessWidget {
                 if (booking.passengers.isNotEmpty)
                   ...booking.passengers.map(
                     (p) => Padding(
-                      padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
+                      padding:
+                          const EdgeInsets.only(left: 12, top: 4, bottom: 4),
                       child: Text(
                         p.fullName,
                         style: AppTextStyles.bodyMedium.copyWith(
@@ -1143,7 +1255,8 @@ class _BookingDetailsSheet extends StatelessWidget {
                 const SizedBox(height: 8),
                 _DetailRow(
                   label: 'Total Paid',
-                  value: '${booking.currency} ${booking.totalPrice.toStringAsFixed(2)}',
+                  value:
+                      '${booking.currency} ${booking.totalPrice.toStringAsFixed(2)}',
                   valueStyle: AppTextStyles.price,
                 ),
                 const SizedBox(height: 20),
