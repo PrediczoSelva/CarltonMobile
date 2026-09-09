@@ -11,6 +11,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../booking/domain/entities/booking_session.dart';
+import '../../../booking/domain/entities/passenger.dart';
+import '../../../hotel/presentation/screens/hotel_search_tab.dart';
 import '../../domain/entities/flight.dart';
 import '../../domain/entities/flight_search_criteria.dart';
 import '../../domain/repositories/flight_repository.dart';
@@ -72,12 +74,14 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   bool _passengersExpanded = false;
 
   late final ApiClient _apiClient;
+  late final BookingSession _session;
 
   @override
   void initState() {
     super.initState();
     _flightRepository = getIt<FlightRepository>();
     _apiClient = getIt<ApiClient>();
+    _session = getIt<BookingSession>();
     _fromController.addListener(_onFromInputChanged);
     _toController.addListener(_onToInputChanged);
     _fromFocusNode.addListener(() {
@@ -340,8 +344,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     try {
       final response = await _apiClient.get<dynamic>('/profile/personal');
       if (response.data != null && response.data is Map) {
-        _loggedInTraveller =
-            (response.data as Map<String, dynamic>)..['id'] = -1;
+        _loggedInTraveller = (response.data as Map<String, dynamic>)
+          ..['id'] = -1;
       }
     } catch (_) {
       // Fallback: use cached auth user from secure storage
@@ -438,8 +442,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                 ),
               ),
             ),
-            if (_passengerSelections.length > 1)
-              const SizedBox(width: 8),
+            if (_passengerSelections.length > 1) const SizedBox(width: 8),
             if (_passengerSelections.length > 1)
               IconButton(
                 icon: const Icon(
@@ -459,8 +462,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   }
 
   void _showAddTravellerSheet() {
-    final firstNameController = TextEditingController();
-    final lastNameController = TextEditingController();
+    final controller = _NewTravellerController();
 
     showModalBottomSheet(
       context: context,
@@ -473,8 +475,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.background,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
           child: SingleChildScrollView(
@@ -485,8 +486,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text('Add new traveller',
-                          style: AppTextStyles.h4),
+                      child: Text('Add new traveller', style: AppTextStyles.h4),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(sheetContext),
@@ -494,15 +494,156 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Fill in the traveller details below and save them for future bookings.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 16),
+                Text('Relationship', style: AppTextStyles.bodyLarge),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: controller.relationship.text.isEmpty
+                      ? null
+                      : controller.relationship.text,
+                  decoration: const InputDecoration(
+                    labelText: 'Select relationship',
+                  ),
+                  items: const [
+                    'Spouse',
+                    'Child',
+                    'Parent',
+                    'Sibling',
+                    'Friend',
+                    'Colleague',
+                  ]
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    controller.relationship.text = value ?? '';
+                  },
+                ),
+                const SizedBox(height: 16),
+                Text('Passenger Type', style: AppTextStyles.bodyLarge),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: controller.passengerType.text.isEmpty
+                      ? null
+                      : controller.passengerType.text,
+                  decoration: const InputDecoration(
+                    labelText: 'Select type',
+                  ),
+                  items: const [
+                    'Adult',
+                    'Child',
+                    'Infant',
+                  ]
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    controller.passengerType.text = value ?? 'Adult';
+                  },
+                ),
+                const SizedBox(height: 16),
+                Text('Personal Information', style: AppTextStyles.bodyLarge),
+                const SizedBox(height: 8),
                 TextField(
-                  controller: firstNameController,
+                  controller: controller.firstName,
                   decoration: const InputDecoration(labelText: 'First name'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: lastNameController,
+                  controller: controller.lastName,
                   decoration: const InputDecoration(labelText: 'Last name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller.dateOfBirth,
+                  readOnly: true,
+                  onTap: () {
+                    final type = switch (controller.passengerType.text) {
+                      'Child' => Passenger.childType,
+                      'Infant' => Passenger.infantType,
+                      _ => Passenger.adultType,
+                    };
+                    _pickTravellerDate(
+                      context: sheetContext,
+                      controller: controller.dateOfBirth,
+                      passengerType: type,
+                    );
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Date of Birth',
+                    suffixIcon: Icon(Icons.calendar_today_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller.nationality,
+                  decoration: const InputDecoration(labelText: 'Nationality'),
+                ),
+                const SizedBox(height: 16),
+                Text('Passport Details', style: AppTextStyles.bodyLarge),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: controller.passportNumber,
+                  decoration:
+                      const InputDecoration(labelText: 'Passport Number'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller.issueNumber,
+                  decoration: const InputDecoration(labelText: 'Issue Number'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller.passportExpiryDate,
+                  readOnly: true,
+                  onTap: () => _pickTravellerDate(
+                    context: sheetContext,
+                    controller: controller.passportExpiryDate,
+                    isExpiryDate: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Expiry Date',
+                    suffixIcon: Icon(Icons.calendar_today_outlined),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Optional Details', style: AppTextStyles.bodyLarge),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: controller.frequencyFlyerNo,
+                  decoration:
+                      const InputDecoration(labelText: 'Frequency Flyer No'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller.knownTravellerNo,
+                  decoration:
+                      const InputDecoration(labelText: 'Known Traveller No'),
+                ),
+                const SizedBox(height: 16),
+                Text('Special Requirement', style: AppTextStyles.bodyLarge),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: controller.specialRequirement,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Special Requirement',
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -515,36 +656,144 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          final fn = firstNameController.text.trim();
-                          final ln = lastNameController.text.trim();
-                          if (fn.isEmpty && ln.isEmpty) {
+                          final firstName = controller.firstName.text.trim();
+                          final lastName = controller.lastName.text.trim();
+                          if (firstName.isEmpty && lastName.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text('Please enter a traveller name')),
+                                content: Text('Please enter a traveller name'),
+                              ),
                             );
                             return;
                           }
+
+                          final dobText = controller.dateOfBirth.text.trim();
+                          final expiryText =
+                              controller.passportExpiryDate.text.trim();
+                          final passportNumber =
+                              controller.passportNumber.text.trim();
+                          final passengerTypeText =
+                              controller.passengerType.text.trim();
+
+                          if (dobText.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter date of birth'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final dob = DateTime.tryParse(dobText);
+                          if (dob == null || dob.isAfter(DateTime.now())) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Please enter a valid date of birth'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final travelDate =
+                              _session.searchCriteria?.departureDate ??
+                                  DateTime.now();
+                          final age = travelDate.difference(dob).inDays ~/ 365;
+                          final selectedType = switch (passengerTypeText) {
+                            'Child' => Passenger.childType,
+                            'Infant' => Passenger.infantType,
+                            _ => Passenger.adultType,
+                          };
+
+                          if (selectedType == Passenger.infantType &&
+                              age >= 2) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Infant must be under 2 years old on travel date (current age: $age)',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (selectedType == Passenger.childType &&
+                              (age < 2 || age > 17)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Child must be between 2 and 17 years old on travel date (current age: $age)',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (selectedType == Passenger.adultType && age < 18) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Adult must be 18 years or older on travel date (current age: $age)',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (passportNumber.isNotEmpty &&
+                              expiryText.isNotEmpty) {
+                            final expiry = DateTime.tryParse(expiryText);
+                            if (expiry == null ||
+                                expiry.isBefore(DateTime.now())) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Passport expiry date must be a future date',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                          }
+
                           final id =
                               DateTime.now().millisecondsSinceEpoch.toString();
-                           setState(() {
-                             _savedTravellers.add({
-                               'id': int.parse(id),
-                               'firstName': fn,
-                               'lastName': ln,
-                             });
-                             final nullIndex =
-                                 _passengerSelections.indexWhere((s) => s == null);
-                             if (nullIndex != -1) {
-                               _passengerSelections[nullIndex] = id;
-                             }
-                           });
+                          setState(() {
+                            _savedTravellers.add({
+                              'id': int.parse(id),
+                              'title':
+                                  controller.relationship.text.trim().isNotEmpty
+                                      ? controller.relationship.text.trim()
+                                      : 'Add New Traveler',
+                              'passengerType': selectedType,
+                              'firstName': firstName,
+                              'lastName': lastName,
+                              'dateOfBirth': dobText,
+                              'passportNumber': passportNumber,
+                              'issueNumber': controller.issueNumber.text.trim(),
+                              'passportExpiryDate': expiryText,
+                              'nationality': controller.nationality.text.trim(),
+                              'frequencyFlyerNo':
+                                  controller.frequencyFlyerNo.text.trim(),
+                              'knownTravellerNo':
+                                  controller.knownTravellerNo.text.trim(),
+                              'specialRequirement':
+                                  controller.specialRequirement.text.trim(),
+                              'passportCountry':
+                                  controller.nationality.text.trim(),
+                            });
+                            final nullIndex = _passengerSelections
+                                .indexWhere((s) => s == null);
+                            if (nullIndex != -1) {
+                              _passengerSelections[nullIndex] = id;
+                            }
+                          });
                           Navigator.pop(sheetContext);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.textOnPrimary,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -560,6 +809,60 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickTravellerDate({
+    required BuildContext context,
+    required TextEditingController controller,
+    int? passengerType,
+    bool isExpiryDate = false,
+  }) async {
+    final initialDate = DateTime.tryParse(controller.text) ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 80)),
+    );
+    if (picked != null) {
+      final dateStr =
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      controller.text = dateStr;
+
+      if (isExpiryDate) {
+        if (picked.isBefore(DateTime.now())) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Expiry date must be a future date'),
+            ),
+          );
+        }
+      }
+
+      if (passengerType != null && !isExpiryDate) {
+        final travelDate =
+            _session.searchCriteria?.departureDate ?? DateTime.now();
+        final age = travelDate.difference(picked).inDays ~/ 365;
+        if (passengerType == Passenger.infantType && age >= 2) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Infant must be under 2 years old on travel date (age: $age)',
+              ),
+            ),
+          );
+        } else if (passengerType == Passenger.childType &&
+            (age < 2 || age > 17)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Child must be between 2 and 17 years old on travel date (age: $age)',
+              ),
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _searchFlights() {
@@ -622,196 +925,319 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     context.push('/flights/results');
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Search flights')),
-      body: BlocListener<FlightSearchBloc, FlightSearchState>(
-        listener: (context, state) {
-          if (state is FlightSearchError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
-          } else if (state is FlightSearchLoaded) {
-            _onResultsLoaded(state);
-          }
-        },
-        child: BlocBuilder<FlightSearchBloc, FlightSearchState>(
-          builder: (context, state) {
-            final isLoading = state is FlightSearchLoading;
-            return SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildLocationInput(
-                      label: 'From',
-                      hint: 'City or airport',
-                      controller: _fromController,
-                      focusNode: _fromFocusNode,
-                      suggestions: _fromSuggestions,
-                      showSuggestions: _showFromSuggestions,
-                      isFromField: true,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildLocationInput(
-                      label: 'To',
-                      hint: 'City or airport',
-                      controller: _toController,
-                      focusNode: _toFocusNode,
-                      suggestions: _toSuggestions,
-                      showSuggestions: _showToSuggestions,
-                      isFromField: false,
-                    ),
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: () => _pickDate(isDeparture: true),
-                      child: InputDecorator(
-                        decoration:
-                            const InputDecoration(labelText: 'Departure'),
-                        child: Text(
-                          _departure == null
-                              ? 'Select date'
-                              : '${_departure!.day}/${_departure!.month}/${_departure!.year}',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: () => _pickDate(isDeparture: false),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Return'),
-                        child: Text(
-                          _return == null
-                              ? 'Optional'
-                              : '${_return!.day}/${_return!.month}/${_return!.year}',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() =>
-                                  _passengersExpanded = !_passengersExpanded);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                              children: [
-                                Text(
-                                  'Passenger',
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  '${_passengerSelections.length} Passenger${_passengerSelections.length > 1 ? 's' : ''}',
-                                  style: AppTextStyles.bodyMedium,
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  _passengersExpanded
-                                      ? Icons.keyboard_arrow_up
-                                      : Icons.keyboard_arrow_down,
-                                  size: 20,
-                                  color: AppColors.textSecondary,
-                                ),
-                                const SizedBox(width: 8),
-                                SizedBox(
-                                  width: 32,
-                                  height: 32,
-                                  child: IconButton(
-                                    padding: EdgeInsets.zero,
-                                    iconSize: 20,
-                                    onPressed: () {
-                                      setState(() {
-                                        _passengerSelections.add(null);
-                                        _passengersExpanded = true;
-                                      });
-                                    },
-                                    icon: const Icon(
-                                      Icons.add,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (_passengersExpanded) ...[
-                            const Divider(height: 1),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  ..._buildPassengerSlots(),
-                                  const SizedBox(height: 8),
-                                  TextButton.icon(
-                                    onPressed: () {
-                                      setState(() {
-                                        _passengerSelections.add(null);
-                                      });
-                                    },
-                                    icon: const Icon(Icons.add),
-                                    label: const Text('Add passenger'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    DropdownButtonFormField<String>(
-                      value: _cabinClass,
-                      decoration: const InputDecoration(
-                        labelText: 'Cabin Class',
-                        suffixIcon: Icon(Icons.arrow_drop_down),
-                      ),
-                      items: _cabinClassOptions
-                          .map((c) => DropdownMenuItem(
-                              value: c, child: Text(c)))
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _cabinClass = value);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    PrimaryButton(
-                      label: 'Search flights',
-                      isLoading: isLoading,
-                      onPressed: isLoading ? null : _searchFlights,
-                    ),
-                  ],
+  Widget _buildOtherSearchSection({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Icon(icon, size: 56, color: AppColors.primary),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.h3,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 32),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Destination',
+                hintText: 'Where do you want to go?',
+                prefixIcon: const Icon(Icons.location_on_outlined),
+                suffixIcon: IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.calendar_today_outlined),
                 ),
               ),
-            );
-          },
+            ),
+            const SizedBox(height: 16),
+            PrimaryButton(
+              label: 'Search',
+              onPressed: () {},
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final requestedTab = GoRouterState.of(context).uri.queryParameters['tab'];
+    final initialTabIndex = switch (requestedTab) {
+      'hotels' => 1,
+      'cars' => 2,
+      'cruise' => 3,
+      _ => 0,
+    };
+
+    return DefaultTabController(
+      length: 4,
+      initialIndex: initialTabIndex,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Search'),
+          bottom: const TabBar(
+            isScrollable: true,
+            labelColor: AppColors.textOnPrimary,
+            unselectedLabelColor: Color(0xFFDCE8F5),
+            indicatorColor: AppColors.accent,
+            tabs: [
+              Tab(icon: Icon(Icons.flight_outlined), text: 'Flights'),
+              Tab(icon: Icon(Icons.hotel_outlined), text: 'Hotels'),
+              Tab(icon: Icon(Icons.directions_car_outlined), text: 'Cars'),
+              Tab(icon: Icon(Icons.directions_boat_outlined), text: 'Cruise'),
+            ],
+          ),
+        ),
+        body: BlocListener<FlightSearchBloc, FlightSearchState>(
+          listener: (context, state) {
+            if (state is FlightSearchError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            } else if (state is FlightSearchLoaded) {
+              _onResultsLoaded(state);
+            }
+          },
+          child: BlocBuilder<FlightSearchBloc, FlightSearchState>(
+            builder: (context, state) {
+              final isLoading = state is FlightSearchLoading;
+              return TabBarView(
+                children: [
+                  SafeArea(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildLocationInput(
+                            label: 'From',
+                            hint: 'City or airport',
+                            controller: _fromController,
+                            focusNode: _fromFocusNode,
+                            suggestions: _fromSuggestions,
+                            showSuggestions: _showFromSuggestions,
+                            isFromField: true,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildLocationInput(
+                            label: 'To',
+                            hint: 'City or airport',
+                            controller: _toController,
+                            focusNode: _toFocusNode,
+                            suggestions: _toSuggestions,
+                            showSuggestions: _showToSuggestions,
+                            isFromField: false,
+                          ),
+                          const SizedBox(height: 16),
+                          InkWell(
+                            onTap: () => _pickDate(isDeparture: true),
+                            child: InputDecorator(
+                              decoration:
+                                  const InputDecoration(labelText: 'Departure'),
+                              child: Text(
+                                _departure == null
+                                    ? 'Select date'
+                                    : '${_departure!.day}/${_departure!.month}/${_departure!.year}',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          InkWell(
+                            onTap: () => _pickDate(isDeparture: false),
+                            child: InputDecorator(
+                              decoration:
+                                  const InputDecoration(labelText: 'Return'),
+                              child: Text(
+                                _return == null
+                                    ? 'Optional'
+                                    : '${_return!.day}/${_return!.month}/${_return!.year}',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() => _passengersExpanded =
+                                        !_passengersExpanded);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Passenger',
+                                          style:
+                                              AppTextStyles.bodySmall.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          '${_passengerSelections.length} Passenger${_passengerSelections.length > 1 ? 's' : ''}',
+                                          style: AppTextStyles.bodyMedium,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          _passengersExpanded
+                                              ? Icons.keyboard_arrow_up
+                                              : Icons.keyboard_arrow_down,
+                                          size: 20,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        SizedBox(
+                                          width: 32,
+                                          height: 32,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            iconSize: 20,
+                                            onPressed: () {
+                                              setState(() {
+                                                _passengerSelections.add(null);
+                                                _passengersExpanded = true;
+                                              });
+                                            },
+                                            icon: const Icon(
+                                              Icons.add,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (_passengersExpanded) ...[
+                                  const Divider(height: 1),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        ..._buildPassengerSlots(),
+                                        const SizedBox(height: 8),
+                                        TextButton.icon(
+                                          onPressed: () {
+                                            setState(() {
+                                              _passengerSelections.add(null);
+                                            });
+                                          },
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('Add passenger'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          DropdownButtonFormField<String>(
+                            value: _cabinClass,
+                            decoration: const InputDecoration(
+                              labelText: 'Cabin Class',
+                              suffixIcon: Icon(Icons.arrow_drop_down),
+                            ),
+                            items: _cabinClassOptions
+                                .map((c) =>
+                                    DropdownMenuItem(value: c, child: Text(c)))
+                                .toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _cabinClass = value);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          PrimaryButton(
+                            label: 'Search flights',
+                            isLoading: isLoading,
+                            onPressed: isLoading ? null : _searchFlights,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const HotelSearchTab(),
+                  _buildOtherSearchSection(
+                    icon: Icons.directions_car_outlined,
+                    title: 'Search cars',
+                    description: 'Choose a car for your journey.',
+                  ),
+                  _buildOtherSearchSection(
+                    icon: Icons.directions_boat_outlined,
+                    title: 'Search cruises',
+                    description: 'Discover your next cruise adventure.',
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NewTravellerController {
+  final relationship = TextEditingController();
+  final passengerType = TextEditingController(text: 'Adult');
+  final firstName = TextEditingController();
+  final lastName = TextEditingController();
+  final dateOfBirth = TextEditingController();
+  final nationality = TextEditingController();
+  final passportNumber = TextEditingController();
+  final issueNumber = TextEditingController();
+  final passportExpiryDate = TextEditingController();
+  final frequencyFlyerNo = TextEditingController();
+  final knownTravellerNo = TextEditingController();
+  final specialRequirement = TextEditingController();
+
+  void dispose() {
+    relationship.dispose();
+    passengerType.dispose();
+    firstName.dispose();
+    lastName.dispose();
+    dateOfBirth.dispose();
+    nationality.dispose();
+    passportNumber.dispose();
+    issueNumber.dispose();
+    passportExpiryDate.dispose();
+    frequencyFlyerNo.dispose();
+    knownTravellerNo.dispose();
+    specialRequirement.dispose();
   }
 }

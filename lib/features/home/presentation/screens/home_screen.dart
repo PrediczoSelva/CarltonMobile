@@ -710,6 +710,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 8),
           TextField(
             readOnly: true,
+            onTap: () => context.push('/flights/search?tab=hotels'),
             decoration: InputDecoration(
               hintText: 'Search hotels',
               prefixIcon: const Icon(Icons.search),
@@ -750,6 +751,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 8),
           TextField(
             readOnly: true,
+            onTap: () => context.push('/flights/search?tab=cars'),
             decoration: InputDecoration(
               hintText: 'Search cars',
               prefixIcon: const Icon(Icons.search),
@@ -833,6 +835,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 8),
         TextField(
           readOnly: true,
+          onTap: () => context.push('/flights/search?tab=cruise'),
           decoration: InputDecoration(
             hintText: 'Search cruises',
             prefixIcon: const Icon(Icons.search),

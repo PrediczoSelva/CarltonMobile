@@ -64,7 +64,7 @@ class ProfileScreen extends StatelessWidget {
         _ProfileTile(
             icon: Icons.card_giftcard_outlined,
             label: 'My Bookings',
-            onTap: () {}),
+            onTap: () => context.push(AppRoutes.myTrips)),
         _ProfileTile(
             icon: Icons.account_balance_wallet_outlined,
             label: 'My Wallet',

@@ -19,6 +19,8 @@ import '../../features/flight/data/datasources/flight_remote_datasource_impl.dar
 import '../../features/flight/data/repositories/flight_repository_impl.dart';
 import '../../features/flight/domain/repositories/flight_repository.dart';
 import '../../features/flight/presentation/bloc/flight_bloc.dart';
+import '../../features/hotel/data/repositories/hotel_repository.dart';
+import '../../features/hotel/data/repositories/hotel_repository_impl.dart';
 import '../../features/payment/data/datasources/payment_remote_datasource.dart';
 import '../../features/payment/data/datasources/payment_remote_datasource_impl.dart';
 import '../../features/payment/data/repositories/payment_repository_impl.dart';
@@ -36,7 +38,8 @@ final GetIt getIt = GetIt.instance;
 /// too, e.g. `getIt.registerFactory(() => FlightSearchBloc(getIt()));`
 Future<void> setupDependencyInjection() async {
   // Storage (used for user preferences, non-auth data)
-  getIt.registerLazySingleton<FlutterSecureStorage>(() => const FlutterSecureStorage());
+  getIt.registerLazySingleton<FlutterSecureStorage>(
+      () => const FlutterSecureStorage());
 
   // Theme
   getIt.registerLazySingleton<ThemeNotifier>(() => ThemeNotifier());
@@ -67,6 +70,11 @@ Future<void> setupDependencyInjection() async {
   );
   getIt.registerFactory<FlightSearchBloc>(
     () => FlightSearchBloc(getIt<FlightRepository>()),
+  );
+
+  // Hotels
+  getIt.registerLazySingleton<HotelRepository>(
+    () => HotelRepositoryImpl(getIt<ApiClient>()),
   );
 
   // Booking
