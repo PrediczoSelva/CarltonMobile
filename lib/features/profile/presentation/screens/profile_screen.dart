@@ -74,7 +74,9 @@ class ProfileScreen extends StatelessWidget {
             label: 'Settings',
             onTap: () => context.push(AppRoutes.settings)),
         _ProfileTile(
-            icon: Icons.help_outline, label: 'Help & support', onTap: () {}),
+            icon: Icons.help_outline,
+            label: 'Help & support',
+            onTap: () => context.push(AppRoutes.helpSupport)),
         const SizedBox(height: 24),
         ElevatedButton.icon(
           onPressed: () {
