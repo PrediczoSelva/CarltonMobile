@@ -765,10 +765,10 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                '${booking.currency} ${booking.totalPrice.toStringAsFixed(0)}',
-                                style: AppTextStyles.price,
-                              ),
+                                Text(
+                                  '£${booking.totalPrice.toStringAsFixed(0)}',
+                                  style: AppTextStyles.price,
+                                ),
                             ],
                           ),
                           const Spacer(),
@@ -956,12 +956,12 @@ class _MyTripsScreenState extends State<MyTripsScreen>
     if (booking.status.toLowerCase() == 'confirmed' && hoursToDeparture > 24) {
       refundPolicy = 'Full refund';
       refundAmount =
-          '${booking.currency} ${booking.totalPrice.toStringAsFixed(2)}';
+          '£${booking.totalPrice.toStringAsFixed(2)}';
     } else if (booking.status.toLowerCase() == 'confirmed' &&
         hoursToDeparture > 0) {
       refundPolicy = 'Partial refund';
       final refundValue = booking.totalPrice * 0.8;
-      refundAmount = '${booking.currency} ${refundValue.toStringAsFixed(2)}';
+      refundAmount = '£${refundValue.toStringAsFixed(2)}';
     } else {
       refundPolicy = 'Non-refundable';
       refundAmount = '0.00';
@@ -1256,7 +1256,7 @@ class _BookingDetailsSheet extends StatelessWidget {
                 _DetailRow(
                   label: 'Total Paid',
                   value:
-                      '${booking.currency} ${booking.totalPrice.toStringAsFixed(2)}',
+                      '£${booking.totalPrice.toStringAsFixed(2)}',
                   valueStyle: AppTextStyles.price,
                 ),
                 const SizedBox(height: 20),
