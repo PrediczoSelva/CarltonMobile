@@ -220,7 +220,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             children: [
               _ConfirmationRow(
                 label: 'Total paid',
-                value: '$currency ${price.toStringAsFixed(0)}',
+                value: '£${price.toStringAsFixed(0)}',
               ),
               _ConfirmationRow(
                 label: 'Payment method',
