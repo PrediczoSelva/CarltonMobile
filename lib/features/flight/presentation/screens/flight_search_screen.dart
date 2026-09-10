@@ -14,6 +14,7 @@ import '../../../booking/domain/entities/booking_session.dart';
 import '../../../booking/domain/entities/passenger.dart';
 import '../../../hotel/presentation/screens/hotel_search_tab.dart';
 import '../../../cruise/presentation/screens/cruise_search_tab.dart';
+import '../../../car/presentation/screens/car_search_tab.dart';
 import '../../domain/entities/flight.dart';
 import '../../domain/entities/flight_search_criteria.dart';
 import '../../domain/repositories/flight_repository.dart';
@@ -1140,55 +1141,6 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     context.push('/flights/results');
   }
 
-  Widget _buildOtherSearchSection({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Icon(icon, size: 56, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.h3,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Destination',
-                hintText: 'Where do you want to go?',
-                prefixIcon: const Icon(Icons.location_on_outlined),
-                suffixIcon: IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.calendar_today_outlined),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            PrimaryButton(
-              label: 'Search',
-              onPressed: () {},
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final requestedTab = GoRouterState.of(context).uri.queryParameters['tab'];
@@ -1429,11 +1381,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                     ),
                   ),
                   const HotelSearchTab(),
-                  _buildOtherSearchSection(
-                    icon: Icons.directions_car_outlined,
-                    title: 'Search cars',
-                    description: 'Choose a car for your journey.',
-                  ),
+                  const CarSearchTab(),
                   const CruiseSearchTab(),
                 ],
               );
