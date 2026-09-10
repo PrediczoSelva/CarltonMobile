@@ -236,7 +236,7 @@ class _BarclaysPaymentScreenState extends State<BarclaysPaymentScreen> {
                           Padding(
                             padding: const EdgeInsets.all(12),
                             child: Text(
-                              '$currency ${price.toStringAsFixed(2)}',
+                              '£${price.toStringAsFixed(2)}',
                               style: AppTextStyles.h4,
                               textAlign: TextAlign.center,
                             ),
@@ -280,7 +280,7 @@ class _BarclaysPaymentScreenState extends State<BarclaysPaymentScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              '$currency ${price.toStringAsFixed(2)}',
+              '£${price.toStringAsFixed(2)}',
               style: AppTextStyles.h4,
             ),
             const SizedBox(height: 24),
