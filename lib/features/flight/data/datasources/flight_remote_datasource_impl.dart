@@ -134,6 +134,41 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
     }
   }
 
+  @override
+  Future<List<Flight>> getRecommendations() async {
+    try {
+      final response = await _apiClient.get<dynamic>('$_basePath/recommendations');
+      final data = response.data as Map<String, dynamic>?;
+      if (data == null) return [];
+
+      final featuredFlights = data['featuredFlights'] as List<dynamic>? ?? [];
+      final flights = featuredFlights
+          .map((json) => Flight.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      if (kDebugMode) {
+        debugPrint(
+            '[FlightSearch] getRecommendations: ${flights.length} featured flights');
+        for (final f in flights) {
+          debugPrint(
+              '[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
+        }
+      }
+      return flights;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+            '[FlightSearch] getRecommendations error: ${e.response?.statusCode}, ${e.response?.data}');
+      }
+      return [];
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[FlightSearch] getRecommendations error: $e');
+      }
+      return [];
+    }
+  }
+
   List<Flight> _parseFlights(dynamic data) {
     final list = _extractList(data);
     return list

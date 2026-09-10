@@ -349,25 +349,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  DateTime _tomorrow() {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day + 1);
-  }
-
   Future<void> _loadSuggestions() async {
     setState(() {
       _loadingSuggestions = true;
       _suggestionsError = null;
     });
     try {
-      final tomorrow = _tomorrow();
-      final criteria = FlightSearchCriteria(
-        origin: 'Colombo (CMB)',
-        destination: 'London (LHR)',
-        departureDate: tomorrow,
-        passengers: 1,
-      );
-      final flights = await _flightRepository.searchFlights(criteria);
+      final flights = await _flightRepository.getRecommendations();
       if (mounted) {
         setState(() {
           _suggestedFlights =
