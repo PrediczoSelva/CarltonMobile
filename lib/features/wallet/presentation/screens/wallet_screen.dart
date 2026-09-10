@@ -127,7 +127,7 @@ class _BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '${balance.currencyCode} ${balance.balance.toStringAsFixed(2)}',
+            '£${balance.balance.toStringAsFixed(2)}',
             style: AppTextStyles.h2.copyWith(color: AppColors.textOnPrimary),
           ),
           const SizedBox(height: 16),
@@ -136,7 +136,7 @@ class _BalanceCard extends StatelessWidget {
               _BalanceStat(
                 label: 'Lifetime Spend',
                 value:
-                    '${balance.currencyCode} ${balance.totalLifetimeSpend.toStringAsFixed(2)}',
+                    '£${balance.totalLifetimeSpend.toStringAsFixed(2)}',
               ),
               const SizedBox(width: 24),
               _BalanceStat(
@@ -269,7 +269,7 @@ class _LoyaltyCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Worth ${balance.currencyCode} ${balance.pointsValueEquivalent.toStringAsFixed(2)}',
+            'Worth £${balance.pointsValueEquivalent.toStringAsFixed(2)}',
             style: AppTextStyles.bodySmall.copyWith(
               color: Colors.white.withValues(alpha: 0.85),
             ),
