@@ -25,6 +25,7 @@ import '../../features/home/presentation/screens/messages_screen.dart';
 import '../../features/home/presentation/screens/notifications_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/cruise/presentation/screens/cruise_results_screen.dart';
+import '../../features/car/presentation/screens/car_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
@@ -122,6 +123,19 @@ final GoRouter appRouter = GoRouter(
               );
             }
             return CruiseResultsScreen(args: args);
+          },
+        ),
+        GoRoute(
+          path: '/cars/results',
+          builder: (context, state) {
+            final args = state.extra;
+            if (args is! CarSearchResultArgs) {
+              return const Scaffold(
+                body:
+                    Center(child: Text('Car search results are unavailable.')),
+              );
+            }
+            return CarResultsScreen(args: args);
           },
         ),
         GoRoute(
