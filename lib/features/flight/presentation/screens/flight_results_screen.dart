@@ -341,7 +341,7 @@ class _FlightCardState extends State<_FlightCard> {
                   Row(
                     children: [
                       Text(
-                        '${flight.currency} ${flight.price.toStringAsFixed(0)}',
+                        '£${flight.price.toStringAsFixed(0)}',
                         style: AppTextStyles.price.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w700,
