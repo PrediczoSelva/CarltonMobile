@@ -995,7 +995,7 @@ class _SuggestedHotelCardState extends State<_SuggestedHotelCard> {
                   Row(
                     children: [
                       Text(
-                        'GBP ${hotel.price.toStringAsFixed(0)}',
+                        '£${hotel.price.toStringAsFixed(0)}',
                         style: AppTextStyles.price.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w700,
@@ -1229,7 +1229,7 @@ class _SuggestedFlightCardState extends State<_SuggestedFlightCard> {
                   Row(
                     children: [
                       Text(
-                        '${flight.currency} ${flight.price.toStringAsFixed(0)}',
+                        '£${flight.price.toStringAsFixed(0)}',
                         style: AppTextStyles.price.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w700,
@@ -1411,7 +1411,7 @@ class _SuggestedCruiseCardState extends State<_SuggestedCruiseCard> {
                       Row(
                         children: [
                           Text(
-                            'GBP ${cruise.price.toStringAsFixed(0)}',
+                            '£${cruise.price.toStringAsFixed(0)}',
                             style: AppTextStyles.price.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w700,
@@ -1573,7 +1573,7 @@ class _SuggestedCarCardState extends State<_SuggestedCarCard> {
                   Row(
                     children: [
                       Text(
-                        'GBP ${car.price.toStringAsFixed(0)}',
+                        '£${car.price.toStringAsFixed(0)}',
                         style: AppTextStyles.price.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w700,
