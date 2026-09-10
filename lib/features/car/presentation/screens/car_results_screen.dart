@@ -177,11 +177,11 @@ class _CarCard extends StatelessWidget {
                       Text(' ${car.rating.toStringAsFixed(1)}')
                     ],
                     const Spacer(),
-                    Text('GBP ${car.dailyPrice.toStringAsFixed(0)} / day',
+                    Text('£${car.dailyPrice.toStringAsFixed(0)} / day',
                         style: AppTextStyles.price),
                   ]),
                   Text(
-                      'Estimated total GBP ${(car.dailyPrice * days).toStringAsFixed(0)}',
+                      'Estimated total £${(car.dailyPrice * days).toStringAsFixed(0)}',
                       style: AppTextStyles.bodySmall),
                   if (car.freeCancellation)
                     const Text('Free cancellation',
