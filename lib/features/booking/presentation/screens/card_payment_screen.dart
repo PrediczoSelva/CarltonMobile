@@ -276,7 +276,7 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '$currency ${price.toStringAsFixed(0)}',
+                      '£${price.toStringAsFixed(0)}',
                       style: AppTextStyles.h2.copyWith(
                         color: AppColors.textOnPrimary,
                       ),
