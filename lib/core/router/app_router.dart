@@ -31,6 +31,7 @@ import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
+import '../../features/profile/presentation/screens/help_support_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
 
 abstract class AppRoutes {
@@ -58,6 +59,7 @@ abstract class AppRoutes {
   static const myTrips = '/my-trips';
   static const messages = '/messages';
   static const notifications = '/notifications';
+  static const helpSupport = '/help-support';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -144,6 +146,10 @@ final GoRouter appRouter = GoRouter(
             create: (_) => getIt<BookingBloc>(),
             child: const MyTripsScreen(),
           ),
+        ),
+        GoRoute(
+          path: AppRoutes.helpSupport,
+          builder: (context, state) => const HelpSupportScreen(),
         ),
         GoRoute(
           path: AppRoutes.profile,
