@@ -222,7 +222,7 @@ class _HotelCard extends StatelessWidget {
                     ],
                     const Spacer(),
                     Text(
-                      '${hotel.currency} ${hotel.price.toStringAsFixed(0)}',
+                      '£${hotel.price.toStringAsFixed(0)}',
                       style: AppTextStyles.price,
                     ),
                   ],
