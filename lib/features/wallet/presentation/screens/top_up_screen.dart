@@ -73,7 +73,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
       case 'GBP':
         return '£';
       case 'USD':
-        return '\$';
+        return '£';
       default:
         return '${widget.currencyCode} ';
     }
