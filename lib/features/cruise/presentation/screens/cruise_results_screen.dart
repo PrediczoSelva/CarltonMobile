@@ -96,7 +96,10 @@ class _CruiseResultsScreenState extends State<CruiseResultsScreen> {
                     itemCount: cruises.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (_, index) =>
-                        _CruiseCard(cruise: cruises[index]),
+                        _CruiseCard(
+                          cruise: cruises[index],
+                          onViewDetails: () => _viewDetails(context, cruises[index]),
+                        ),
                   ),
           ),
         ],
@@ -169,12 +172,20 @@ class _CruiseResultsScreenState extends State<CruiseResultsScreen> {
             icon: const Icon(Icons.search),
             label: const Text('Modify search')),
       ]));
+
+  void _viewDetails(BuildContext context, Cruise cruise) {
+    context.push('/cruises/${cruise.id}', extra: cruise);
+  }
 }
 
 class _CruiseCard extends StatelessWidget {
-  const _CruiseCard({required this.cruise});
+  const _CruiseCard({
+    required this.cruise,
+    this.onViewDetails,
+  });
 
   final Cruise cruise;
+  final VoidCallback? onViewDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -220,6 +231,18 @@ class _CruiseCard extends StatelessWidget {
               Text('£${cruise.startingPrice.toStringAsFixed(0)} / person',
                   style: AppTextStyles.price),
             ]),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onViewDetails,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.textOnPrimary,
+                ),
+                child: const Text('View cabins & details'),
+              ),
+            ),
           ]),
         ),
       ]),
