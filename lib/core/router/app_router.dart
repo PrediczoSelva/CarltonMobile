@@ -25,6 +25,8 @@ import '../../features/home/presentation/screens/messages_screen.dart';
 import '../../features/home/presentation/screens/notifications_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/cruise/presentation/screens/cruise_results_screen.dart';
+import '../../features/cruise/presentation/screens/cruise_details_screen.dart';
+import '../../features/cruise/domain/entities/cruise.dart';
 import '../../features/car/presentation/screens/car_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_details_screen.dart';
@@ -169,6 +171,18 @@ final GoRouter appRouter = GoRouter(
               );
             }
             return CruiseResultsScreen(args: args);
+          },
+        ),
+        GoRoute(
+          path: '/cruises/:cruiseId',
+          builder: (context, state) {
+            final cruise = state.extra;
+            if (cruise is! Cruise) {
+              return const Scaffold(
+                body: Center(child: Text('Cruise details are unavailable.')),
+              );
+            }
+            return CruiseDetailsScreen(cruise: cruise);
           },
         ),
         GoRoute(
