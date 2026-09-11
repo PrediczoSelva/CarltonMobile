@@ -27,6 +27,8 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/cruise/presentation/screens/cruise_results_screen.dart';
 import '../../features/car/presentation/screens/car_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
+import '../../features/hotel/presentation/screens/hotel_details_screen.dart';
+import '../../features/hotel/domain/entities/hotel_search_criteria.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -112,6 +114,24 @@ final GoRouter appRouter = GoRouter(
               );
             }
             return HotelResultsScreen(args: args);
+          },
+        ),
+        GoRoute(
+          path: '/hotels/:hotelId',
+          builder: (context, state) {
+            final hotelId = state.pathParameters['hotelId'] ?? '';
+            final criteria = state.extra is HotelSearchCriteria
+                ? state.extra as HotelSearchCriteria
+                : HotelSearchCriteria(
+                    destination: '',
+                    checkIn: DateTime.now().add(const Duration(days: 7)),
+                    checkOut:
+                        DateTime.now().add(const Duration(days: 10)),
+                    adults: 1,
+                    children: 0,
+                    rooms: 1,
+                  );
+            return HotelDetailsScreen(hotelId: hotelId, criteria: criteria);
           },
         ),
         GoRoute(
