@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection.dart';
@@ -527,10 +528,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 
   void _reserve(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(
-              'Reservation flow for ${_hotel?.name ?? 'this hotel'} coming soon.')),
-    );
+    if (_hotel == null) return;
+    final encodedName = Uri.encodeComponent(_hotel!.name);
+    context.push('/hotels/${_hotel!.id}/rooms?hotelName=$encodedName',
+        extra: widget.criteria);
   }
 }

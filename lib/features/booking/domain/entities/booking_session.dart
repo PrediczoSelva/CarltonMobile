@@ -1,6 +1,22 @@
 import '../../../flight/domain/entities/flight.dart';
 import '../../../flight/domain/entities/flight_search_criteria.dart';
+import '../../../hotel/domain/entities/hotel.dart';
+import '../../../hotel/domain/entities/hotel_search_criteria.dart';
+import '../../../hotel/data/repositories/hotel_repository.dart';
 import 'passenger.dart';
+
+class HotelBookingSession {
+  Hotel? hotel;
+  HotelSearchCriteria? searchCriteria;
+  HotelOffer? selectedOffer;
+  int roomQuantity = 1;
+  double get totalPrice => selectedOffer != null
+      ? (selectedOffer!.price + selectedOffer!.taxes) * roomQuantity
+      : 0.0;
+  String? guestName;
+  String? guestEmail;
+  String? guestPhone;
+}
 
 /// Shared session that carries booking data across multiple screens
 /// (search results -> passenger details -> summary -> payment -> confirmation).

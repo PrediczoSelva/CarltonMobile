@@ -181,7 +181,9 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   }
 
   void _reserve(BuildContext context, Hotel hotel) {
-    context.push('/hotels/${hotel.id}', extra: widget.args.criteria);
+    final encodedName = Uri.encodeComponent(hotel.name);
+    context.push('/hotels/${hotel.id}/rooms?hotelName=$encodedName',
+        extra: widget.args.criteria);
   }
 }
 
