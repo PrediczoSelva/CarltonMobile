@@ -177,65 +177,11 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   }
 
   void _viewDetails(BuildContext context, Hotel hotel) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(hotel.name),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (hotel.thumbnail != null && hotel.thumbnail!.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    hotel.thumbnail!,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 150,
-                      color: AppColors.surfaceVariant,
-                      child: const Icon(Icons.hotel, size: 48, color: AppColors.primary),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 12),
-              Text('Location: ${hotel.location}', style: AppTextStyles.bodyMedium),
-              const SizedBox(height: 8),
-              if (hotel.starRating > 0)
-                Text('${hotel.starRating} stars', style: AppTextStyles.bodyMedium),
-              if (hotel.guestRating > 0) ...[
-                const SizedBox(height: 4),
-                Text('Guest rating: ${hotel.guestRating.toStringAsFixed(1)}', style: AppTextStyles.bodyMedium),
-              ],
-              const SizedBox(height: 8),
-              Text('Price: £${hotel.price.toStringAsFixed(0)} / night', style: AppTextStyles.bodyMedium),
-              if (hotel.refundable) ...[
-                const SizedBox(height: 8),
-                const Text('Free cancellation', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w600)),
-              ],
-              if (hotel.amenities.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text('Amenities: ${hotel.amenities.join(', ')}', style: AppTextStyles.bodySmall),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+    context.push('/hotels/${hotel.id}', extra: widget.args.criteria);
   }
 
   void _reserve(BuildContext context, Hotel hotel) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Reservation flow for ${hotel.name} coming soon.')),
-    );
+    context.push('/hotels/${hotel.id}', extra: widget.args.criteria);
   }
 }
 
