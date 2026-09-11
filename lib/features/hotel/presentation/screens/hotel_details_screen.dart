@@ -90,7 +90,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                               _hotel!.description!.isNotEmpty)
                             const SizedBox(height: 16),
                           if (_hotel!.policies != null) _buildPolicies(),
-                          if (_hotel!.policies != null) const SizedBox(height: 16),
+                          if (_hotel!.policies != null)
+                            const SizedBox(height: 16),
                           _buildAmenitiesSection(),
                           const SizedBox(height: 16),
                           _buildRoomTypes(),
@@ -315,7 +316,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
             width: 90,
             child: Text(label,
                 style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600)),
           ),
           Expanded(child: Text(value, style: AppTextStyles.bodyMedium)),
         ],
@@ -390,7 +392,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
         children: [
           if (image != null)
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
               child: Image.network(
                 image,
                 width: double.infinity,
@@ -449,7 +452,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
         children: [
           if (image != null)
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
               child: Image.network(
                 image,
                 width: double.infinity,
@@ -477,8 +481,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    if (offer.mealPlan != null &&
-                        offer.mealPlan!.isNotEmpty)
+                    if (offer.mealPlan != null && offer.mealPlan!.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
@@ -512,7 +515,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.textOnPrimary,
                     ),
-                    child: const Text('Reserve now'),
+                    child: const Text('Reserve room'),
                   ),
                 ),
               ],
