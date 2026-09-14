@@ -28,6 +28,9 @@ import '../../features/cruise/presentation/screens/cruise_results_screen.dart';
 import '../../features/cruise/presentation/screens/cruise_details_screen.dart';
 import '../../features/cruise/domain/entities/cruise.dart';
 import '../../features/car/presentation/screens/car_results_screen.dart';
+import '../../features/car/presentation/screens/car_details_screen.dart';
+import '../../features/car/domain/entities/car_vehicle.dart';
+import '../../features/car/domain/entities/car_search_criteria.dart';
 import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_details_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_room_selection_screen.dart';
@@ -196,6 +199,22 @@ final GoRouter appRouter = GoRouter(
               );
             }
             return CarResultsScreen(args: args);
+          },
+        ),
+        GoRoute(
+          path: '/cars/:carId',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              final car = extra['car'] as CarVehicle?;
+              final criteria = extra['criteria'] as CarSearchCriteria?;
+              if (car != null && criteria != null) {
+                return CarDetailsScreen(car: car, criteria: criteria);
+              }
+            }
+            return const Scaffold(
+              body: Center(child: Text('Car details are unavailable.')),
+            );
           },
         ),
         GoRoute(

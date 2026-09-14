@@ -107,8 +107,12 @@ class _CarResultsScreenState extends State<CarResultsScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                     itemCount: cars.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, index) =>
-                        _CarCard(car: cars[index], days: criteria.rentalDays),
+                    itemBuilder: (_, index) => _CarCard(
+                      car: cars[index],
+                      days: criteria.rentalDays,
+                      onViewDetails: () => _viewDetails(context, cars[index]),
+                      onReserve: () => _reserve(context, cars[index]),
+                    ),
                   ),
           ),
         ],
@@ -117,26 +121,48 @@ class _CarResultsScreenState extends State<CarResultsScreen> {
   }
 
   Widget _buildEmptyState() => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.directions_car_outlined,
-                size: 52, color: AppColors.textSecondary),
-            const SizedBox(height: 12),
-            Text('No cars found', style: AppTextStyles.h4),
-            TextButton.icon(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.search),
-                label: const Text('Modify search')),
-          ],
-        ),
-      );
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.directions_car_outlined,
+                  size: 52, color: AppColors.textSecondary),
+              const SizedBox(height: 12),
+              Text('No cars found', style: AppTextStyles.h4),
+              TextButton.icon(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Icons.search),
+                  label: const Text('Modify search')),
+            ],
+          ),
+        );
+
+  void _viewDetails(BuildContext context, CarVehicle car) {
+    context.push('/cars/${car.id}', extra: {
+      'car': car,
+      'criteria': widget.args.criteria,
+    });
+  }
+
+  void _reserve(BuildContext context, CarVehicle car) {
+    context.push('/cars/${car.id}', extra: {
+      'car': car,
+      'criteria': widget.args.criteria,
+    });
+  }
 }
 
 class _CarCard extends StatelessWidget {
-  const _CarCard({required this.car, required this.days});
+  const _CarCard({
+    required this.car,
+    required this.days,
+    this.onViewDetails,
+    this.onReserve,
+  });
+
   final CarVehicle car;
   final int days;
+  final VoidCallback? onViewDetails;
+  final VoidCallback? onReserve;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -188,6 +214,30 @@ class _CarCard extends StatelessWidget {
                         style: TextStyle(
                             color: AppColors.success,
                             fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 16),
+                  Row(children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onViewDetails,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                        ),
+                        child: const Text('View details'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onReserve,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.textOnPrimary,
+                        ),
+                        child: const Text('Reserve'),
+                      ),
+                    ),
+                  ]),
                 ],
               ),
             ),
