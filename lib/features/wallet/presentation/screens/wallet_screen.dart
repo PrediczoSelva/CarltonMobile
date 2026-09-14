@@ -11,13 +11,32 @@ import '../bloc/wallet_state.dart';
 import 'top_up_screen.dart';
 import 'redeem_screen.dart';
 
-class WalletScreen extends StatelessWidget {
+class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
+
+  @override
+  State<WalletScreen> createState() => _WalletScreenState();
+}
+
+class _WalletScreenState extends State<WalletScreen> {
+  late final WalletBloc _walletBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _walletBloc = getIt<WalletBloc>()..add(WalletLoadRequested());
+  }
+
+  @override
+  void dispose() {
+    _walletBloc.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<WalletBloc>()..add(WalletLoadRequested()),
+      create: (_) => _walletBloc,
       child: const _WalletView(),
     );
   }
@@ -168,12 +187,19 @@ class _BalanceCard extends StatelessWidget {
   }
 
   void _showTopUpModal(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => TopUpScreen(currencyCode: balance.currencyCode),
-        fullscreenDialog: true,
-      ),
-    );
+    final walletBloc = BlocProvider.of<WalletBloc>(context);
+    Navigator.of(context)
+        .push<bool>(
+          MaterialPageRoute(
+            builder: (context) => TopUpScreen(currencyCode: balance.currencyCode),
+            fullscreenDialog: true,
+          ),
+        )
+        .then((completed) {
+          if (completed == true) {
+            walletBloc.add(WalletLoadRequested());
+          }
+        });
   }
 }
 
