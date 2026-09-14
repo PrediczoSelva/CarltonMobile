@@ -143,6 +143,23 @@ class _FlightScheduleChangeScreenState
     });
   }
 
+  String _cleanFlightCode(String code) {
+    return code.split(RegExp(r'\s*→\s*')).first.trim();
+  }
+
+  String _formatPrice(double price, String currency) {
+    switch (currency.toUpperCase()) {
+      case 'GBP':
+        return '£${price.toStringAsFixed(0)}';
+      case 'USD':
+        return '\$${price.toStringAsFixed(0)}';
+      case 'EUR':
+        return '€${price.toStringAsFixed(0)}';
+      default:
+        return '$currency ${price.toStringAsFixed(0)}';
+    }
+  }
+
   Future<void> _pickDate() async {
     final minimum = DateTime.now();
     final picked = await showDatePicker(
@@ -223,7 +240,10 @@ class _FlightScheduleChangeScreenState
       final response = await _apiClient.post<dynamic>(
         '/bookings/${widget.booking.id}/exchange-quote',
         data: {
-          'amadeusNewFlightNumber': flight.flightCode,
+          'amadeusNewFlightNumber': flight.flightCode
+              .split(RegExp(r'\s*→\s*'))
+              .first
+              .trim(),
           'amadeusNewDepartureDate': flight.departureTime.toIso8601String(),
         },
       );
@@ -231,6 +251,13 @@ class _FlightScheduleChangeScreenState
         setState(() => _quote = response.data is Map
             ? Map<String, dynamic>.from(response.data)
             : null);
+    } on DioException catch (error) {
+      if (mounted) {
+        final message = error.response?.data is Map
+            ? (error.response?.data as Map)['message']?.toString()
+            : null;
+        _showMessage(message ?? 'Unable to quote flight exchange.');
+      }
     } catch (_) {
       if (mounted) {
         final difference = flight.price * widget.booking.passengers.length -
@@ -259,7 +286,10 @@ class _FlightScheduleChangeScreenState
         'price': totalDue,
         'departure': flight.origin,
         'destination': flight.destination,
-        'flightNumber': flight.flightCode,
+        'flightNumber': flight.flightCode
+            .split(RegExp(r'\s*→\s*'))
+            .first
+            .trim(),
         'newDepartureTime': flight.departureTime.toIso8601String(),
         'newArrivalTime': flight.arrivalTime.toIso8601String(),
         'reason': 'Customer requested schedule change',
@@ -416,11 +446,11 @@ class _FlightScheduleChangeScreenState
           onTap: () => _selectFlight(flight),
           leading: Icon(selected ? Icons.check_circle : Icons.flight,
               color: AppColors.primary),
-          title: Text('${flight.airline} · ${flight.flightCode}'),
+          title: Text('${flight.airline} · ${_cleanFlightCode(flight.flightCode)}'),
           subtitle: Text(
               '${DateFormat('dd MMM, HH:mm').format(flight.departureTime)}  →  ${DateFormat('HH:mm').format(flight.arrivalTime)}\n${flight.origin} → ${flight.destination}'),
           trailing: Text(
-              '${flight.currency} ${flight.price.toStringAsFixed(0)}',
+              _formatPrice(flight.price, flight.currency),
               style: AppTextStyles.price),
         ),
       );
@@ -434,14 +464,14 @@ class _FlightScheduleChangeScreenState
             Text('Confirm flight change', style: AppTextStyles.h4),
             const SizedBox(height: 8),
             Text(
-                'New flight: ${flight.flightCode} · ${DateFormat('dd MMM, HH:mm').format(flight.departureTime)}'),
+                'New flight: ${_cleanFlightCode(flight.flightCode)} · ${DateFormat('dd MMM, HH:mm').format(flight.departureTime)}'),
             const SizedBox(height: 8),
             if (_quoting)
               const LinearProgressIndicator()
             else
               Text(
                   totalDue > 0
-                      ? 'Amount due now: ${widget.booking.currency} ${totalDue.toStringAsFixed(2)}'
+                      ? 'Amount due now: ${_formatPrice(totalDue, widget.booking.currency)}'
                       : 'No extra charge for this change.',
                   style: AppTextStyles.bodyMedium
                       .copyWith(fontWeight: FontWeight.w700)),
