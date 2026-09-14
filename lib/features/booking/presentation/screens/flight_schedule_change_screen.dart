@@ -7,6 +7,8 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../flight/domain/entities/flight.dart';
+import '../../../flight/domain/entities/flight_search_criteria.dart';
+import '../../../flight/domain/repositories/flight_repository.dart';
 import '../../domain/entities/booking.dart';
 
 class FlightScheduleChangeScreen extends StatefulWidget {
@@ -21,10 +23,15 @@ class FlightScheduleChangeScreen extends StatefulWidget {
 
 class _FlightScheduleChangeScreenState
     extends State<FlightScheduleChangeScreen> {
+  late final FlightRepository _flightRepository;
   late final ApiClient _apiClient;
   late final TextEditingController _fromController;
   late final TextEditingController _toController;
   DateTime? _newDepartureDate;
+  List<String> _fromSuggestions = const [];
+  List<String> _toSuggestions = const [];
+  bool _showFromSuggestions = false;
+  bool _showToSuggestions = false;
   List<Flight> _flights = const [];
   Flight? _selectedFlight;
   Map<String, dynamic>? _quote;
@@ -33,26 +40,107 @@ class _FlightScheduleChangeScreenState
   bool _confirming = false;
   String? _error;
 
+  static const List<String> _defaultPlaces = [
+    'Colombo (CMB)',
+    'London (LHR)',
+    'London Gatwick (LGW)',
+    'Dubai (DXB)',
+    'Doha (DOH)',
+    'Singapore (SIN)',
+    'Bangkok (BKK)',
+    'Kuala Lumpur (KUL)',
+    'Maldives (MLE)',
+    'Paris (CDG)',
+    'Frankfurt (FRA)',
+    'Istanbul (IST)',
+    'New York (JFK)',
+    'Manchester (MAN)',
+    'Edinburgh (EDI)',
+    'Birmingham (BHX)',
+    'Gatwick (LGW)',
+  ];
+
   @override
   void initState() {
     super.initState();
+    _flightRepository = getIt<FlightRepository>();
     _apiClient = getIt<ApiClient>();
     _fromController = TextEditingController(text: widget.booking.flight.origin);
     _toController =
         TextEditingController(text: widget.booking.flight.destination);
     _newDepartureDate = widget.booking.flight.departureTime;
+    _fromController.addListener(_onFromInputChanged);
+    _toController.addListener(_onToInputChanged);
+    _loadPlacesFromFlights();
+    _loadPlacesFromFlights();
   }
 
   @override
   void dispose() {
+    _fromController.removeListener(_onFromInputChanged);
+    _toController.removeListener(_onToInputChanged);
     _fromController.dispose();
     _toController.dispose();
     super.dispose();
   }
 
-  String _airportCode(String value) {
-    final match = RegExp(r'\(([A-Za-z]{3})\)').firstMatch(value);
-    return match?.group(1)?.toUpperCase() ?? value.trim();
+  void _onFromInputChanged() => _updateSuggestions(isFromField: true);
+
+  void _onToInputChanged() => _updateSuggestions(isFromField: false);
+
+  Future<void> _loadPlacesFromFlights() async {
+    try {
+      await _flightRepository.getAllFlights();
+      if (!mounted) return;
+      setState(() {});
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {});
+    }
+  }
+
+  List<String> _filterPlaces(String query) {
+    final normalizedQuery = query.toLowerCase().trim();
+    if (normalizedQuery.isEmpty) return _defaultPlaces.take(8).toList();
+
+    final matches = <String>[];
+    for (final place in _defaultPlaces) {
+      final lower = place.toLowerCase();
+      if (lower.contains(normalizedQuery)) matches.add(place);
+    }
+    return matches.take(8).toList();
+  }
+
+  void _updateSuggestions({required bool isFromField}) {
+    final controller = isFromField ? _fromController : _toController;
+    final query = controller.text.trim();
+    final matches = query.isEmpty
+        ? (isFromField ? _defaultPlaces : _defaultPlaces).take(8).toList()
+        : _filterPlaces(query);
+    if (!mounted) return;
+    setState(() {
+      if (isFromField) {
+        _fromSuggestions = matches;
+        _showFromSuggestions = matches.isNotEmpty;
+      } else {
+        _toSuggestions = matches;
+        _showToSuggestions = matches.isNotEmpty;
+      }
+    });
+  }
+
+  void _selectSuggestion({required bool isFromField, required String place}) {
+    final controller = isFromField ? _fromController : _toController;
+    controller
+      ..text = place
+      ..selection = TextSelection.collapsed(offset: place.length);
+    setState(() {
+      if (isFromField) {
+        _showFromSuggestions = false;
+      } else {
+        _showToSuggestions = false;
+      }
+    });
   }
 
   Future<void> _pickDate() async {
@@ -95,55 +183,33 @@ class _FlightScheduleChangeScreenState
     });
 
     try {
-      final response =
-          await _apiClient.get<dynamic>('/bookings/available-flights', query: {
-        'departure': _airportCode(_fromController.text),
-        'destination': _airportCode(_toController.text),
-        'departureDateFrom':
-            DateFormat('yyyy-MM-dd').format(_newDepartureDate!),
-        // The backend compares this as a DateTime. Use the end of the day so
-        // flights later on the selected date are not filtered out at midnight.
-        'departureDateTo': _newDepartureDate!
-            .add(const Duration(days: 1))
-            .subtract(const Duration(microseconds: 1))
-            .toIso8601String(),
-        'minSeatsAvailable': widget.booking.passengers.length,
-      });
-      final data = response.data;
-      final values = data is List
-          ? data
-          : data is Map
-              ? data['flights'] ?? data['results'] ?? data['items'] ?? const []
-              : const [];
+      final criteria = FlightSearchCriteria(
+        origin: _fromController.text.trim(),
+        destination: _toController.text.trim(),
+        departureDate: _newDepartureDate!,
+        passengers: widget.booking.passengers.length > 0
+            ? widget.booking.passengers.length
+            : 1,
+        tripType: 'one-way',
+      );
+      _flights = await _flightRepository.searchFlights(criteria);
+
       if (!mounted) return;
       setState(() {
-        _flights = values is List
-            ? values
-                .whereType<Map>()
-                .map((item) {
-                  return Flight.fromJson(Map<String, dynamic>.from(item));
-                })
-                .where((flight) =>
-                    flight.flightCode != widget.booking.flight.flightCode)
-                .toList()
-            : const [];
+        _flights = _flights
+            .where((flight) =>
+                flight.id != widget.booking.flight.id ||
+                !flight.departureTime
+                    .isAtSameMomentAs(widget.booking.flight.departureTime))
+            .toList();
         _loading = false;
       });
-    } on DioException catch (error) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = (error.response?.data is Map
-                ? (error.response?.data as Map)['message']?.toString()
-                : null) ??
-            'Unable to search alternative flights.';
+        _error = 'Unable to search alternative flights.';
       });
-    } catch (_) {
-      if (mounted)
-        setState(() {
-          _loading = false;
-          _error = 'Unable to search alternative flights.';
-        });
     }
   }
 
@@ -219,6 +285,58 @@ class _FlightScheduleChangeScreenState
   void _showMessage(String message) => ScaffoldMessenger.of(context)
       .showSnackBar(SnackBar(content: Text(message)));
 
+  Widget _buildLocationInput({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required List<String> suggestions,
+    required bool showSuggestions,
+    required bool isFromField,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            suffixIcon: const Icon(Icons.arrow_drop_down),
+          ),
+          onChanged: (_) => _updateSuggestions(isFromField: isFromField),
+          onTap: () => _updateSuggestions(isFromField: isFromField),
+        ),
+        if (showSuggestions)
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            constraints: const BoxConstraints(maxHeight: 220),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).dividerColor),
+              color: Theme.of(context).colorScheme.surface,
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: suggestions.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final place = suggestions[index];
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.place_outlined),
+                  title: Text(place),
+                  onTap: () => _selectSuggestion(
+                    isFromField: isFromField,
+                    place: place,
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selected = _selectedFlight;
@@ -234,17 +352,23 @@ class _FlightScheduleChangeScreenState
               'Booking ${widget.booking.pnr.isEmpty ? widget.booking.id : widget.booking.pnr}',
               style: AppTextStyles.bodySmall),
           const SizedBox(height: 16),
-          TextField(
-              controller: _fromController,
-              decoration: const InputDecoration(
-                  labelText: 'From',
-                  prefixIcon: Icon(Icons.flight_takeoff_outlined))),
+          _buildLocationInput(
+            label: 'From',
+            hint: 'City or airport',
+            controller: _fromController,
+            suggestions: _fromSuggestions,
+            showSuggestions: _showFromSuggestions,
+            isFromField: true,
+          ),
           const SizedBox(height: 12),
-          TextField(
-              controller: _toController,
-              decoration: const InputDecoration(
-                  labelText: 'To',
-                  prefixIcon: Icon(Icons.flight_land_outlined))),
+          _buildLocationInput(
+            label: 'To',
+            hint: 'City or airport',
+            controller: _toController,
+            suggestions: _toSuggestions,
+            showSuggestions: _showToSuggestions,
+            isFromField: false,
+          ),
           const SizedBox(height: 12),
           InkWell(
               onTap: _pickDate,
