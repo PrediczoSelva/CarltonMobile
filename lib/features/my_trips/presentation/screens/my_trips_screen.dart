@@ -756,7 +756,8 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton.icon(
-                            onPressed: () => _showChangeFlightSheet(context, booking),
+                            onPressed: () =>
+                                _showChangeFlightSheet(context, booking),
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.primary,
                               backgroundColor:
@@ -1117,11 +1118,10 @@ class _MyTripsScreenState extends State<MyTripsScreen>
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.8,
+          height: MediaQuery.of(context).size.height * 0.5,
           decoration: BoxDecoration(
             color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: FlightScheduleChangeScreen(booking: booking),
         ),
