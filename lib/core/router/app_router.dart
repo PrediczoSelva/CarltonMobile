@@ -8,6 +8,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/booking/presentation/bloc/booking_bloc.dart';
+import '../../features/booking/domain/entities/booking.dart';
 import '../../features/booking/presentation/screens/booking_confirmation_screen.dart';
 import '../../features/booking/presentation/screens/booking_summary_screen.dart';
 import '../../features/booking/presentation/screens/service_pack_selection_screen.dart';
@@ -15,6 +16,7 @@ import '../../features/booking/presentation/screens/card_payment_screen.dart';
 import '../../features/booking/presentation/screens/wallet_payment_screen.dart';
 import '../../features/booking/presentation/screens/paypal_payment_screen.dart';
 import '../../features/booking/presentation/screens/barclays_payment_screen.dart';
+import '../../features/booking/presentation/screens/flight_schedule_change_screen.dart';
 import '../../features/booking/presentation/screens/payment_method_selection_screen.dart';
 import '../../features/booking/presentation/screens/payment_processing_screen.dart';
 import '../../features/booking/presentation/screens/passenger_details_screen.dart';
@@ -131,8 +133,7 @@ final GoRouter appRouter = GoRouter(
                 : HotelSearchCriteria(
                     destination: '',
                     checkIn: DateTime.now().add(const Duration(days: 7)),
-                    checkOut:
-                        DateTime.now().add(const Duration(days: 10)),
+                    checkOut: DateTime.now().add(const Duration(days: 10)),
                     adults: 1,
                     children: 0,
                     rooms: 1,
@@ -150,8 +151,7 @@ final GoRouter appRouter = GoRouter(
                 : HotelSearchCriteria(
                     destination: '',
                     checkIn: DateTime.now().add(const Duration(days: 7)),
-                    checkOut:
-                        DateTime.now().add(const Duration(days: 10)),
+                    checkOut: DateTime.now().add(const Duration(days: 10)),
                     adults: 1,
                     children: 0,
                     rooms: 1,
@@ -223,6 +223,18 @@ final GoRouter appRouter = GoRouter(
             create: (_) => getIt<BookingBloc>(),
             child: const MyTripsScreen(),
           ),
+        ),
+        GoRoute(
+          path: '/my-trips/:bookingId/schedule-change',
+          builder: (context, state) {
+            final booking = state.extra;
+            if (booking is! Booking) {
+              return const Scaffold(
+                body: Center(child: Text('Booking details are unavailable.')),
+              );
+            }
+            return FlightScheduleChangeScreen(booking: booking);
+          },
         ),
         GoRoute(
           path: AppRoutes.helpSupport,

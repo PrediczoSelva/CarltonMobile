@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -750,6 +751,43 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                           ],
                         ],
                       ),
+                      if (showCancel) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () => context.push(
+                              '/my-trips/${booking.id}/schedule-change',
+                              extra: booking,
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              backgroundColor:
+                                  AppColors.primary.withOpacity(0.06),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(
+                                  color: AppColors.primary.withOpacity(0.14),
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.swap_horiz_outlined,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'Change flight',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 14),
                       const Divider(color: AppColors.divider, height: 1),
                       const SizedBox(height: 14),
@@ -765,10 +803,10 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                                Text(
-                                  '£${booking.totalPrice.toStringAsFixed(0)}',
-                                  style: AppTextStyles.price,
-                                ),
+                              Text(
+                                '£${booking.totalPrice.toStringAsFixed(0)}',
+                                style: AppTextStyles.price,
+                              ),
                             ],
                           ),
                           const Spacer(),
@@ -955,8 +993,7 @@ class _MyTripsScreenState extends State<MyTripsScreen>
     String refundAmount;
     if (booking.status.toLowerCase() == 'confirmed' && hoursToDeparture > 24) {
       refundPolicy = 'Full refund';
-      refundAmount =
-          '£${booking.totalPrice.toStringAsFixed(2)}';
+      refundAmount = '£${booking.totalPrice.toStringAsFixed(2)}';
     } else if (booking.status.toLowerCase() == 'confirmed' &&
         hoursToDeparture > 0) {
       refundPolicy = 'Partial refund';
@@ -1255,8 +1292,7 @@ class _BookingDetailsSheet extends StatelessWidget {
                 const SizedBox(height: 8),
                 _DetailRow(
                   label: 'Total Paid',
-                  value:
-                      '£${booking.totalPrice.toStringAsFixed(2)}',
+                  value: '£${booking.totalPrice.toStringAsFixed(2)}',
                   valueStyle: AppTextStyles.price,
                 ),
                 const SizedBox(height: 20),
