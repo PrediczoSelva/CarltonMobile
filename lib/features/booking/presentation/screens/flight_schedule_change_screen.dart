@@ -101,7 +101,13 @@ class _FlightScheduleChangeScreenState
         'destination': _airportCode(_toController.text),
         'departureDateFrom':
             DateFormat('yyyy-MM-dd').format(_newDepartureDate!),
-        'departureDateTo': DateFormat('yyyy-MM-dd').format(_newDepartureDate!),
+        // The backend compares this as a DateTime. Use the end of the day so
+        // flights later on the selected date are not filtered out at midnight.
+        'departureDateTo': _newDepartureDate!
+            .add(const Duration(days: 1))
+            .subtract(const Duration(microseconds: 1))
+            .toIso8601String(),
+        'minSeatsAvailable': widget.booking.passengers.length,
       });
       final data = response.data;
       final values = data is List

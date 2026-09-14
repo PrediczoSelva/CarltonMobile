@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,6 +17,7 @@ import '../../../booking/domain/repositories/booking_repository.dart';
 import '../../../booking/presentation/bloc/booking_bloc.dart';
 import '../../../booking/presentation/bloc/booking_event.dart';
 import '../../../booking/presentation/bloc/booking_state.dart';
+import '../../../booking/presentation/screens/flight_schedule_change_screen.dart';
 
 class MyTripsScreen extends StatefulWidget {
   const MyTripsScreen({super.key});
@@ -756,10 +756,7 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton.icon(
-                            onPressed: () => context.push(
-                              '/my-trips/${booking.id}/schedule-change',
-                              extra: booking,
-                            ),
+                            onPressed: () => _showChangeFlightSheet(context, booking),
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.primary,
                               backgroundColor:
@@ -1108,6 +1105,28 @@ class _MyTripsScreenState extends State<MyTripsScreen>
         setState(() => _cancellingIds.remove(booking.id));
       }
     }
+  }
+
+  void _showChangeFlightSheet(BuildContext context, Booking booking) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: FlightScheduleChangeScreen(booking: booking),
+        ),
+      ),
+    );
   }
 }
 
