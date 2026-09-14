@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../flight/domain/entities/flight.dart';
@@ -299,11 +301,20 @@ class _FlightScheduleChangeScreenState
       Navigator.pop(context, true);
     } on DioException catch (error) {
       if (!mounted) return;
-      final message = error.response?.data is Map
-          ? (error.response?.data as Map)['message']?.toString()
-          : null;
-      _showMessage(
-          message ?? 'Payment or flight change failed. Please try again.');
+      final data = error.response?.data;
+      final message = data is Map ? (data)['message']?.toString() : null;
+      final lowerMessage = (message ?? '').toLowerCase();
+      if (lowerMessage.contains('insufficient wallet balance') ||
+          lowerMessage.contains('wallet')) {
+        _showMessage(message!);
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          context.push(AppRoutes.wallet);
+        }
+      } else {
+        _showMessage(
+            message ?? 'Payment or flight change failed. Please try again.');
+      }
     } catch (_) {
       if (mounted)
         _showMessage('Payment or flight change failed. Please try again.');
@@ -471,7 +482,7 @@ class _FlightScheduleChangeScreenState
             else
               Text(
                   totalDue > 0
-                      ? 'Amount due now: ${_formatPrice(totalDue, widget.booking.currency)}'
+                      ? 'Amount due now: ${_formatPrice(totalDue, _quote?['currency'] as String? ?? widget.booking.currency)}'
                       : 'No extra charge for this change.',
                   style: AppTextStyles.bodyMedium
                       .copyWith(fontWeight: FontWeight.w700)),
