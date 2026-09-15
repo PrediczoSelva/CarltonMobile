@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_client.dart';
+import '../../domain/entities/schedule_change.dart';
 import '../models/atlas_verify_response.dart';
 import '../models/amadeus_verify_response.dart';
 import '../models/travelport_verify_response.dart';
@@ -74,6 +75,49 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
   }
 
   @override
+  Future<List<ScheduleChange>> getScheduleChanges() async {
+    try {
+      final response = await _apiClient.get<dynamic>('$_basePath/schedule-changes');
+      final data = response.data;
+      if (data == null) return [];
+      final list = data is List
+          ? data
+          : (data as Map<String, dynamic>)['scheduleChanges'] as List<dynamic>? ?? [];
+      return list
+          .map((json) => ScheduleChange.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<ScheduleChange?> getScheduleChangeForBooking(int bookingId) async {
+    try {
+      final response = await _apiClient.get<dynamic>('$_basePath/$bookingId/schedule-change');
+      if (response.data == null) return null;
+      return ScheduleChange.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<void> acceptScheduleChange(int bookingId) async {
+    await _apiClient.post<dynamic>(
+      '$_basePath/$bookingId/schedule-change/accept',
+    );
+  }
+
+  @override
+  Future<void> requestRefundForScheduleChange(int bookingId) async {
+    await _apiClient.post<dynamic>(
+      '$_basePath/$bookingId/schedule-change/refund-request',
+    );
+  }
+
   Future<AtlasVerifyResponse> atlasVerify({
     required String routingIdentifier,
     required int adultCount,
