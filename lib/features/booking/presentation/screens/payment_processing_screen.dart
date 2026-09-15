@@ -312,7 +312,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '$currency ${price.toStringAsFixed(0)} paid successfully',
+                                '£${price.toStringAsFixed(0)} paid successfully',
                                 style: AppTextStyles.bodyMedium,
                               ),
                               if (session.pnr != null) ...[

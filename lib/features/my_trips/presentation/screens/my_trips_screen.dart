@@ -17,6 +17,7 @@ import '../../../booking/domain/repositories/booking_repository.dart';
 import '../../../booking/presentation/bloc/booking_bloc.dart';
 import '../../../booking/presentation/bloc/booking_event.dart';
 import '../../../booking/presentation/bloc/booking_state.dart';
+import '../../../booking/presentation/screens/flight_schedule_change_screen.dart';
 
 class MyTripsScreen extends StatefulWidget {
   const MyTripsScreen({super.key});
@@ -750,6 +751,41 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                           ],
                         ],
                       ),
+                      if (showCancel) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () =>
+                                _showChangeFlightSheet(context, booking),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              backgroundColor:
+                                  AppColors.primary.withOpacity(0.06),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(
+                                  color: AppColors.primary.withOpacity(0.14),
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.swap_horiz_outlined,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'Change flight',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 14),
                       const Divider(color: AppColors.divider, height: 1),
                       const SizedBox(height: 14),
@@ -766,7 +802,7 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${booking.currency} ${booking.totalPrice.toStringAsFixed(0)}',
+                                '£${booking.totalPrice.toStringAsFixed(0)}',
                                 style: AppTextStyles.price,
                               ),
                             ],
@@ -955,13 +991,12 @@ class _MyTripsScreenState extends State<MyTripsScreen>
     String refundAmount;
     if (booking.status.toLowerCase() == 'confirmed' && hoursToDeparture > 24) {
       refundPolicy = 'Full refund';
-      refundAmount =
-          '${booking.currency} ${booking.totalPrice.toStringAsFixed(2)}';
+      refundAmount = '£${booking.totalPrice.toStringAsFixed(2)}';
     } else if (booking.status.toLowerCase() == 'confirmed' &&
         hoursToDeparture > 0) {
       refundPolicy = 'Partial refund';
       final refundValue = booking.totalPrice * 0.8;
-      refundAmount = '${booking.currency} ${refundValue.toStringAsFixed(2)}';
+      refundAmount = '£${refundValue.toStringAsFixed(2)}';
     } else {
       refundPolicy = 'Non-refundable';
       refundAmount = '0.00';
@@ -1071,6 +1106,27 @@ class _MyTripsScreenState extends State<MyTripsScreen>
         setState(() => _cancellingIds.remove(booking.id));
       }
     }
+  }
+
+  void _showChangeFlightSheet(BuildContext context, Booking booking) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.5,
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: FlightScheduleChangeScreen(booking: booking),
+        ),
+      ),
+    );
   }
 }
 
@@ -1255,8 +1311,7 @@ class _BookingDetailsSheet extends StatelessWidget {
                 const SizedBox(height: 8),
                 _DetailRow(
                   label: 'Total Paid',
-                  value:
-                      '${booking.currency} ${booking.totalPrice.toStringAsFixed(2)}',
+                  value: '£${booking.totalPrice.toStringAsFixed(2)}',
                   valueStyle: AppTextStyles.price,
                 ),
                 const SizedBox(height: 20),

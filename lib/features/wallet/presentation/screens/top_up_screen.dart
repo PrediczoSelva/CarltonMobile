@@ -182,7 +182,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       setState(() {

@@ -89,11 +89,11 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
             children: [
               _SummaryRow(
                 label: 'Base fare',
-                value: '$currency ${basePrice.toStringAsFixed(0)}',
+                value: '£${basePrice.toStringAsFixed(0)}',
               ),
               _SummaryRow(
                 label: 'Taxes & fees',
-                value: '$currency ${taxes.toStringAsFixed(0)}',
+                value: '£${taxes.toStringAsFixed(0)}',
               ),
               const SizedBox(height: 8),
               Row(
@@ -101,7 +101,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                   Text('Total', style: AppTextStyles.h4),
                   const Spacer(),
                   Text(
-                    '$currency ${total.toStringAsFixed(0)}',
+                    '£${total.toStringAsFixed(0)}',
                     style: AppTextStyles.price,
                   ),
                 ],

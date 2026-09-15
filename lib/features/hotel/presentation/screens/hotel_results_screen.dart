@@ -75,7 +75,11 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                     itemCount: hotels.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) =>
-                        _HotelCard(hotel: hotels[index]),
+                        _HotelCard(
+                          hotel: hotels[index],
+                          onViewDetails: () => _viewDetails(context, hotels[index]),
+                          onReserve: () => _reserve(context, hotels[index]),
+                        ),
                   ),
           ),
         ],
@@ -171,12 +175,28 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
       ),
     );
   }
+
+  void _viewDetails(BuildContext context, Hotel hotel) {
+    context.push('/hotels/${hotel.id}', extra: widget.args.criteria);
+  }
+
+  void _reserve(BuildContext context, Hotel hotel) {
+    final encodedName = Uri.encodeComponent(hotel.name);
+    context.push('/hotels/${hotel.id}/rooms?hotelName=$encodedName',
+        extra: widget.args.criteria);
+  }
 }
 
 class _HotelCard extends StatelessWidget {
-  const _HotelCard({required this.hotel});
+  const _HotelCard({
+    required this.hotel,
+    this.onViewDetails,
+    this.onReserve,
+  });
 
   final Hotel hotel;
+  final VoidCallback? onViewDetails;
+  final VoidCallback? onReserve;
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +242,7 @@ class _HotelCard extends StatelessWidget {
                     ],
                     const Spacer(),
                     Text(
-                      '${hotel.currency} ${hotel.price.toStringAsFixed(0)}',
+                      '£${hotel.price.toStringAsFixed(0)}',
                       style: AppTextStyles.price,
                     ),
                   ],
@@ -239,6 +259,32 @@ class _HotelCard extends StatelessWidget {
                   Text(hotel.amenities.take(3).join(' · '),
                       style: AppTextStyles.bodySmall),
                 ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onViewDetails,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                        ),
+                        child: const Text('View Details'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onReserve,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.textOnPrimary,
+                        ),
+                        child: const Text('Reserve'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

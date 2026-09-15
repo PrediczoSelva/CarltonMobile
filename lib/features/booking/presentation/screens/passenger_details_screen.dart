@@ -849,10 +849,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                 ],
                               ),
                             ),
-                            Text(
-                              '${flight.currency} ${flight.price.toStringAsFixed(0)}',
-                              style: AppTextStyles.price,
-                            ),
+                              Text(
+                                '£${flight.price.toStringAsFixed(0)}',
+                                style: AppTextStyles.price,
+                              ),
                           ],
                         ),
                       ),

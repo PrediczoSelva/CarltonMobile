@@ -8,6 +8,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/booking/presentation/bloc/booking_bloc.dart';
+import '../../features/booking/domain/entities/booking.dart';
 import '../../features/booking/presentation/screens/booking_confirmation_screen.dart';
 import '../../features/booking/presentation/screens/booking_summary_screen.dart';
 import '../../features/booking/presentation/screens/service_pack_selection_screen.dart';
@@ -15,6 +16,7 @@ import '../../features/booking/presentation/screens/card_payment_screen.dart';
 import '../../features/booking/presentation/screens/wallet_payment_screen.dart';
 import '../../features/booking/presentation/screens/paypal_payment_screen.dart';
 import '../../features/booking/presentation/screens/barclays_payment_screen.dart';
+import '../../features/booking/presentation/screens/flight_schedule_change_screen.dart';
 import '../../features/booking/presentation/screens/payment_method_selection_screen.dart';
 import '../../features/booking/presentation/screens/payment_processing_screen.dart';
 import '../../features/booking/presentation/screens/passenger_details_screen.dart';
@@ -24,11 +26,22 @@ import '../../features/flight/presentation/screens/flight_search_screen.dart';
 import '../../features/home/presentation/screens/messages_screen.dart';
 import '../../features/home/presentation/screens/notifications_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/cruise/presentation/screens/cruise_results_screen.dart';
+import '../../features/cruise/presentation/screens/cruise_details_screen.dart';
+import '../../features/cruise/domain/entities/cruise.dart';
+import '../../features/car/presentation/screens/car_results_screen.dart';
+import '../../features/car/presentation/screens/car_details_screen.dart';
+import '../../features/car/domain/entities/car_vehicle.dart';
+import '../../features/car/domain/entities/car_search_criteria.dart';
 import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
+import '../../features/hotel/presentation/screens/hotel_details_screen.dart';
+import '../../features/hotel/presentation/screens/hotel_room_selection_screen.dart';
+import '../../features/hotel/domain/entities/hotel_search_criteria.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
+import '../../features/profile/presentation/screens/help_support_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
 
 abstract class AppRoutes {
@@ -56,6 +69,7 @@ abstract class AppRoutes {
   static const myTrips = '/my-trips';
   static const messages = '/messages';
   static const notifications = '/notifications';
+  static const helpSupport = '/help-support';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -111,11 +125,120 @@ final GoRouter appRouter = GoRouter(
           },
         ),
         GoRoute(
+          path: '/hotels/:hotelId',
+          builder: (context, state) {
+            final hotelId = state.pathParameters['hotelId'] ?? '';
+            final criteria = state.extra is HotelSearchCriteria
+                ? state.extra as HotelSearchCriteria
+                : HotelSearchCriteria(
+                    destination: '',
+                    checkIn: DateTime.now().add(const Duration(days: 7)),
+                    checkOut: DateTime.now().add(const Duration(days: 10)),
+                    adults: 1,
+                    children: 0,
+                    rooms: 1,
+                  );
+            return HotelDetailsScreen(hotelId: hotelId, criteria: criteria);
+          },
+        ),
+        GoRoute(
+          path: '/hotels/:hotelId/rooms',
+          builder: (context, state) {
+            final hotelId = state.pathParameters['hotelId'] ?? '';
+            final hotelName = state.uri.queryParameters['hotelName'] ?? 'Hotel';
+            final criteria = state.extra is HotelSearchCriteria
+                ? state.extra as HotelSearchCriteria
+                : HotelSearchCriteria(
+                    destination: '',
+                    checkIn: DateTime.now().add(const Duration(days: 7)),
+                    checkOut: DateTime.now().add(const Duration(days: 10)),
+                    adults: 1,
+                    children: 0,
+                    rooms: 1,
+                  );
+            return HotelRoomSelectionScreen(
+              hotelId: hotelId,
+              hotelName: hotelName,
+              criteria: criteria,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/cruises/results',
+          builder: (context, state) {
+            final args = state.extra;
+            if (args is! CruiseSearchResultArgs) {
+              return const Scaffold(
+                body: Center(
+                    child: Text('Cruise search results are unavailable.')),
+              );
+            }
+            return CruiseResultsScreen(args: args);
+          },
+        ),
+        GoRoute(
+          path: '/cruises/:cruiseId',
+          builder: (context, state) {
+            final cruise = state.extra;
+            if (cruise is! Cruise) {
+              return const Scaffold(
+                body: Center(child: Text('Cruise details are unavailable.')),
+              );
+            }
+            return CruiseDetailsScreen(cruise: cruise);
+          },
+        ),
+        GoRoute(
+          path: '/cars/results',
+          builder: (context, state) {
+            final args = state.extra;
+            if (args is! CarSearchResultArgs) {
+              return const Scaffold(
+                body:
+                    Center(child: Text('Car search results are unavailable.')),
+              );
+            }
+            return CarResultsScreen(args: args);
+          },
+        ),
+        GoRoute(
+          path: '/cars/:carId',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              final car = extra['car'] as CarVehicle?;
+              final criteria = extra['criteria'] as CarSearchCriteria?;
+              if (car != null && criteria != null) {
+                return CarDetailsScreen(car: car, criteria: criteria);
+              }
+            }
+            return const Scaffold(
+              body: Center(child: Text('Car details are unavailable.')),
+            );
+          },
+        ),
+        GoRoute(
           path: AppRoutes.myTrips,
           builder: (context, state) => BlocProvider(
             create: (_) => getIt<BookingBloc>(),
             child: const MyTripsScreen(),
           ),
+        ),
+        GoRoute(
+          path: '/my-trips/:bookingId/schedule-change',
+          builder: (context, state) {
+            final booking = state.extra;
+            if (booking is! Booking) {
+              return const Scaffold(
+                body: Center(child: Text('Booking details are unavailable.')),
+              );
+            }
+            return FlightScheduleChangeScreen(booking: booking);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.helpSupport,
+          builder: (context, state) => const HelpSupportScreen(),
         ),
         GoRoute(
           path: AppRoutes.profile,

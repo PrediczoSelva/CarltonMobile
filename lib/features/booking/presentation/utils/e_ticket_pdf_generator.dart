@@ -215,7 +215,7 @@ class ETicketPdfGenerator {
                         ),
                       ),
                       pw.Text(
-                        '${ticket.currency} ${ticket.totalAmount!.toStringAsFixed(2)}',
+                        '£${ticket.totalAmount!.toStringAsFixed(2)}',
                         style: pw.TextStyle(
                           color: PdfColors.white,
                           fontSize: 16,

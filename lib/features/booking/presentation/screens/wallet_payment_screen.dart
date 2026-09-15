@@ -54,7 +54,7 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
     if (_balance == null || _balance! < amount) {
       setState(() {
         _error =
-            'Insufficient wallet balance. Current balance: $_currency ${_balance?.toStringAsFixed(2) ?? '0.00'}';
+            'Insufficient wallet balance. Current balance: £${_balance?.toStringAsFixed(2) ?? '0.00'}';
       });
       return;
     }
@@ -126,7 +126,7 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '$currency ${price.toStringAsFixed(2)}',
+                      '£${price.toStringAsFixed(2)}',
                       style: AppTextStyles.h2.copyWith(
                         color: AppColors.textOnPrimary,
                       ),
@@ -191,7 +191,7 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '${_currency ?? 'USD'} ${_balance?.toStringAsFixed(2) ?? '0.00'}',
+                                      '£${_balance?.toStringAsFixed(2) ?? '0.00'}',
                                       style: AppTextStyles.h4,
                                     ),
                                   ],

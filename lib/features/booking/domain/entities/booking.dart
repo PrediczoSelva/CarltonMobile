@@ -58,4 +58,49 @@ class Booking {
         'status': status,
         'bookingDate': bookingDate.toIso8601String(),
       };
+
+  static List<Booking> filterByStatus(
+    List<Booking> bookings, {
+    String? status,
+  }) {
+    if (status == null || status.isEmpty) return List.of(bookings);
+    final lower = status.toLowerCase();
+    return bookings.where((b) => b.status.toLowerCase() == lower).toList();
+  }
+
+  static List<Booking> filterByDate(List<Booking> bookings,
+      {DateTime? from, DateTime? to}) {
+    final start = from ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final end = to ?? DateTime.now();
+    return bookings
+        .where((b) =>
+            b.flight.departureTime.isAfter(start) &&
+            b.flight.departureTime.isBefore(end))
+        .toList();
+  }
+
+  static List<Booking> filterUpcoming(List<Booking> bookings,
+      {DateTime? now}) {
+    final reference = now ?? DateTime.now();
+    return bookings
+        .where((b) =>
+            !b.status.toLowerCase().contains('cancel') &&
+            b.flight.departureTime.isAfter(reference))
+        .toList();
+  }
+
+  static List<Booking> filterPast(List<Booking> bookings, {DateTime? now}) {
+    final reference = now ?? DateTime.now();
+    return bookings
+        .where((b) =>
+            !b.status.toLowerCase().contains('cancel') &&
+            b.flight.departureTime.isBefore(reference))
+        .toList();
+  }
+
+  static List<Booking> filterCancelled(List<Booking> bookings) {
+    return bookings
+        .where((b) => b.status.toLowerCase().contains('cancel'))
+        .toList();
+  }
 }

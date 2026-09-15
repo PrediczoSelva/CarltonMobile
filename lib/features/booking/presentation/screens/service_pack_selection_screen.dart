@@ -113,7 +113,7 @@ class _ServicePackSelectionScreenState
                     children: [
                       Text('Base total', style: AppTextStyles.bodySmall),
                       const Spacer(),
-                      Text('$currency ${baseTotal.toStringAsFixed(2)}',
+                      Text('£${baseTotal.toStringAsFixed(2)}',
                           style: AppTextStyles.bodyLarge),
                     ],
                   ),
@@ -123,7 +123,7 @@ class _ServicePackSelectionScreenState
                       Text('Service pack', style: AppTextStyles.bodySmall),
                       const Spacer(),
                       Text(
-                          '$currency ${packs[_selectedKey]!.price.toStringAsFixed(2)}',
+                          '£${packs[_selectedKey]!.price.toStringAsFixed(2)}',
                           style: AppTextStyles.bodyLarge),
                     ],
                   ),
@@ -135,7 +135,7 @@ class _ServicePackSelectionScreenState
                       Text('Total', style: AppTextStyles.h4),
                       const Spacer(),
                       Text(
-                          '$currency ${(baseTotal + packs[_selectedKey]!.price).toStringAsFixed(2)}',
+                          '£${(baseTotal + packs[_selectedKey]!.price).toStringAsFixed(2)}',
                           style: AppTextStyles.price),
                     ],
                   ),

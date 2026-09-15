@@ -75,7 +75,7 @@ class _TopUpModalState extends State<TopUpModal> {
       case 'GBP':
         return '£';
       case 'USD':
-        return '\$';
+        return '£';
       default:
         return '${widget.currencyCode} ';
     }

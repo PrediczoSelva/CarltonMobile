@@ -69,7 +69,7 @@ class _RedeemScreenState extends State<RedeemScreen> {
       case 'GBP':
         return '£';
       case 'USD':
-        return '\$';
+        return '£';
       default:
         return '${widget.currencyCode} ';
     }

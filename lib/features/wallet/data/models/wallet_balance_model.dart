@@ -19,12 +19,32 @@ class WalletBalanceModel {
 
   factory WalletBalanceModel.fromJson(Map<String, dynamic> json) {
     return WalletBalanceModel(
-      balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
-      currencyCode: json['currencyCode'] as String? ?? 'USD',
-      loyaltyPoints: json['loyaltyPoints'] as int? ?? 0,
-      tierLevel: json['tierLevel'] as String? ?? 'Bronze',
-      totalLifetimeSpend: (json['totalLifetimeSpend'] as num?)?.toDouble() ?? 0.0,
-      tripsCompleted: json['tripsCompleted'] as int? ?? 0,
+      balance: ((json['balance'] ??
+              json['walletBalance'] ??
+              json['availableBalance'] ??
+              json['balanceAmount'] ??
+              json['amount']) as num?)?.toDouble() ??
+          0.0,
+      currencyCode: json['currencyCode'] as String? ??
+          json['currency'] as String? ??
+          'GBP',
+      loyaltyPoints: (json['loyaltyPoints'] ??
+              json['points'] ??
+              json['loyaltyPointsBalance'] ??
+              json['pointsBalance']) as int? ??
+          0,
+      tierLevel: json['tierLevel'] as String? ??
+          json['tier'] as String? ??
+          'Bronze',
+      totalLifetimeSpend: ((json['totalLifetimeSpend'] ??
+              json['lifetimeSpend'] ??
+              json['lifetimeValue']) as num?)?.toDouble() ??
+          0.0,
+      tripsCompleted: (json['tripsCompleted'] ??
+              json['completedTrips'] ??
+              json['bookingsCount'] ??
+              json['bookingsCompleted']) as int? ??
+          0,
     );
   }
 

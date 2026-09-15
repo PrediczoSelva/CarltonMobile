@@ -11,13 +11,32 @@ import '../bloc/wallet_state.dart';
 import 'top_up_screen.dart';
 import 'redeem_screen.dart';
 
-class WalletScreen extends StatelessWidget {
+class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
+
+  @override
+  State<WalletScreen> createState() => _WalletScreenState();
+}
+
+class _WalletScreenState extends State<WalletScreen> {
+  late final WalletBloc _walletBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _walletBloc = getIt<WalletBloc>()..add(WalletLoadRequested());
+  }
+
+  @override
+  void dispose() {
+    _walletBloc.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<WalletBloc>()..add(WalletLoadRequested()),
+      create: (_) => _walletBloc,
       child: const _WalletView(),
     );
   }
@@ -127,7 +146,7 @@ class _BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '${balance.currencyCode} ${balance.balance.toStringAsFixed(2)}',
+            '£${balance.balance.toStringAsFixed(2)}',
             style: AppTextStyles.h2.copyWith(color: AppColors.textOnPrimary),
           ),
           const SizedBox(height: 16),
@@ -136,7 +155,7 @@ class _BalanceCard extends StatelessWidget {
               _BalanceStat(
                 label: 'Lifetime Spend',
                 value:
-                    '${balance.currencyCode} ${balance.totalLifetimeSpend.toStringAsFixed(2)}',
+                    '£${balance.totalLifetimeSpend.toStringAsFixed(2)}',
               ),
               const SizedBox(width: 24),
               _BalanceStat(
@@ -168,12 +187,19 @@ class _BalanceCard extends StatelessWidget {
   }
 
   void _showTopUpModal(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => TopUpScreen(currencyCode: balance.currencyCode),
-        fullscreenDialog: true,
-      ),
-    );
+    final walletBloc = BlocProvider.of<WalletBloc>(context);
+    Navigator.of(context)
+        .push<bool>(
+          MaterialPageRoute(
+            builder: (context) => TopUpScreen(currencyCode: balance.currencyCode),
+            fullscreenDialog: true,
+          ),
+        )
+        .then((completed) {
+          if (completed == true) {
+            walletBloc.add(WalletLoadRequested());
+          }
+        });
   }
 }
 
@@ -269,7 +295,7 @@ class _LoyaltyCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Worth ${balance.currencyCode} ${balance.pointsValueEquivalent.toStringAsFixed(2)}',
+            'Worth £${balance.pointsValueEquivalent.toStringAsFixed(2)}',
             style: AppTextStyles.bodySmall.copyWith(
               color: Colors.white.withValues(alpha: 0.85),
             ),
