@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking.dart';
@@ -18,6 +20,8 @@ import '../../../booking/presentation/bloc/booking_bloc.dart';
 import '../../../booking/presentation/bloc/booking_event.dart';
 import '../../../booking/presentation/bloc/booking_state.dart';
 import '../../../booking/presentation/screens/flight_schedule_change_screen.dart';
+import '../../../flight/domain/entities/flight_search_criteria.dart';
+import '../../../booking/domain/entities/booking_session.dart';
 
 class MyTripsScreen extends StatefulWidget {
   const MyTripsScreen({super.key});
@@ -786,6 +790,41 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                           ),
                         ),
                       ],
+                      if (booking.status.toLowerCase().contains('cancel')) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () => _copyAndRebook(booking),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.accent,
+                              backgroundColor:
+                                  AppColors.accent.withOpacity(0.12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(
+                                  color: AppColors.accent.withOpacity(0.3),
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.copy_all,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'Copy & Rebook',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 14),
                       const Divider(color: AppColors.divider, height: 1),
                       const SizedBox(height: 14),
@@ -1106,6 +1145,43 @@ class _MyTripsScreenState extends State<MyTripsScreen>
         setState(() => _cancellingIds.remove(booking.id));
       }
     }
+  }
+
+  void _copyAndRebook(Booking booking) {
+    final session = getIt<BookingSession>();
+    session.reset();
+
+    session.searchCriteria = FlightSearchCriteria(
+      origin: booking.flight.origin,
+      destination: booking.flight.destination,
+      departureDate: booking.flight.departureTime,
+      passengers: booking.passengers.length > 0 ? booking.passengers.length : 1,
+      tripType: 'one-way',
+    );
+
+    final travelerMaps = <Map<String, dynamic>>[];
+    for (final p in booking.passengers) {
+      travelerMaps.add({
+        'id': -1,
+        'firstName': p.firstName,
+        'lastName': p.lastName,
+        'passengerType': p.passengerType ?? 0,
+        'dateOfBirth': p.dateOfBirth?.toIso8601String(),
+        'nationality': p.country,
+        'passportNumber': p.passportNumber,
+        'passportExpiry': p.passportExpiry?.toIso8601String(),
+      });
+    }
+    session.selectedTravelers = travelerMaps.isNotEmpty ? travelerMaps : null;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Booking details copied. Search to rebook.'),
+        backgroundColor: AppColors.success,
+      ),
+    );
+
+    context.push(AppRoutes.flightSearch);
   }
 
   void _showChangeFlightSheet(BuildContext context, Booking booking) {
