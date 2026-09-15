@@ -1,5 +1,6 @@
 import '../../domain/entities/booking.dart';
 import '../../domain/entities/passenger.dart';
+import '../../domain/entities/schedule_change.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../../../../core/utils/country_code_mapper.dart';
 import '../models/atlas_verify_response.dart';
@@ -64,6 +65,25 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
+  Future<List<ScheduleChange>> getScheduleChanges() {
+    return _remoteDatasource.getScheduleChanges();
+  }
+
+  @override
+  Future<ScheduleChange?> getScheduleChangeForBooking(int bookingId) {
+    return _remoteDatasource.getScheduleChangeForBooking(bookingId);
+  }
+
+  @override
+  Future<void> acceptScheduleChange(int bookingId) {
+    return _remoteDatasource.acceptScheduleChange(bookingId);
+  }
+
+  @override
+  Future<void> requestRefundForScheduleChange(int bookingId) {
+    return _remoteDatasource.requestRefundForScheduleChange(bookingId);
+  }
+
   Future<AtlasVerifyResponse> atlasVerify({
     required String routingIdentifier,
     required int adultCount,
