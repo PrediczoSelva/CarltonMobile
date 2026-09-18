@@ -70,6 +70,7 @@ abstract class BookingRepository {
     int? walletUserId,
     String? barclaycardReference,
     String? barclaycardLast4,
+    bool deferCarltonPayment = false,
   });
 
   Future<TravelportVerifyResponse> travelportVerify({

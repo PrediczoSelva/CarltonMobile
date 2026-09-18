@@ -153,7 +153,8 @@ class BookingRepositoryImpl implements BookingRepository {
         'passengerType': _amadeusPassengerType(p),
         'gender': 'M',
         'birthday': birthday,
-        if (p.country != null) 'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
+        if (p.country != null)
+          'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
       };
     }).toList();
 
@@ -202,6 +203,7 @@ class BookingRepositoryImpl implements BookingRepository {
     int? walletUserId,
     String? barclaycardReference,
     String? barclaycardLast4,
+    bool deferCarltonPayment = false,
   }) async {
     final amadeusPassengers = passengers.map((p) {
       final birthday = p.dateOfBirth != null
@@ -213,9 +215,13 @@ class BookingRepositoryImpl implements BookingRepository {
         'passengerType': _amadeusPassengerType(p),
         'gender': 'M',
         'birthday': birthday,
-        if (p.country != null) 'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
-        if (p.passportNumber != null && p.passportNumber!.isNotEmpty) 'passportNumber': p.passportNumber,
-        if (p.passportExpiry != null) 'passportExpiry': '${p.passportExpiry!.year.toString().padLeft(4, '0')}-${p.passportExpiry!.month.toString().padLeft(2, '0')}-${p.passportExpiry!.day.toString().padLeft(2, '0')}',
+        if (p.country != null)
+          'nationality': CountryCodeMapper.toIsoCodeOrDefault(p.country),
+        if (p.passportNumber != null && p.passportNumber!.isNotEmpty)
+          'passportNumber': p.passportNumber,
+        if (p.passportExpiry != null)
+          'passportExpiry':
+              '${p.passportExpiry!.year.toString().padLeft(4, '0')}-${p.passportExpiry!.month.toString().padLeft(2, '0')}-${p.passportExpiry!.day.toString().padLeft(2, '0')}',
       };
     }).toList();
 
@@ -246,6 +252,7 @@ class BookingRepositoryImpl implements BookingRepository {
       walletUserId: walletUserId,
       barclaycardReference: barclaycardReference,
       barclaycardLast4: barclaycardLast4,
+      deferCarltonPayment: deferCarltonPayment,
     );
   }
 

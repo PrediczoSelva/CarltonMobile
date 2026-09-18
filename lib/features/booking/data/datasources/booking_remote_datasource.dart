@@ -58,6 +58,7 @@ abstract class BookingRemoteDatasource {
     int? walletUserId,
     String? barclaycardReference,
     String? barclaycardLast4,
+    bool deferCarltonPayment = false,
   });
 
   Future<TravelportVerifyResponse> travelportVerify({

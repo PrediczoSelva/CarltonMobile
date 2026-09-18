@@ -40,7 +40,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   Future<void> _createBooking() async {
     final session = getIt<BookingSession>();
 
-    if (session.pnr != null) {
+    if (session.pnr != null &&
+        session.bookingStatus?.toLowerCase() == 'confirmed') {
       setState(() => _showSuccess = true);
       return;
     }
@@ -58,7 +59,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     final isProviderFlight = isAtlas || isAmadeus || isTravelport;
 
     if (!isProviderFlight) {
-      _showError('Only provider flights are supported. Please search and select a provider flight.');
+      _showError(
+          'Only provider flights are supported. Please search and select a provider flight.');
       return;
     }
 
@@ -69,7 +71,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
             : null;
 
     if (bookingKey == null) {
-      _showError('This flight is missing booking details. Please go back and search again.');
+      _showError(
+          'This flight is missing booking details. Please go back and search again.');
       return;
     }
 
@@ -80,26 +83,40 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       final stripeIntentId = session.stripePaymentIntentId;
       final quotedTotal = session.totalPriceWithTaxes;
 
+      if (session.bookingId != null &&
+          stripeIntentId != null &&
+          stripeIntentId.isNotEmpty) {
+        final booking = await bookingRepository.finalizeBookingPayment(
+          bookingId: session.bookingId!,
+          stripePaymentIntentId: stripeIntentId,
+          paymentMetadataJson: session.paymentMetadataJson,
+        );
+        _storeBooking(session, booking);
+        if (mounted) {
+          setState(() => _showSuccess = true);
+        }
+        return;
+      }
+
       if (quotedTotal < 0.50) {
-        throw Exception('The selected flight price is too low to process payment. Please select a different flight.');
+        throw Exception(
+            'The selected flight price is too low to process payment. Please select a different flight.');
       }
 
       Booking booking;
 
       if (isAtlas) {
-        booking = await _createAtlasBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
+        booking = await _createAtlasBooking(
+            bookingRepository, session, flight, stripeIntentId, quotedTotal);
       } else if (isAmadeus) {
-        booking = await _createAmadeusBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
+        booking = await _createAmadeusBooking(
+            bookingRepository, session, flight, stripeIntentId, quotedTotal);
       } else {
-        booking = await _createTravelportBooking(bookingRepository, session, flight, stripeIntentId, quotedTotal);
+        booking = await _createTravelportBooking(
+            bookingRepository, session, flight, stripeIntentId, quotedTotal);
       }
 
-      session.pnr = booking.pnr;
-      session.bookingReference = booking.pnr;
-      session.bookingStatus = booking.status;
-      session.totalPrice = booking.totalPrice;
-      session.currency = booking.currency;
-      session.bookingId = booking.id;
+      _storeBooking(session, booking);
 
       if (mounted) {
         setState(() => _showSuccess = true);
@@ -109,6 +126,14 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       debugPrint('[PaymentProcessing] Booking error: $message');
       _showError(message);
     }
+  }
+
+  void _storeBooking(BookingSession session, Booking booking) {
+    session.pnr = booking.pnr.isEmpty ? null : booking.pnr;
+    session.bookingReference = session.pnr;
+    session.bookingStatus = booking.status;
+    session.currency = booking.currency;
+    session.bookingId = booking.id;
   }
 
   Future<Booking> _createAtlasBooking(
@@ -122,7 +147,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         flight.providerOfferId ??
         (throw Exception('Missing Atlas routing identifier.'));
 
-    final firstPassenger = session.passengers.isNotEmpty ? session.passengers.first : null;
+    final firstPassenger =
+        session.passengers.isNotEmpty ? session.passengers.first : null;
     final contactName = firstPassenger != null
         ? '${firstPassenger.lastName}/${firstPassenger.firstName}'
         : session.contactEmail ?? 'Customer';
@@ -216,7 +242,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
             : null;
 
     if (fareKey == null) {
-      throw Exception('Missing Travelport fare key. Please go back and search again.');
+      throw Exception(
+          'Missing Travelport fare key. Please go back and search again.');
     }
 
     return repo.createTravelportBooking(
@@ -249,12 +276,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   void _handleState(BookingState state) {
     if (state is BookingSuccess) {
       final session = getIt<BookingSession>();
-      session.pnr = state.booking.pnr;
-      session.bookingReference = state.booking.pnr;
-      session.bookingStatus = state.booking.status;
-      session.totalPrice = state.booking.totalPrice;
-      session.currency = state.booking.currency;
-      session.bookingId = state.booking.id;
+      _storeBooking(session, state.booking);
 
       setState(() => _showSuccess = true);
     }
