@@ -20,7 +20,7 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
   static const _methods = [
     _PaymentMethod(
       id: 'card',
-      title: 'Card payment',
+      title: 'Pay by Card',
       icon: Icons.credit_card,
     ),
     _PaymentMethod(
@@ -29,14 +29,24 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
       icon: Icons.account_balance_wallet,
     ),
     _PaymentMethod(
-      id: 'wallet',
-      title: 'Wallet',
-      icon: Icons.wallet,
+      id: 'super_pay',
+      title: 'Super Pay',
+      icon: Icons.flash_on,
     ),
     _PaymentMethod(
       id: 'barclays',
-      title: 'Barclays Pay',
+      title: 'Barclays Card',
       icon: Icons.account_balance,
+    ),
+    _PaymentMethod(
+      id: 'crypto',
+      title: 'Crypto Payment',
+      icon: Icons.currency_bitcoin,
+    ),
+    _PaymentMethod(
+      id: 'wallet',
+      title: 'Carlton Wallet',
+      icon: Icons.wallet,
     ),
   ];
 
@@ -53,11 +63,17 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
       case 'paypal':
         context.push('/booking/payment/paypal');
         break;
-      case 'wallet':
-        context.push('/booking/payment/wallet');
+      case 'super_pay':
+        context.push('/booking/payment/super_pay');
         break;
       case 'barclays':
         context.push('/booking/payment/barclays');
+        break;
+      case 'crypto':
+        context.push('/booking/payment/crypto');
+        break;
+      case 'wallet':
+        context.push('/booking/payment/wallet');
         break;
       default:
         context.push('/booking/payment/process');
@@ -68,7 +84,6 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
   Widget build(BuildContext context) {
     final session = getIt<BookingSession>();
     final price = session.totalPriceWithTaxes;
-    final currency = session.currency ?? 'GBP';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Payment method')),
