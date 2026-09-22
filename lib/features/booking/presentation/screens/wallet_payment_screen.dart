@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../booking/domain/entities/booking_session.dart';
+import '../../../wallet/presentation/screens/top_up_screen.dart';
 import '../../../wallet/domain/repositories/wallet_repository.dart';
 
 class WalletPaymentScreen extends StatefulWidget {
@@ -47,17 +48,31 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
     }
   }
 
-  Future<void> _payWithWallet() async {
+  Future<void> _navigateToTopUp() async {
+    if (_currency == null) return;
+    
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => TopUpScreen(currencyCode: _currency!),
+        fullscreenDialog: true,
+      ),
+    );
+    
+    if (result == true && mounted) {
+      _loadWallet();
+    }
+  }
+
+  bool get _hasSufficientBalance {
     final session = getIt<BookingSession>();
     final amount = session.totalPriceWithTaxes;
+    return _balance != null && _balance! >= amount;
+  }
 
-    if (_balance == null || _balance! < amount) {
-      setState(() {
-        _error =
-            'Insufficient wallet balance. Current balance: £${_balance?.toStringAsFixed(2) ?? '0.00'}';
-      });
-      return;
-    }
+  Future<void> _payWithWallet() async {
+    if (!_hasSufficientBalance) return;
+    
+    final session = getIt<BookingSession>();
 
     setState(() => _error = null);
 
@@ -99,7 +114,6 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
   Widget build(BuildContext context) {
     final session = getIt<BookingSession>();
     final price = session.totalPriceWithTaxes;
-    final currency = session.currency ?? 'GBP';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Pay with Wallet')),
@@ -203,8 +217,32 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
                         const SizedBox(height: 24),
                         PrimaryButton(
                           label: 'Pay with Wallet',
-                          onPressed: _payWithWallet,
+                          onPressed: _hasSufficientBalance ? _payWithWallet : null,
                         ),
+                        if (!_hasSufficientBalance && _balance != null) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: _navigateToTopUp,
+                            icon: const Icon(Icons.add_card, size: 18),
+                            label: const Text('Top Up Wallet'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Insufficient balance. Current: £${_balance?.toStringAsFixed(2) ?? '0.00'}, Required: £${price.toStringAsFixed(2)}',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         TextButton.icon(
                           onPressed: () => context.pop(),
