@@ -4,12 +4,18 @@ import '../models/travelport_verify_response.dart';
 import '../models/booking_model.dart';
 import '../models/booking_request_model.dart';
 import '../models/e_ticket_models.dart';
+import '../../domain/entities/schedule_change.dart';
 
 abstract class BookingRemoteDatasource {
   Future<BookingModel> createBooking(BookingRequest request);
   Future<List<BookingModel>> getUserBookings();
   Future<BookingModel?> getBookingById(int id);
   Future<void> cancelBooking(int id);
+
+  Future<List<ScheduleChange>> getScheduleChanges();
+  Future<ScheduleChange?> getScheduleChangeForBooking(int bookingId);
+  Future<void> acceptScheduleChange(int bookingId);
+  Future<void> requestRefundForScheduleChange(int bookingId);
 
   Future<AtlasVerifyResponse> atlasVerify({
     required String routingIdentifier,
@@ -52,6 +58,7 @@ abstract class BookingRemoteDatasource {
     int? walletUserId,
     String? barclaycardReference,
     String? barclaycardLast4,
+    bool deferCarltonPayment = false,
   });
 
   Future<TravelportVerifyResponse> travelportVerify({

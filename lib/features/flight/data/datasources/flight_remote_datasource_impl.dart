@@ -49,6 +49,9 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
 
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(criteria.departureDate);
+      final returnDateStr = criteria.returnDate != null
+          ? DateFormat('yyyy-MM-dd').format(criteria.returnDate!)
+          : null;
       final response = await _apiClient.post<dynamic>(
         '$_basePath/search/all',
         data: {
@@ -60,6 +63,7 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
           'cabinClass': criteria.cabinClass,
           'outboundTime': criteria.outboundTime,
           'returnTime': criteria.returnTime,
+          if (returnDateStr != null) 'returnDate': returnDateStr,
           'legs': criteria.multiCityLegs.map((leg) => leg.toJson()).toList(),
         },
       );

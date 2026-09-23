@@ -17,6 +17,7 @@ import '../../features/booking/presentation/screens/wallet_payment_screen.dart';
 import '../../features/booking/presentation/screens/paypal_payment_screen.dart';
 import '../../features/booking/presentation/screens/barclays_payment_screen.dart';
 import '../../features/booking/presentation/screens/flight_schedule_change_screen.dart';
+import '../../features/booking/presentation/screens/schedule_change_screen.dart';
 import '../../features/booking/presentation/screens/payment_method_selection_screen.dart';
 import '../../features/booking/presentation/screens/payment_processing_screen.dart';
 import '../../features/booking/presentation/screens/passenger_details_screen.dart';
@@ -67,6 +68,7 @@ abstract class AppRoutes {
   static const paymentProcessing = '/booking/payment/process';
   static const bookingConfirmation = '/booking/confirmation';
   static const myTrips = '/my-trips';
+  static const scheduleChange = '/my-trips/schedule-change';
   static const messages = '/messages';
   static const notifications = '/notifications';
   static const helpSupport = '/help-support';
@@ -234,6 +236,18 @@ final GoRouter appRouter = GoRouter(
               );
             }
             return FlightScheduleChangeScreen(booking: booking);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.scheduleChange,
+          builder: (context, state) {
+            final booking = state.extra;
+            if (booking is! Booking) {
+              return const Scaffold(
+                body: Center(child: Text('Booking details are unavailable.')),
+              );
+            }
+            return ScheduleChangeScreen(booking: booking);
           },
         ),
         GoRoute(

@@ -11,7 +11,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
+import '../../../booking/domain/repositories/booking_repository.dart';
+import '../../../booking/domain/entities/booking.dart';
 import '../../../booking/domain/entities/booking_session.dart';
+import '../../../flight/domain/entities/flight.dart';
 import '../../../payment/domain/repositories/payment_repository.dart';
 
 class CardPaymentScreen extends StatefulWidget {
@@ -104,6 +107,54 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
     return sum % 10 == 0;
   }
 
+  Future<Booking> _createAmadeusHold(
+    BookingRepository repo,
+    BookingSession session,
+    Flight flight,
+    double quotedTotal,
+  ) async {
+    final amadeusOfferToken = flight.bookingKey ??
+        flight.providerOfferId ??
+        (throw Exception('Missing Amadeus offer token.'));
+
+    double? tokenBaseFare;
+    try {
+      final tokenJson = jsonDecode(amadeusOfferToken);
+      tokenBaseFare = (tokenJson['totalAmount'] as num?)?.toDouble();
+    } catch (_) {
+      tokenBaseFare = null;
+    }
+
+    return repo.createAmadeusBooking(
+      amadeusOfferToken: amadeusOfferToken,
+      verifyId: '',
+      stripePaymentIntentId: '',
+      baseFareTotal: tokenBaseFare ?? quotedTotal,
+      passengers: session.passengers,
+      contactEmail: session.contactEmail ?? '',
+      contactPhone: session.contactPhone ?? '',
+      bookingClass: 'Economy',
+      quotedTotal: quotedTotal,
+      flightSnapshotJson: jsonEncode(flight.toJson()),
+      isGuest: false,
+      paypalOrderId: session.paypalOrderId,
+      paypalCaptureId: session.paypalCaptureId,
+      payWithWallet: session.payWithWallet,
+      walletUserId: session.walletPayUserId,
+      barclaycardReference: session.barclaycardReference,
+      barclaycardLast4: session.barclaycardLast4,
+      deferCarltonPayment: true,
+    );
+  }
+
+  void _storeBooking(BookingSession session, Booking booking) {
+    session.pnr = booking.pnr.isEmpty ? null : booking.pnr;
+    session.bookingReference = session.pnr;
+    session.bookingStatus = booking.status;
+    session.currency = booking.currency;
+    session.bookingId = booking.id;
+  }
+
   Future<void> _pay() async {
     setState(() => _error = null);
 
@@ -165,6 +216,24 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
       if (bookingKey == null) {
         throw Exception(
             'This flight is missing booking details. Please go back and search again.');
+      }
+
+      if (isAmadeus && session.bookingId == null) {
+        try {
+          final bookingRepository = getIt<BookingRepository>();
+          final hold = await _createAmadeusHold(
+            bookingRepository,
+            session,
+            flight,
+            amount,
+          );
+          _storeBooking(session, hold);
+        } catch (e) {
+          setState(() {
+            _error = e.toString().replaceFirst('Exception: ', '');
+          });
+          return;
+        }
       }
 
       debugPrint(

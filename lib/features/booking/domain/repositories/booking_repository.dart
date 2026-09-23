@@ -1,5 +1,6 @@
 import '../entities/booking.dart';
 import '../entities/passenger.dart';
+import '../entities/schedule_change.dart';
 import '../../data/models/atlas_verify_response.dart';
 import '../../data/models/amadeus_verify_response.dart';
 import '../../data/models/travelport_verify_response.dart';
@@ -18,6 +19,11 @@ abstract class BookingRepository {
   Future<List<Booking>> getUserBookings();
   Future<Booking?> getBookingById(int id);
   Future<void> cancelBooking(int id);
+
+  Future<List<ScheduleChange>> getScheduleChanges();
+  Future<ScheduleChange?> getScheduleChangeForBooking(int bookingId);
+  Future<void> acceptScheduleChange(int bookingId);
+  Future<void> requestRefundForScheduleChange(int bookingId);
 
   Future<AtlasVerifyResponse> atlasVerify({
     required String routingIdentifier,
@@ -64,6 +70,7 @@ abstract class BookingRepository {
     int? walletUserId,
     String? barclaycardReference,
     String? barclaycardLast4,
+    bool deferCarltonPayment = false,
   });
 
   Future<TravelportVerifyResponse> travelportVerify({

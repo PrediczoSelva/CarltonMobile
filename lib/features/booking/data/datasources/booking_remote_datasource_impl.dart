@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_client.dart';
+import '../../domain/entities/schedule_change.dart';
 import '../models/atlas_verify_response.dart';
 import '../models/amadeus_verify_response.dart';
 import '../models/travelport_verify_response.dart';
@@ -74,6 +75,53 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
   }
 
   @override
+  Future<List<ScheduleChange>> getScheduleChanges() async {
+    try {
+      final response =
+          await _apiClient.get<dynamic>('$_basePath/schedule-changes');
+      final data = response.data;
+      if (data == null) return [];
+      final list = data is List
+          ? data
+          : (data as Map<String, dynamic>)['scheduleChanges']
+                  as List<dynamic>? ??
+              [];
+      return list
+          .map((json) => ScheduleChange.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<ScheduleChange?> getScheduleChangeForBooking(int bookingId) async {
+    try {
+      final response = await _apiClient
+          .get<dynamic>('$_basePath/$bookingId/schedule-change');
+      if (response.data == null) return null;
+      return ScheduleChange.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<void> acceptScheduleChange(int bookingId) async {
+    await _apiClient.post<dynamic>(
+      '$_basePath/$bookingId/schedule-change/accept',
+    );
+  }
+
+  @override
+  Future<void> requestRefundForScheduleChange(int bookingId) async {
+    await _apiClient.post<dynamic>(
+      '$_basePath/$bookingId/schedule-change/refund-request',
+    );
+  }
+
   Future<AtlasVerifyResponse> atlasVerify({
     required String routingIdentifier,
     required int adultCount,
@@ -178,6 +226,7 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     int? walletUserId,
     String? barclaycardReference,
     String? barclaycardLast4,
+    bool deferCarltonPayment = false,
   }) async {
     final path =
         isGuest ? '$_basePath/amadeus/guest/book' : '$_basePath/amadeus/book';
@@ -194,6 +243,7 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
           'quotedTotal': quotedTotal,
           if (flightSnapshotJson != null)
             'flightSnapshotJson': flightSnapshotJson,
+          'deferCarltonPayment': deferCarltonPayment,
           if (stripePaymentIntentId.isNotEmpty)
             'stripePaymentIntentId': stripePaymentIntentId,
           if (paypalOrderId != null && paypalOrderId.isNotEmpty)
@@ -227,7 +277,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
     required int infants,
   }) async {
     try {
-      debugPrint('[Travelport] verify fareKey=$fareKey adults=$adults children=$children infants=$infants');
+      debugPrint(
+          '[Travelport] verify fareKey=$fareKey adults=$adults children=$children infants=$infants');
       final response = await _apiClient.post<dynamic>(
         '$_travelportBasePath/verify',
         data: {
@@ -241,7 +292,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
       return TravelportVerifyResponse.fromJson(
           response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      debugPrint('[Travelport] verify error: ${e.response?.statusCode} ${e.response?.data}');
+      debugPrint(
+          '[Travelport] verify error: ${e.response?.statusCode} ${e.response?.data}');
       throw _handleDioError(e);
     }
   }
@@ -263,7 +315,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
         ? '$_travelportBasePath/guest/book'
         : '$_travelportBasePath/book';
     try {
-      debugPrint('[Travelport] book path=$path fareKey=$fareKey passengers=${passengers.length} quotedTotal=$quotedTotal');
+      debugPrint(
+          '[Travelport] book path=$path fareKey=$fareKey passengers=${passengers.length} quotedTotal=$quotedTotal');
       final response = await _apiClient.post<dynamic>(
         path,
         data: {
@@ -286,7 +339,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
       }
       return BookingModel.fromJson(booking);
     } on DioException catch (e) {
-      debugPrint('[Travelport] book error: ${e.response?.statusCode} ${e.response?.data}');
+      debugPrint(
+          '[Travelport] book error: ${e.response?.statusCode} ${e.response?.data}');
       throw _handleDioError(e);
     }
   }
@@ -370,7 +424,8 @@ class BookingRemoteDatasourceImpl implements BookingRemoteDatasource {
   }
 
   Exception _handleDioError(DioException e) {
-    debugPrint('[BookingAPI] error type=${e.type} status=${e.response?.statusCode} data=${e.response?.data}');
+    debugPrint(
+        '[BookingAPI] error type=${e.type} status=${e.response?.statusCode} data=${e.response?.data}');
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:

@@ -34,6 +34,7 @@ class _MyTripsScreenState extends State<MyTripsScreen>
     with TickerProviderStateMixin {
   final Set<int> _downloadingIds = {};
   final Set<int> _cancellingIds = {};
+  final Map<int, bool> _scheduleChanges = {};
   int? _selectedBookingId;
   int? _hoveredBookingId;
   late TabController _serviceTabController;
@@ -53,6 +54,18 @@ class _MyTripsScreenState extends State<MyTripsScreen>
     super.dispose();
   }
 
+  Future<void> _checkScheduleChange(BuildContext context, Booking booking) async {
+    try {
+      final repo = getIt<BookingRepository>();
+      final change = await repo.getScheduleChangeForBooking(booking.id);
+      if (mounted) {
+        setState(() {
+          _scheduleChanges[booking.id] = change != null && !change.accepted;
+        });
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,6 +82,11 @@ class _MyTripsScreenState extends State<MyTripsScreen>
             );
           }
           if (state is BookingsListLoaded) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              for (final booking in state.bookings) {
+                _checkScheduleChange(context, booking);
+              }
+            });
             return _buildTabbedView(state.bookings);
           }
           if (state is BookingCancelled) {
@@ -146,6 +164,21 @@ class _MyTripsScreenState extends State<MyTripsScreen>
 
   Widget _buildTabbedView(List<Booking> allBookings) {
     final now = DateTime.now();
+
+    // --- MOCK DATA: Simulate a schedule change for preview ---
+    // Remove this block when the real API is available.
+    final mockScheduleChangeBookingIds = <int>{};
+    for (final b in allBookings) {
+      if (!b.status.toLowerCase().contains('cancel') && !b.flight.departureTime.isBefore(now)) {
+        mockScheduleChangeBookingIds.add(b.id);
+        break;
+      }
+    }
+    _scheduleChanges.addAll({
+      for (final id in mockScheduleChangeBookingIds) id: true,
+    });
+    // --- END MOCK DATA ---
+
     final upcoming = allBookings.where((b) {
       final isCancelled = b.status.toLowerCase().contains('cancel');
       final isPast = b.flight.departureTime.isBefore(now);
@@ -825,6 +858,61 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                           ),
                         ),
                       ],
+                      if (_scheduleChanges[booking.id] == true) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.warning.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_outlined,
+                                color: AppColors.warning,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Schedule change by airline',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.warning,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                onPressed: () => _viewScheduleChange(booking),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.warning,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                ),
+                                icon: const Icon(Icons.visibility, size: 16),
+                                label: Text(
+                                  'View schedule change',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.warning,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 14),
                       const Divider(color: AppColors.divider, height: 1),
                       const SizedBox(height: 14),
@@ -1182,6 +1270,10 @@ class _MyTripsScreenState extends State<MyTripsScreen>
     );
 
     context.push(AppRoutes.flightSearch);
+  }
+
+  void _viewScheduleChange(Booking booking) {
+    context.push('${AppRoutes.scheduleChange}', extra: booking);
   }
 
   void _showChangeFlightSheet(BuildContext context, Booking booking) {
