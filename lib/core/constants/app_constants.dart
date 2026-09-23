@@ -31,7 +31,7 @@ class AppConstants {
 
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   // Payment endpoints
   static const String paymentCreateFlightIntent = '/payment/create-flight-payment-intent';

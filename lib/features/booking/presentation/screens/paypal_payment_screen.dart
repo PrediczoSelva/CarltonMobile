@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
@@ -21,15 +21,16 @@ class PayPalPaymentScreen extends StatefulWidget {
 class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
   bool _isLoading = true;
   String? _error;
-  WebViewController? _controller;
+  String? _orderId;
+  bool _hasHandledReturn = false;
 
   @override
   void initState() {
     super.initState();
-    _createOrder();
+    _createOrderAndRedirect();
   }
 
-  Future<void> _createOrder() async {
+  Future<void> _createOrderAndRedirect() async {
     try {
       final session = getIt<BookingSession>();
       final flight = session.selectedOutboundFlight;
@@ -56,16 +57,27 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
 
       final data = response.data as Map<String, dynamic>;
       final orderId = data['orderId'] as String?;
+      String? approvalUrl = data['approvalUrl'] as String?;
 
       if (orderId == null || orderId.isEmpty) {
         throw Exception('Unable to create PayPal order. Please try again.');
       }
 
+      // If backend doesn't return approvalUrl, construct it for sandbox
+      if (approvalUrl == null || approvalUrl.isEmpty) {
+        // Use PayPal sandbox checkoutnow URL with deep link return/cancel
+        final returnUrl = Uri.encodeComponent('carlton://paypal/success?orderId=$orderId');
+        final cancelUrl = Uri.encodeComponent('carlton://paypal/cancel');
+        approvalUrl = 'https://www.sandbox.paypal.com/checkoutnow?token=$orderId&returnUrl=$returnUrl&cancelUrl=$cancelUrl';
+      }
+
+      _orderId = orderId;
       session.paypalOrderId = orderId;
 
-      if (mounted) {
-        _loadPayPalCheckout(orderId);
-      }
+      if (!mounted) return;
+
+      // Launch PayPal in external browser
+      await _launchPayPal(approvalUrl);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -76,82 +88,42 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
     }
   }
 
-  Future<void> _loadPayPalCheckout(String orderId) async {
-    final session = getIt<BookingSession>();
-    final currency = session.currency ?? 'GBP';
-
-    final html = '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=${Uri.encodeComponent(currency)}&enable-funding=venmo&components=buttons&intent=capture"></script>
-</head>
-<body>
-  <div id="paypal-button-container"></div>
-  <script>
-    paypal.Buttons({
-      style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' },
-      createOrder: function() {
-        return Promise.resolve('$orderId');
-      },
-      onApprove: function(data, actions) {
-        return actions.order.capture().then(function(details) {
-          window.location.href = 'carlton://paypal/success?orderId=' + data.orderID + '&captureId=' + details.id;
+  Future<void> _launchPayPal(String approvalUrl) async {
+    final uri = Uri.parse(approvalUrl);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        setState(() {
+          _error = 'Could not launch PayPal. Please check your browser settings.';
+          _isLoading = false;
         });
-      },
-      onError: function(err) {
-        window.location.href = 'carlton://paypal/error?message=' + encodeURIComponent(err.message || 'PayPal payment failed');
-      },
-      onCancel: function() {
-        window.location.href = 'carlton://paypal/cancel';
       }
-    }).render('#paypal-button-container');
-  </script>
-</body>
-</html>
-''';
+    }
+    // The app will be resumed via deep link when PayPal completes
+    // We don't set _isLoading = false here because we wait for the deep link
+  }
 
-    final controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (request) {
-            final uri = Uri.parse(request.url);
-            if (uri.scheme == 'carlton' && uri.host == 'paypal') {
-              final params = uri.queryParameters;
-              final status = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
-              _handlePayPalResult(status, params);
-              return NavigationDecision.prevent;
-            }
-            if (uri.host == 'paypal.com' || uri.host == 'sandbox.paypal.com') {
-              return NavigationDecision.navigate;
-            }
-            return NavigationDecision.navigate;
-          },
-          onWebResourceError: (error) {
-            if (mounted) {
-              setState(() {
-                _error = 'WebView error: ${error.description}';
-                _isLoading = false;
-              });
-            }
-          },
-        ),
-      )
-      ..loadHtmlString(html);
-
-    if (mounted) {
-      setState(() {
-        _controller = controller;
-        _isLoading = false;
+  void _checkForPayPalReturn() {
+    if (_hasHandledReturn) return;
+    
+    final uri = GoRouterState.of(context).uri;
+    if (uri.scheme == 'carlton' && uri.host == 'paypal') {
+      final params = uri.queryParameters;
+      final status = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
+      _hasHandledReturn = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handlePayPalReturn(status, params);
       });
     }
   }
 
-  Future<void> _handlePayPalResult(
-      String status, Map<String, String> params) async {
-    final orderId = params['orderId'] ?? session.paypalOrderId ?? '';
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkForPayPalReturn();
+  }
+
+  Future<void> _handlePayPalReturn(String status, Map<String, String> params) async {
+    final orderId = params['orderId'] ?? _orderId ?? '';
     final captureId = params['captureId'] ?? '';
     final message = params['message'] ?? '';
 
@@ -165,6 +137,7 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
           },
         );
 
+        final session = getIt<BookingSession>();
         session.paypalCaptureId = captureId.isNotEmpty ? captureId : orderId;
 
         final paymentMetadata = {
@@ -189,6 +162,7 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
         if (mounted) {
           setState(() {
             _error = e.toString().replaceFirst('Exception: ', '');
+            _isLoading = false;
           });
         }
       }
@@ -196,18 +170,18 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
       if (mounted) {
         setState(() {
           _error = message.isNotEmpty ? message : 'PayPal payment failed.';
+          _isLoading = false;
         });
       }
     } else if (status == 'cancel') {
       if (mounted) {
         setState(() {
           _error = 'PayPal payment was cancelled.';
+          _isLoading = false;
         });
       }
     }
   }
-
-  BookingSession get session => getIt<BookingSession>();
 
   @override
   Widget build(BuildContext context) {
@@ -222,28 +196,60 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
             ? const Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(color: AppColors.primary),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: AppColors.primary),
+                      SizedBox(height: 16),
+                      Text('Redirecting to PayPal...'),
+                    ],
+                  ),
                 ),
               )
             : _error != null
                 ? _buildErrorView(price, currency)
-                : _controller != null
-                    ? Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Text(
-                              '£${price.toStringAsFixed(2)}',
-                              style: AppTextStyles.h4,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Expanded(
-                            child: WebViewWidget(controller: _controller!),
-                          ),
-                        ],
-                      )
-                    : const SizedBox.shrink(),
+                : _buildWaitingView(price, currency),
+      ),
+    );
+  }
+
+  Widget _buildWaitingView(double price, String currency) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '£${price.toStringAsFixed(2)}',
+              style: AppTextStyles.h4,
+            ),
+            const SizedBox(height: 32),
+            const CircularProgressIndicator(color: AppColors.primary),
+            const SizedBox(height: 16),
+            Text(
+              'Waiting for PayPal payment...',
+              style: AppTextStyles.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Complete the payment in your browser, then return to the app.',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            PrimaryButton(
+              label: 'Check Payment Status',
+              onPressed: _createOrderAndRedirect,
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => context.pop(),
+              child: const Text('Back to payment method'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -263,8 +269,7 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 20),
+                  const Icon(Icons.error_outline, color: AppColors.error, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -282,8 +287,13 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
             ),
             const SizedBox(height: 24),
             PrimaryButton(
-              label: 'Back to payment method',
+              label: 'Retry',
+              onPressed: _createOrderAndRedirect,
+            ),
+            const SizedBox(height: 12),
+            TextButton(
               onPressed: () => context.pop(),
+              child: const Text('Back to payment method'),
             ),
           ],
         ),

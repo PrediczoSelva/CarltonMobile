@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
@@ -77,12 +75,26 @@ class ApiClient {
 
   Map<String, String> get cookies => Map.unmodifiable(_cookieJar);
 
-  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? query}) {
-    return _dio.get<T>(path, queryParameters: query);
+  Future<Response<T>> post<T>(String path, {dynamic data, Duration? receiveTimeout}) {
+    if (receiveTimeout != null) {
+      return _dio.post<T>(
+        path,
+        data: data,
+        options: Options(receiveTimeout: receiveTimeout),
+      );
+    }
+    return _dio.post<T>(path, data: data);
   }
 
-  Future<Response<T>> post<T>(String path, {dynamic data}) {
-    return _dio.post<T>(path, data: data);
+  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? query, Duration? receiveTimeout}) {
+    if (receiveTimeout != null) {
+      return _dio.get<T>(
+        path,
+        queryParameters: query,
+        options: Options(receiveTimeout: receiveTimeout),
+      );
+    }
+    return _dio.get<T>(path, queryParameters: query);
   }
 
   Future<Response<T>> put<T>(String path, {dynamic data}) {
