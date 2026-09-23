@@ -75,23 +75,29 @@ class ApiClient {
 
   Map<String, String> get cookies => Map.unmodifiable(_cookieJar);
 
-  Future<Response<T>> post<T>(String path, {dynamic data, Duration? receiveTimeout}) {
-    if (receiveTimeout != null) {
+  Future<Response<T>> post<T>(String path, {dynamic data, Duration? receiveTimeout, Duration? connectTimeout}) {
+    if (receiveTimeout != null || connectTimeout != null) {
       return _dio.post<T>(
         path,
         data: data,
-        options: Options(receiveTimeout: receiveTimeout),
+        options: Options(
+          receiveTimeout: receiveTimeout,
+          sendTimeout: connectTimeout,
+        ),
       );
     }
     return _dio.post<T>(path, data: data);
   }
 
-  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? query, Duration? receiveTimeout}) {
-    if (receiveTimeout != null) {
+  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? query, Duration? receiveTimeout, Duration? connectTimeout}) {
+    if (receiveTimeout != null || connectTimeout != null) {
       return _dio.get<T>(
         path,
         queryParameters: query,
-        options: Options(receiveTimeout: receiveTimeout),
+        options: Options(
+          receiveTimeout: receiveTimeout,
+          sendTimeout: connectTimeout,
+        ),
       );
     }
     return _dio.get<T>(path, queryParameters: query);
