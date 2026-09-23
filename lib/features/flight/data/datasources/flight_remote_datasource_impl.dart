@@ -13,6 +13,7 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
   final ApiClient _apiClient;
   final Map<String, (List<Flight>, DateTime)> _cache = {};
   static const Duration _cacheTtl = Duration(minutes: 5);
+  static const Duration _searchTimeout = Duration(seconds: 60);
 
   static const String _basePath = '/flights';
 
@@ -66,6 +67,7 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
           if (returnDateStr != null) 'returnDate': returnDateStr,
           'legs': criteria.multiCityLegs.map((leg) => leg.toJson()).toList(),
         },
+        receiveTimeout: _searchTimeout,
       );
 
       final flights = _parseFlights(response.data);
@@ -141,7 +143,10 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
   @override
   Future<List<Flight>> getRecommendations() async {
     try {
-      final response = await _apiClient.get<dynamic>('$_basePath/recommendations');
+      final response = await _apiClient.get<dynamic>(
+        '$_basePath/recommendations',
+        receiveTimeout: _searchTimeout,
+      );
       final data = response.data as Map<String, dynamic>?;
       if (data == null) return [];
 
