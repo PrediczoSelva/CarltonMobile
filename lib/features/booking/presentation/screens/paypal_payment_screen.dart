@@ -22,6 +22,7 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
   bool _isLoading = true;
   String? _error;
   WebViewController? _controller;
+  String? _orderId;
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
         throw Exception('Unable to create PayPal order. Please try again.');
       }
 
+      _orderId = orderId;
       session.paypalOrderId = orderId;
 
       if (mounted) {
@@ -80,40 +82,14 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
     final session = getIt<BookingSession>();
     final currency = session.currency ?? 'GBP';
 
-    final html = '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=${Uri.encodeComponent(currency)}&enable-funding=venmo&components=buttons&intent=capture"></script>
-</head>
-<body>
-  <div id="paypal-button-container"></div>
-  <script>
-    paypal.Buttons({
-      style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' },
-      createOrder: function() {
-        return Promise.resolve('$orderId');
-      },
-      onApprove: function(data, actions) {
-        return actions.order.capture().then(function(details) {
-          window.location.href = 'carlton://paypal/success?orderId=' + data.orderID + '&captureId=' + details.id;
-        });
-      },
-      onError: function(err) {
-        window.location.href = 'carlton://paypal/error?message=' + encodeURIComponent(err.message || 'PayPal payment failed');
-      },
-      onCancel: function() {
-        window.location.href = 'carlton://paypal/cancel';
-      }
-    }).render('#paypal-button-container');
-  </script>
-</body>
-</html>
-''';
-
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel(
+        'PayPalBridge',
+        onMessageReceived: (JavaScriptMessage message) {
+          _handlePayPalMessage(message.message);
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (request) {
@@ -137,9 +113,13 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
               });
             }
           },
+          onPageFinished: (String url) {
+            // Inject JavaScript to handle postMessage issues
+            _injectPostMessageFix();
+          },
         ),
       )
-      ..loadHtmlString(html);
+      ..loadHtmlString(_generatePayPalHtml(orderId, currency));
 
     if (mounted) {
       setState(() {
@@ -149,9 +129,52 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
     }
   }
 
+  void _injectPostMessageFix() {
+    // Fix for PayPal SDK postMessage issue in WebView
+    // This overrides the problematic postMessage calls
+    const fixScript = '''
+      (function() {
+        // Store original postMessage
+        const originalPostMessage = window.postMessage;
+        
+        // Override postMessage to handle about:// origin
+        window.postMessage = function(message, targetOrigin, transfer) {
+          // If targetOrigin is about:// or empty, use * instead
+          if (!targetOrigin || targetOrigin === 'about://' || targetOrigin === 'about:blank') {
+            targetOrigin = '*';
+          }
+          return originalPostMessage.call(this, message, targetOrigin, transfer);
+        };
+        
+        // Also fix for PayPal's internal postRobot library
+        if (window.bo && window.bo.postrobot_post_message) {
+          const originalPostRobot = window.bo.postrobot_post_message;
+          window.bo.postrobot_post_message = function(target, message, targetOrigin) {
+            if (!targetOrigin || targetOrigin === 'about://' || targetOrigin === 'about:blank') {
+              targetOrigin = '*';
+            }
+            return originalPostRobot.call(this, target, message, targetOrigin);
+          };
+        }
+        
+        // Notify Flutter that fix is applied
+        if (window.PayPalBridge) {
+          window.PayPalBridge.postMessage('postMessageFixApplied');
+        }
+      })();
+    ''';
+    _controller?.runJavaScript(fixScript);
+  }
+
+  Future<void> _handlePayPalMessage(String message) async {
+    // Handle messages from PayPal SDK via JavaScript channel
+    // This can be used for additional communication if needed
+    debugPrint('PayPal message: $message');
+  }
+
   Future<void> _handlePayPalResult(
       String status, Map<String, String> params) async {
-    final orderId = params['orderId'] ?? session.paypalOrderId ?? '';
+    final orderId = params['orderId'] ?? _orderId ?? '';
     final captureId = params['captureId'] ?? '';
     final message = params['message'] ?? '';
 
@@ -165,6 +188,7 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
           },
         );
 
+        final session = getIt<BookingSession>();
         session.paypalCaptureId = captureId.isNotEmpty ? captureId : orderId;
 
         final paymentMetadata = {
@@ -205,6 +229,84 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
         });
       }
     }
+  }
+
+  String _generatePayPalHtml(String orderId, String currency) {
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; frame-src *;">
+  <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=${Uri.encodeComponent(currency)}&enable-funding=venmo&components=buttons&intent=capture&disable-funding=card,venmo"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #fff; }
+    #paypal-button-container { max-width: 400px; margin: 0 auto; }
+    .loading { text-align: center; padding: 20px; color: #666; }
+  </style>
+</head>
+<body>
+  <div id="paypal-button-container">
+    <div class="loading">Loading PayPal...</div>
+  </div>
+  <script>
+    // Wait for PayPal SDK to load
+    function initPayPal() {
+      if (typeof paypal === 'undefined' || !paypal.Buttons) {
+        setTimeout(initPayPal, 100);
+        return;
+      }
+      
+      paypal.Buttons({
+        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' },
+        createOrder: function() {
+          return Promise.resolve('$orderId');
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            // Use JavaScript channel to communicate with Flutter
+            if (window.PayPalBridge) {
+              window.PayPalBridge.postMessage(JSON.stringify({
+                type: 'success',
+                orderId: data.orderID,
+                captureId: details.id
+              }));
+            }
+            // Also try navigation as fallback
+            window.location.href = 'carlton://paypal/success?orderId=' + data.orderID + '&captureId=' + details.id;
+          });
+        },
+        onError: function(err) {
+          if (window.PayPalBridge) {
+            window.PayPalBridge.postMessage(JSON.stringify({
+              type: 'error',
+              message: err.message || 'PayPal payment failed'
+            }));
+          }
+          window.location.href = 'carlton://paypal/error?message=' + encodeURIComponent(err.message || 'PayPal payment failed');
+        },
+        onCancel: function() {
+          if (window.PayPalBridge) {
+            window.PayPalBridge.postMessage(JSON.stringify({ type: 'cancel' }));
+          }
+          window.location.href = 'carlton://paypal/cancel';
+        }
+      }).render('#paypal-button-container').catch(function(err) {
+        console.error('PayPal render error:', err);
+        if (window.PayPalBridge) {
+          window.PayPalBridge.postMessage(JSON.stringify({
+            type: 'error',
+            message: 'Failed to render PayPal buttons: ' + err.message
+          }));
+        }
+      });
+    }
+    
+    initPayPal();
+  </script>
+</body>
+</html>
+''';
   }
 
   BookingSession get session => getIt<BookingSession>();
@@ -263,8 +365,7 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 20),
+                  const Icon(Icons.error_outline, color: AppColors.error, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -282,8 +383,13 @@ class _PayPalPaymentScreenState extends State<PayPalPaymentScreen> {
             ),
             const SizedBox(height: 24),
             PrimaryButton(
-              label: 'Back to payment method',
+              label: 'Retry',
+              onPressed: _createOrder,
+            ),
+            const SizedBox(height: 12),
+            TextButton(
               onPressed: () => context.pop(),
+              child: const Text('Back to payment method'),
             ),
           ],
         ),
