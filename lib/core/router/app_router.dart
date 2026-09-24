@@ -16,6 +16,7 @@ import '../../features/booking/presentation/screens/card_payment_screen.dart';
 import '../../features/booking/presentation/screens/wallet_payment_screen.dart';
 import '../../features/booking/presentation/screens/paypal_payment_screen.dart';
 import '../../features/booking/presentation/screens/barclays_payment_screen.dart';
+import '../../features/booking/presentation/screens/super_pay_payment_screen.dart';
 import '../../features/booking/presentation/screens/flight_schedule_change_screen.dart';
 import '../../features/booking/presentation/screens/schedule_change_screen.dart';
 import '../../features/booking/presentation/screens/payment_method_selection_screen.dart';
@@ -65,6 +66,7 @@ abstract class AppRoutes {
   static const walletPayment = '/booking/payment/wallet';
   static const paypalPayment = '/booking/payment/paypal';
   static const barclaysPayment = '/booking/payment/barclays';
+  static const superPayPayment = '/booking/payment/superpay';
   static const paymentProcessing = '/booking/payment/process';
   static const bookingConfirmation = '/booking/confirmation';
   static const myTrips = '/my-trips';
@@ -303,6 +305,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: AppRoutes.barclaysPayment,
           builder: (context, state) => const BarclaysPaymentScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.superPayPayment,
+          builder: (context, state) => const SuperPayPaymentScreen(),
         ),
         GoRoute(
           path: AppRoutes.paymentProcessing,

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 
@@ -64,10 +65,10 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
         context.push('/booking/payment/paypal');
         break;
       case 'super_pay':
-        context.push('/booking/payment/super_pay');
+        context.push(AppRoutes.superPayPayment);
         break;
       case 'barclays':
-        context.push('/booking/payment/barclays');
+        context.push(AppRoutes.barclaysPayment);
         break;
       case 'crypto':
         context.push('/booking/payment/crypto');
