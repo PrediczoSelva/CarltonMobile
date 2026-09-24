@@ -257,6 +257,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       providerBaseFare: quotedTotal,
       flightSnapshotJson: jsonEncode(flight.toJson()),
       stripePaymentIntentId: stripeIntentId,
+      paymentMetadataJson: session.paymentMetadataJson,
       isGuest: false,
     );
   }
