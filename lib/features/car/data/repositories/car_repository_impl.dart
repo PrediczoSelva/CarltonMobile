@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../domain/entities/car_extra_option.dart';
 import '../../domain/entities/car_search_criteria.dart';
 import '../../domain/entities/car_vehicle.dart';
 import 'car_repository.dart';
@@ -37,6 +38,25 @@ class CarRepositoryImpl implements CarRepository {
       final data = error.response?.data;
       final message = data is Map ? data['message']?.toString() : null;
       throw Exception(message ?? 'Unable to load cars. Please try again.');
+    }
+  }
+
+  @override
+  Future<List<CarExtraOption>> getExtraOptions(String vehicleId) async {
+    try {
+      final response = await _apiClient.get<dynamic>(
+        '/car-hire/extras',
+        query: {'vehicleId': vehicleId},
+      );
+      if (response.data is! List) return const [];
+      return (response.data as List)
+          .whereType<Map>()
+          .map((item) => CarExtraOption.fromJson(Map<String, dynamic>.from(item)))
+          .toList(growable: false);
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      final message = data is Map ? data['message']?.toString() : null;
+      throw Exception(message ?? 'Unable to load add-ons. Please try again.');
     }
   }
 }
