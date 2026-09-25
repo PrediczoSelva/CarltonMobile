@@ -95,7 +95,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Notifications')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary))
           : _notifications.isEmpty
               ? const Center(child: Text('No notifications at the moment.'))
               : ListView.builder(
@@ -110,7 +111,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       subtitle: notification.change.reason.isNotEmpty
                           ? notification.change.reason
                           : 'Your flight schedule has been changed by the airline.',
-                      time: DateFormat('dd MMM, HH:mm').format(notification.change.createdAt),
+                      time: DateFormat('dd MMM, HH:mm')
+                          .format(notification.change.createdAt),
                       onTap: () {
                         if (notification.booking != null) {
                           context.push(AppRoutes.scheduleChange,
@@ -162,23 +164,10 @@ class _NotificationTile extends StatelessWidget {
           backgroundColor: iconColor.withOpacity(0.12),
           child: Icon(icon, color: iconColor),
         ),
-        title: Row(
-          children: [
-            Expanded(child: Text(title, style: AppTextStyles.bodyLarge)),
-            if (unread)
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.warning,
-                ),
-              ),
-          ],
-        ),
         subtitle: Text(subtitle, style: AppTextStyles.bodySmall),
         trailing: Text(time,
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+            style: AppTextStyles.bodySmall
+                .copyWith(color: AppColors.textSecondary)),
       ),
     );
   }
