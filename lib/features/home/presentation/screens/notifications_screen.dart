@@ -164,6 +164,20 @@ class _NotificationTile extends StatelessWidget {
           backgroundColor: iconColor.withOpacity(0.12),
           child: Icon(icon, color: iconColor),
         ),
+        title: Row(
+          children: [
+            Expanded(child: Text(title, style: AppTextStyles.bodyLarge)),
+            if (unread)
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warning,
+                ),
+              ),
+          ],
+        ),
         subtitle: Text(subtitle, style: AppTextStyles.bodySmall),
         trailing: Text(time,
             style: AppTextStyles.bodySmall
