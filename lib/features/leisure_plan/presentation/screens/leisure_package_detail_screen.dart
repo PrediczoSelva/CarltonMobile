@@ -45,7 +45,7 @@ class PackageDetail {
     this.reviewMeta = '',
   });
 
- .
+
   factory PackageDetail.forPackage(LeisurePackage p) {
     final nights =
         int.tryParse(RegExp(r'\d+').firstMatch(p.duration)?.group(0) ?? '') ?? 1;
