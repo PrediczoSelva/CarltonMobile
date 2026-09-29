@@ -816,7 +816,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     final flight = _session.selectedOutboundFlight;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Passenger details')),
+      appBar: AppBar(
+        title: Text(flight == null ? 'Guest details' : 'Passenger details'),
+      ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(
