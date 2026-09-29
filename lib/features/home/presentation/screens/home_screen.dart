@@ -860,6 +860,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _bookFlight(BuildContext context, Flight flight) {
     final session = getIt<BookingSession>()..reset();
+    session.isHotelBooking = false;
     session.searchCriteria = FlightSearchCriteria(
       origin: '${flight.origin} (${flight.origin})',
       destination: '${flight.destination} (${flight.destination})',
