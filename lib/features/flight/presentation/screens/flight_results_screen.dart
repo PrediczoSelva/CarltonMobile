@@ -25,6 +25,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
   }
 
   void _selectFlight(Flight flight) {
+    _session.isHotelBooking = false;
     _session.selectedOutboundFlight = flight;
     _session.currency = flight.currency;
     context.push('/booking/passenger-details');
