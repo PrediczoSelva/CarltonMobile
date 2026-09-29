@@ -316,6 +316,9 @@ class _HotelRoomSelectionScreenState extends State<HotelRoomSelectionScreen> {
 
     _bookingSession.totalPrice = _total;
     _bookingSession.currency = _selectedOffer!.currency;
+    _bookingSession.isHotelBooking = true;
+    _bookingSession.selectedOutboundFlight = null;
+    _bookingSession.selectedReturnFlight = null;
 
     context.push('/booking/passenger-details');
   }
