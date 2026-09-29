@@ -817,7 +817,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(flight == null ? 'Guest details' : 'Passenger details'),
+        title: Text(
+          _session.isHotelBooking ? 'Guest details' : 'Passenger details',
+        ),
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: AppColors.primary))
