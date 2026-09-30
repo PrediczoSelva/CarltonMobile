@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../domain/entities/flight.dart';
+import '../widgets/flight_weather_strip.dart';
 
 class FlightResultsScreen extends StatefulWidget {
   const FlightResultsScreen({super.key});
@@ -99,6 +100,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                 final flight = flights[index];
                 return _FlightCard(
                   flight: flight,
+                  weather: buildFlightWeather(flight),
                   formatTime: _formatTime,
                   formatDate: _formatDate,
                   onSelect: () => _selectFlight(flight),
@@ -112,12 +114,14 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 class _FlightCard extends StatefulWidget {
   const _FlightCard({
     required this.flight,
+    required this.weather,
     required this.formatTime,
     required this.formatDate,
     required this.onSelect,
   });
 
   final Flight flight;
+  final FlightWeatherDay weather;
   final String Function(DateTime) formatTime;
   final String Function(DateTime) formatDate;
   final VoidCallback onSelect;
@@ -336,6 +340,13 @@ class _FlightCardState extends State<_FlightCard> {
                         ],
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 14),
+                  FlightWeatherStrip(
+                    weather: widget.weather,
+                    formatDate: widget.formatDate,
+                    origin: flight.origin,
+                    destination: flight.destination,
                   ),
                   const SizedBox(height: 14),
                   Row(
