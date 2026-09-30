@@ -239,6 +239,49 @@ class _HomeScreenState extends State<HomeScreen> {
     'New York, United States',
   ];
 
+  static const _flightWeatherConditions = [
+    _WeatherCondition(
+      label: 'Sunny',
+      icon: Icons.wb_sunny,
+      color: Color(0xFFF5A623),
+    ),
+    _WeatherCondition(
+      label: 'Partly cloudy',
+      icon: Icons.cloud_queue,
+      color: Color(0xFF7F9BB5),
+    ),
+    _WeatherCondition(
+      label: 'Cloudy',
+      icon: Icons.cloud,
+      color: Color(0xFF6B7F92),
+    ),
+    _WeatherCondition(
+      label: 'Light rain',
+      icon: Icons.grain,
+      color: Color(0xFF3E7BC0),
+    ),
+    _WeatherCondition(
+      label: 'Rainy',
+      icon: Icons.water_drop,
+      color: Color(0xFF2A5FA8),
+    ),
+    _WeatherCondition(
+      label: 'Showers',
+      icon: Icons.thunderstorm,
+      color: Color(0xFF5B4B8A),
+    ),
+    _WeatherCondition(
+      label: 'Windy',
+      icon: Icons.air,
+      color: Color(0xFF4C8B8B),
+    ),
+    _WeatherCondition(
+      label: 'Clear',
+      icon: Icons.nightlight_round,
+      color: Color(0xFF3D4A6B),
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -443,8 +486,32 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  _LocalWeather _withLocation(_LocalWeather weather, String locationName) {
-    return _LocalWeather(
+  /// Dummy weather forecast for [flight], derived deterministically from the
+  /// flight id so the same flight always shows the same forecast.
+  /// Swap this for a real weather API call later.
+  _FlightWeatherDay _buildFlightWeather(Flight flight) {
+    final seed = flight.id.abs();
+
+    _FlightWeather pick(int offset) {
+      final condition = _flightWeatherConditions[
+          (seed + offset * 3) % _flightWeatherConditions.length];
+      final temperature = 14 + ((seed + offset * 7) % 18);
+      final chanceOfRain = (seed + offset * 11) % 100;
+      return _FlightWeather(
+        temperature: temperature,
+        condition: condition,
+        chanceOfRain: chanceOfRain,
+      );
+    }
+
+    return _FlightWeatherDay(
+      date: flight.departureTime,
+      departure: pick(1),
+      arrival: pick(2),
+    );
+  }
+
+  _LocalWeather _withLocation(_LocalWeather weather, String locationName) {    return _LocalWeather(
       locationName: locationName,
       updatedAt: weather.updatedAt,
       temperature: weather.temperature,
@@ -484,6 +551,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatTime(DateTime dt) {
     return DateFormat.Hm().format(dt);
+  }
+
+  String _formatWeatherDate(DateTime dt) {
+    return DateFormat('EEE, d MMM').format(dt);
   }
 
   @override
@@ -977,6 +1048,8 @@ class _HomeScreenState extends State<HomeScreen> {
         final flight = _suggestedFlights[index];
         return _SuggestedFlightCard(
           flight: flight,
+          weather: _buildFlightWeather(flight),
+          formatDate: _formatWeatherDate,
           formatTime: _formatTime,
           onBook: () => _bookFlight(context, flight),
         );
@@ -1153,11 +1226,15 @@ class _SuggestedHotelCardState extends State<_SuggestedHotelCard> {
 class _SuggestedFlightCard extends StatefulWidget {
   const _SuggestedFlightCard({
     required this.flight,
+    required this.weather,
+    required this.formatDate,
     required this.formatTime,
     required this.onBook,
   });
 
   final Flight flight;
+  final _FlightWeatherDay weather;
+  final String Function(DateTime) formatDate;
   final String Function(DateTime) formatTime;
   final VoidCallback onBook;
 
@@ -1352,6 +1429,13 @@ class _SuggestedFlightCardState extends State<_SuggestedFlightCard> {
                     ],
                   ),
                   const SizedBox(height: 14),
+                  _FlightWeatherStrip(
+                    weather: widget.weather,
+                    formatDate: widget.formatDate,
+                    origin: flight.origin,
+                    destination: flight.destination,
+                  ),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Text(
@@ -1379,6 +1463,159 @@ class _SuggestedFlightCardState extends State<_SuggestedFlightCard> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FlightWeatherStrip extends StatelessWidget {
+  const _FlightWeatherStrip({
+    required this.weather,
+    required this.formatDate,
+    required this.origin,
+    required this.destination,
+  });
+
+  final _FlightWeatherDay weather;
+  final String Function(DateTime) formatDate;
+  final String origin;
+  final String destination;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.cloud_outlined,
+                  size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                'Weather on ${formatDate(weather.date)}',
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _WeatherPill(
+                  label: 'Departure',
+                  place: origin,
+                  weather: weather.departure,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _WeatherPill(
+                  label: 'Arrival',
+                  place: destination,
+                  weather: weather.arrival,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeatherPill extends StatelessWidget {
+  const _WeatherPill({
+    required this.label,
+    required this.place,
+    required this.weather,
+  });
+
+  final String label;
+  final String place;
+  final _FlightWeather weather;
+
+  @override
+  Widget build(BuildContext context) {
+    final condition = weather.condition;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: condition.color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(condition.icon, size: 18, color: condition.color),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '${weather.temperature}°',
+                      style: AppTextStyles.h4.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        condition.label,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: condition.color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.water_drop_outlined,
+                        size: 11, color: AppColors.textSecondary),
+                    Text(
+                      '${weather.chanceOfRain}% rain',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                ),
+                Text(
+                  '$label · $place',
+                  style: AppTextStyles.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2001,8 +2238,45 @@ class _PromotionalUpdateCardState extends State<_PromotionalUpdateCard> {
   }
 }
 
-class _WeatherHour {
-  const _WeatherHour({
+class _WeatherCondition {
+  const _WeatherCondition({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+}
+
+/// Dummy per-flight weather forecast. Replace [temperature], [condition] and
+/// [chanceOfRain] with real API values once a weather key is available.
+class _FlightWeather {
+  const _FlightWeather({
+    required this.temperature,
+    required this.condition,
+    required this.chanceOfRain,
+  });
+
+  final int temperature;
+  final _WeatherCondition condition;
+  final int chanceOfRain;
+}
+
+class _FlightWeatherDay {
+  const _FlightWeatherDay({
+    required this.date,
+    required this.departure,
+    required this.arrival,
+  });
+
+  final DateTime date;
+  final _FlightWeather departure;
+  final _FlightWeather arrival;
+}
+
+class _WeatherHour {  const _WeatherHour({
     required this.label,
     required this.temperature,
     required this.icon,
