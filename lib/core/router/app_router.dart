@@ -38,6 +38,7 @@ import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_details_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_room_selection_screen.dart';
 import '../../features/hotel/domain/entities/hotel_search_criteria.dart';
+import '../../features/leisure_plan/presentation/screens/leisure_plan_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -55,6 +56,7 @@ abstract class AppRoutes {
   static const personalDetails = '/profile/personal-details';
   static const settings = '/profile/settings';
   static const wallet = '/profile/wallet';
+  static const leisurePlan = '/profile/leisure-plan';
   static const flightSearch = '/flights/search';
   static const flightResults = '/flights/results';
   static const passengerDetails = '/booking/passenger-details';
@@ -133,13 +135,13 @@ final GoRouter appRouter = GoRouter(
             final criteria = state.extra is HotelSearchCriteria
                 ? state.extra as HotelSearchCriteria
                 : HotelSearchCriteria(
-                    destination: '',
-                    checkIn: DateTime.now().add(const Duration(days: 7)),
-                    checkOut: DateTime.now().add(const Duration(days: 10)),
-                    adults: 1,
-                    children: 0,
-                    rooms: 1,
-                  );
+              destination: '',
+              checkIn: DateTime.now().add(const Duration(days: 7)),
+              checkOut: DateTime.now().add(const Duration(days: 10)),
+              adults: 1,
+              children: 0,
+              rooms: 1,
+            );
             return HotelDetailsScreen(hotelId: hotelId, criteria: criteria);
           },
         ),
@@ -151,13 +153,13 @@ final GoRouter appRouter = GoRouter(
             final criteria = state.extra is HotelSearchCriteria
                 ? state.extra as HotelSearchCriteria
                 : HotelSearchCriteria(
-                    destination: '',
-                    checkIn: DateTime.now().add(const Duration(days: 7)),
-                    checkOut: DateTime.now().add(const Duration(days: 10)),
-                    adults: 1,
-                    children: 0,
-                    rooms: 1,
-                  );
+              destination: '',
+              checkIn: DateTime.now().add(const Duration(days: 7)),
+              checkOut: DateTime.now().add(const Duration(days: 10)),
+              adults: 1,
+              children: 0,
+              rooms: 1,
+            );
             return HotelRoomSelectionScreen(
               hotelId: hotelId,
               hotelName: hotelName,
@@ -197,7 +199,7 @@ final GoRouter appRouter = GoRouter(
             if (args is! CarSearchResultArgs) {
               return const Scaffold(
                 body:
-                    Center(child: Text('Car search results are unavailable.')),
+                Center(child: Text('Car search results are unavailable.')),
               );
             }
             return CarResultsScreen(args: args);
@@ -269,6 +271,10 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: 'wallet',
               builder: (context, state) => const WalletScreen(),
+            ),
+            GoRoute(
+              path: 'leisure-plan',
+              builder: (context, state) => const LeisurePlanPage(),
             ),
           ],
         ),
@@ -372,9 +378,9 @@ class _MainShellState extends State<MainShell> {
         },
         items: _navItems
             .map((item) => BottomNavigationBarItem(
-                  icon: Icon(item.icon),
-                  label: item.label,
-                ))
+          icon: Icon(item.icon),
+          label: item.label,
+        ))
             .toList(),
       ),
     );

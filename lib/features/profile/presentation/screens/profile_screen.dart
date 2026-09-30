@@ -70,13 +70,15 @@ class ProfileScreen extends StatelessWidget {
             label: 'My Wallet',
             onTap: () => context.push(AppRoutes.wallet)),
         _ProfileTile(
+            icon: Icons.card_travel_outlined,
+            label: 'Leisure Plan',
+            onTap: () => context.push(AppRoutes.leisurePlan)),
+        _ProfileTile(
             icon: Icons.settings_outlined,
             label: 'Settings',
             onTap: () => context.push(AppRoutes.settings)),
         _ProfileTile(
-            icon: Icons.help_outline,
-            label: 'Help & support',
-            onTap: () => context.push(AppRoutes.helpSupport)),
+            icon: Icons.help_outline, label: 'Help & support', onTap: () {}),
         const SizedBox(height: 24),
         ElevatedButton.icon(
           onPressed: () {
@@ -119,7 +121,7 @@ class _ProfileTile extends StatelessWidget {
         leading: Icon(icon, color: AppColors.primary),
         title: Text(label, style: AppTextStyles.bodyLarge),
         trailing:
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+        const Icon(Icons.chevron_right, color: AppColors.textSecondary),
         onTap: onTap,
       ),
     );
