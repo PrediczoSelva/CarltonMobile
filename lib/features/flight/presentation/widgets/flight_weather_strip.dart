@@ -75,11 +75,7 @@ const flightWeatherConditions = <WeatherCondition>[
     icon: Icons.thunderstorm,
     color: Color(0xFF5B4B8A),
   ),
-  WeatherCondition(
-    label: 'Windy',
-    icon: Icons.air,
-    color: Color(0xFF4C8B8B),
-  ),
+  WeatherCondition(label: 'Windy', icon: Icons.air, color: Color(0xFF4C8B8B)),
   WeatherCondition(
     label: 'Clear',
     icon: Icons.nightlight_round,
@@ -95,8 +91,9 @@ FlightWeatherDay buildFlightWeather(Flight flight) {
   FlightWeather pick(int offset) {
     return FlightWeather(
       temperature: 14 + ((seed + offset * 7) % 18),
-      condition: flightWeatherConditions[
-          (seed + offset * 3) % flightWeatherConditions.length],
+      condition:
+          flightWeatherConditions[(seed + offset * 3) %
+              flightWeatherConditions.length],
       chanceOfRain: (seed + offset * 11) % 100,
     );
   }
@@ -105,6 +102,97 @@ FlightWeatherDay buildFlightWeather(Flight flight) {
     date: flight.departureTime,
     departure: pick(1),
     arrival: pick(2),
+  );
+}
+
+/// Hourly reading within a single forecast day.
+class WeatherHourForecast {
+  const WeatherHourForecast({
+    required this.label,
+    required this.temperature,
+    required this.condition,
+    required this.chanceOfRain,
+  });
+
+  final String label;
+  final int temperature;
+  final WeatherCondition condition;
+  final int chanceOfRain;
+}
+
+/// Full day forecast for a named place on a given date.
+class WeatherForecast {
+  const WeatherForecast({
+    required this.place,
+    required this.date,
+    required this.updatedAt,
+    required this.temperatureHigh,
+    required this.temperatureLow,
+    required this.feelsLike,
+    required this.condition,
+    required this.chanceOfRain,
+    required this.windSpeedKph,
+    required this.humidity,
+    required this.sunrise,
+    required this.sunset,
+    required this.hourly,
+  });
+
+  final String place;
+  final DateTime date;
+  final String updatedAt;
+  final int temperatureHigh;
+  final int temperatureLow;
+  final int feelsLike;
+  final WeatherCondition condition;
+  final int chanceOfRain;
+  final int windSpeedKph;
+  final int humidity;
+  final String sunrise;
+  final String sunset;
+  final List<WeatherHourForecast> hourly;
+}
+
+/// Dummy forecast for a named [place] on [date], derived deterministically from
+/// the place and date so repeated searches return the same result.
+/// Swap for a real API call later.
+WeatherForecast buildPlaceWeather(String place, DateTime date) {
+  final seed =
+      place.trim().toLowerCase().codeUnits.fold<int>(0, (a, b) => a + b) +
+      date.year * 372 +
+      date.month * 31 +
+      date.day;
+
+  WeatherCondition conditionAt(int offset) =>
+      flightWeatherConditions[(seed + offset * 5) %
+          flightWeatherConditions.length];
+
+  final hourly = <WeatherHourForecast>[];
+  for (var hour = 8; hour <= 19; hour += 3) {
+    hourly.add(
+      WeatherHourForecast(
+        label: '${hour.toString().padLeft(2, '0')}:00',
+        temperature: 12 + ((seed + hour * 3) % 16),
+        condition: conditionAt(hour),
+        chanceOfRain: (seed + hour * 13) % 100,
+      ),
+    );
+  }
+
+  return WeatherForecast(
+    place: place.trim(),
+    date: date,
+    updatedAt: 'Just now',
+    temperatureHigh: 18 + (seed % 12),
+    temperatureLow: 8 + (seed % 8),
+    feelsLike: 16 + (seed % 12),
+    condition: conditionAt(1),
+    chanceOfRain: (seed * 7) % 100,
+    windSpeedKph: 4 + (seed % 28),
+    humidity: 35 + (seed % 55),
+    sunrise: '06:1${seed % 9}',
+    sunset: '18:2${seed % 8}',
+    hourly: hourly,
   );
 }
 
