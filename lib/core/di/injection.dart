@@ -2,6 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 
 import '../network/api_client.dart';
+import '../network/weather_api_client.dart';
 import '../theme/theme_notifier.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource_impl.dart';
@@ -32,6 +33,9 @@ import '../../features/payment/domain/repositories/payment_repository.dart';
 import '../../features/wallet/data/datasources/wallet_remote_datasource.dart';
 import '../../features/wallet/data/datasources/wallet_remote_datasource_impl.dart';
 import '../../features/wallet/data/repositories/wallet_repository_impl.dart';
+import '../../features/weather/data/datasources/weather_remote_datasource_impl.dart';
+import '../../features/weather/data/repositories/weather_repository_impl.dart';
+import '../../features/weather/domain/repositories/weather_repository.dart';
 import '../../features/wallet/domain/repositories/wallet_repository.dart';
 import '../../features/wallet/presentation/bloc/wallet_bloc.dart';
 
@@ -89,6 +93,15 @@ Future<void> setupDependencyInjection() async {
   // Cars
   getIt.registerLazySingleton<CarRepository>(
     () => CarRepositoryImpl(getIt<ApiClient>()),
+  );
+
+  // Weather (Open-Meteo - third party, uses its own Dio)
+  getIt.registerLazySingleton<WeatherApiClient>(() => WeatherApiClient());
+  getIt.registerLazySingleton<WeatherRemoteDatasource>(
+    () => WeatherRemoteDatasourceImpl(getIt<WeatherApiClient>().dio),
+  );
+  getIt.registerLazySingleton<WeatherRepository>(
+    () => WeatherRepositoryImpl(getIt<WeatherRemoteDatasource>()),
   );
 
   // Booking
