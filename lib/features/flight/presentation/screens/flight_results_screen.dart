@@ -6,8 +6,10 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking_session.dart';
+import '../../../weather/domain/entities/weather_forecast.dart';
+import '../../../weather/domain/repositories/weather_repository.dart';
+import '../../../weather/presentation/widgets/flight_weather_strip.dart';
 import '../../domain/entities/flight.dart';
-import '../widgets/flight_weather_strip.dart';
 
 class FlightResultsScreen extends StatefulWidget {
   const FlightResultsScreen({super.key});
@@ -18,17 +20,42 @@ class FlightResultsScreen extends StatefulWidget {
 
 class _FlightResultsScreenState extends State<FlightResultsScreen> {
   late final BookingSession _session;
+  late final WeatherRepository _weatherRepository;
+  final Map<String, FlightWeatherDay?> _weatherByFlight = {};
 
   @override
   void initState() {
     super.initState();
     _session = getIt<BookingSession>();
+    _weatherRepository = getIt<WeatherRepository>();
   }
 
   void _selectFlight(Flight flight) {
+    _session.isHotelBooking = false;
     _session.selectedOutboundFlight = flight;
     _session.currency = flight.currency;
     context.push('/booking/passenger-details');
+  }
+
+  /// Fetches (and caches per flight) the forecast for a result card.
+  void _loadWeather(Flight flight) {
+    final key = '${flight.id}-${flight.departureTime.toIso8601String()}';
+    if (_weatherByFlight.containsKey(key)) return;
+
+    // Record the pending state so the card does not refetch on rebuild.
+    _weatherByFlight[key] = null;
+
+    _weatherRepository
+        .forecastForFlight(
+          originCode: flight.origin,
+          destinationCode: flight.destination,
+          departureTime: flight.departureTime,
+          arrivalTime: flight.arrivalTime,
+        )
+        .then((forecast) {
+      if (!mounted) return;
+      setState(() => _weatherByFlight[key] = forecast);
+    });
   }
 
   String _formatTime(DateTime dt) => DateFormat.Hm().format(dt);
@@ -98,9 +125,19 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final flight = flights[index];
+                final weatherKey =
+                    '${flight.id}-${flight.departureTime.toIso8601String()}';
+                final weather = _weatherByFlight[weatherKey];
+
+                // Kick off the fetch once per flight; the strip renders as
+                // soon as it resolves.
+                if (!_weatherByFlight.containsKey(weatherKey)) {
+                  _loadWeather(flight);
+                }
+
                 return _FlightCard(
                   flight: flight,
-                  weather: buildFlightWeather(flight),
+                  weather: weather,
                   formatTime: _formatTime,
                   formatDate: _formatDate,
                   onSelect: () => _selectFlight(flight),
@@ -121,7 +158,7 @@ class _FlightCard extends StatefulWidget {
   });
 
   final Flight flight;
-  final FlightWeatherDay weather;
+  final FlightWeatherDay? weather;
   final String Function(DateTime) formatTime;
   final String Function(DateTime) formatDate;
   final VoidCallback onSelect;
@@ -341,13 +378,15 @@ class _FlightCardState extends State<_FlightCard> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  FlightWeatherStrip(
-                    weather: widget.weather,
-                    formatDate: widget.formatDate,
-                    origin: flight.origin,
-                    destination: flight.destination,
-                  ),
+                  if (widget.weather != null) ...[
+                    const SizedBox(height: 14),
+                    FlightWeatherStrip(
+                      weather: widget.weather!,
+                      formatDate: widget.formatDate,
+                      origin: flight.origin,
+                      destination: flight.destination,
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   Row(
                     children: [
