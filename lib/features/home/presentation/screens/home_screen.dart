@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../flight/domain/entities/flight.dart';
+import '../../../flight/presentation/widgets/flight_weather_strip.dart';
 import '../../../flight/domain/entities/flight_search_criteria.dart';
 import '../../../flight/domain/repositories/flight_repository.dart';
 
@@ -212,18 +213,25 @@ class _HomeScreenState extends State<HomeScreen> {
     hourly: [
       _WeatherHour(label: 'Now', temperature: 24, icon: Icons.cloud_queue),
       _WeatherHour(label: '11 AM', temperature: 25, icon: Icons.cloud_queue),
-      _WeatherHour(label: '12 PM', temperature: 26, icon: Icons.wb_sunny_outlined),
-      _WeatherHour(label: '1 PM', temperature: 27, icon: Icons.wb_sunny_outlined),
+      _WeatherHour(
+        label: '12 PM',
+        temperature: 26,
+        icon: Icons.wb_sunny_outlined,
+      ),
+      _WeatherHour(
+        label: '1 PM',
+        temperature: 27,
+        icon: Icons.wb_sunny_outlined,
+      ),
       _WeatherHour(label: '2 PM', temperature: 27, icon: Icons.wb_sunny),
-      _WeatherHour(label: '3 PM', temperature: 26, icon: Icons.wb_sunny_outlined),
+      _WeatherHour(
+        label: '3 PM',
+        temperature: 26,
+        icon: Icons.wb_sunny_outlined,
+      ),
     ],
     daily: [
-      _WeatherDay(
-        day: 'Today',
-        icon: Icons.cloud_queue,
-        high: 27,
-        low: 18,
-      ),
+      _WeatherDay(day: 'Today', icon: Icons.cloud_queue, high: 27, low: 18),
       _WeatherDay(day: 'Tomorrow', icon: Icons.wb_sunny, high: 29, low: 19),
       _WeatherDay(day: 'Fri', icon: Icons.grain, high: 23, low: 17),
       _WeatherDay(day: 'Sat', icon: Icons.wb_cloudy, high: 22, low: 16),
@@ -484,6 +492,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatTime(DateTime dt) {
     return DateFormat.Hm().format(dt);
+  }
+
+  String _formatWeatherDate(DateTime dt) {
+    return DateFormat('EEE, d MMM').format(dt);
   }
 
   @override
@@ -977,6 +989,8 @@ class _HomeScreenState extends State<HomeScreen> {
         final flight = _suggestedFlights[index];
         return _SuggestedFlightCard(
           flight: flight,
+          weather: buildFlightWeather(flight),
+          formatDate: _formatWeatherDate,
           formatTime: _formatTime,
           onBook: () => _bookFlight(context, flight),
         );
@@ -1153,11 +1167,15 @@ class _SuggestedHotelCardState extends State<_SuggestedHotelCard> {
 class _SuggestedFlightCard extends StatefulWidget {
   const _SuggestedFlightCard({
     required this.flight,
+    required this.weather,
+    required this.formatDate,
     required this.formatTime,
     required this.onBook,
   });
 
   final Flight flight;
+  final FlightWeatherDay weather;
+  final String Function(DateTime) formatDate;
   final String Function(DateTime) formatTime;
   final VoidCallback onBook;
 
@@ -1350,6 +1368,13 @@ class _SuggestedFlightCardState extends State<_SuggestedFlightCard> {
                         ],
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 14),
+                  FlightWeatherStrip(
+                    weather: widget.weather,
+                    formatDate: widget.formatDate,
+                    origin: flight.origin,
+                    destination: flight.destination,
                   ),
                   const SizedBox(height: 14),
                   Row(
