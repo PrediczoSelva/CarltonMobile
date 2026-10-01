@@ -70,6 +70,10 @@ class ProfileScreen extends StatelessWidget {
             label: 'My Wallet',
             onTap: () => context.push(AppRoutes.wallet)),
         _ProfileTile(
+            icon: Icons.bookmark_border,
+            label: 'Travel Plan',
+            onTap: () => context.push(AppRoutes.travelPlan)),
+        _ProfileTile(
             icon: Icons.card_travel_outlined,
             label: 'Leisure Plan',
             onTap: () => context.push(AppRoutes.leisurePlan)),
