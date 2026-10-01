@@ -26,7 +26,7 @@ class _TravelPlanScreenState extends State<TravelPlanScreen> {
       children: 0,
       infants: 0,
       fromDate: DateTime(2026, 11, 15),
-      toDate: DateTime(2026, 9, 20),
+      toDate: DateTime(2026, 11, 20),
       budgetType: 'Maximum',
       currency: 'USD',
       maxBudget: 0,
@@ -35,6 +35,44 @@ class _TravelPlanScreenState extends State<TravelPlanScreen> {
         TravelPlanFlight(
             departureAirport: 'Colombo, Sri Lanka (CMB)',
             arrivalAirport: 'Gandhi, India (DEL)'),
+      ],
+    ),
+    TravelPlan(
+      tripName: 'colombo',
+      tripType: TripType.returnTrip,
+      cabinClass: 'Business',
+      adults: 1,
+      children: 0,
+      infants: 0,
+      fromDate: DateTime(2026, 9, 15),
+      toDate: DateTime(2026, 10, 10),
+      budgetType: 'Maximum',
+      currency: 'USD',
+      maxBudget: 980,
+      savedAt: DateTime(2026, 9, 15),
+      flights: const [
+        TravelPlanFlight(
+            departureAirport: 'London, United Kingdom (LON)',
+            arrivalAirport: 'Bandaranaike International Colombo Airport (CMB)'),
+      ],
+    ),
+    TravelPlan(
+      tripName: 'family trip',
+      tripType: TripType.returnTrip,
+      cabinClass: 'Economy',
+      adults: 1,
+      children: 0,
+      infants: 0,
+      fromDate: DateTime(2026, 9, 1),
+      toDate: DateTime(2026, 9, 3),
+      budgetType: 'Maximum',
+      currency: 'USD',
+      maxBudget: 0,
+      savedAt: DateTime(2026, 8, 31),
+      flights: const [
+        TravelPlanFlight(
+            departureAirport: 'Bandaranaike International Colombo Airport (CMB)',
+            arrivalAirport: 'Paris, France (PAR)'),
       ],
     ),
   ];
@@ -52,12 +90,29 @@ class _TravelPlanScreenState extends State<TravelPlanScreen> {
     }
   }
 
-  void _openPlanNewTrip() {
-    context.push(AppRoutes.travelPlanCreate);
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _editTrip(TravelPlan trip) {
-    context.push(AppRoutes.travelPlanCreate);
+  Future<void> _openPlanNewTrip() async {
+    final result = await context.push<TravelPlan>(AppRoutes.travelPlanCreate);
+    if (!mounted || result == null) return;
+    setState(() => _trips.insert(0, result));
+    _showMessage('Trip plan saved');
+  }
+
+  Future<void> _editTrip(TravelPlan trip) async {
+    final result = await context.push<TravelPlan>(
+      AppRoutes.travelPlanCreate,
+      extra: trip,
+    );
+    if (!mounted || result == null) return;
+    final index = _trips.indexOf(trip);
+    if (index == -1) return;
+    setState(() => _trips[index] = result);
+    _showMessage('Trip plan updated');
   }
 
   Future<void> _deleteTrip(TravelPlan trip) async {
@@ -82,8 +137,10 @@ class _TravelPlanScreenState extends State<TravelPlanScreen> {
     }
   }
 
+
+
   void _bookNow(TravelPlan trip) {
-    context.push(AppRoutes.flightSearch);
+    context.push(AppRoutes.flightSearch, extra: trip);
   }
 
   @override
@@ -99,7 +156,7 @@ class _TravelPlanScreenState extends State<TravelPlanScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
-          context.canPop() ? context.pop() : context.go(AppRoutes.home),
+              context.canPop() ? context.pop() : context.go(AppRoutes.home),
         ),
       ),
       body: ListView(
@@ -171,6 +228,15 @@ class TravelPlanFlight {
   final String departureAirport;
   final String arrivalAirport;
   final DateTime? fromDate;
+
+
+  static String _code(String airport) {
+    final m = RegExp(r'\(([A-Z0-9]{3})\)\s*$').firstMatch(airport);
+    return m?.group(1) ?? airport;
+  }
+
+  String get departureCode => _code(departureAirport);
+  String get arrivalCode => _code(arrivalAirport);
 }
 
 class TravelPlan {
@@ -183,7 +249,7 @@ class TravelPlan {
     required this.children,
     required this.infants,
     required this.fromDate,
-    required this.toDate,
+    this.toDate,
     required this.budgetType,
     required this.currency,
     required this.maxBudget,
@@ -202,7 +268,7 @@ class TravelPlan {
   final int children;
   final int infants;
   final DateTime fromDate;
-  final DateTime toDate;
+  final DateTime? toDate;
   final String budgetType;
   final String currency;
   final double maxBudget;
@@ -235,6 +301,7 @@ class _FilterChips extends StatelessWidget {
           ChoiceChip(
             label: Text(entry.value),
             selected: selected == entry.key,
+            showCheckmark: false,
             onSelected: (_) => onChanged(entry.key),
             selectedColor: AppColors.primary,
             backgroundColor: AppColors.background,
@@ -247,8 +314,9 @@ class _FilterChips extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(
-                color:
-                selected == entry.key ? AppColors.primary : AppColors.border,
+                color: selected == entry.key
+                    ? AppColors.primary
+                    : AppColors.border,
               ),
             ),
           ),
@@ -292,7 +360,8 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             isFiltered ? 'No matching travel plans' : 'No travel plans yet',
-            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700),
+            style:
+                AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 4),
           Text(
@@ -332,6 +401,8 @@ class _TripCard extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onBookNow;
 
+  static const _maxLegsShown = 3;
+
   String _fmtDate(DateTime d) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -339,6 +410,10 @@ class _TripCard extends StatelessWidget {
     ];
     return '${months[d.month - 1]} ${d.day.toString().padLeft(2, '0')}, ${d.year}';
   }
+
+  String get _dateLabel => trip.toDate == null
+      ? _fmtDate(trip.fromDate)
+      : '${_fmtDate(trip.fromDate)} – ${_fmtDate(trip.toDate!)}';
 
   String get _tripTypeLabel {
     switch (trip.tripType) {
@@ -351,12 +426,30 @@ class _TripCard extends StatelessWidget {
     }
   }
 
+  String get _currencySymbol {
+    switch (trip.currency) {
+      case 'USD':
+        return '\$';
+      case 'GBP':
+        return '£';
+      case 'EUR':
+        return '€';
+      default:
+        return '${trip.currency} ';
+    }
+  }
+
+  String get _budgetLabel =>
+      '${trip.budgetType.toUpperCase()} • $_currencySymbol${trip.maxBudget.toStringAsFixed(0)}';
+
   int get _paxCount => trip.adults + trip.children + trip.infants;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final legs = trip.flights.take(2).toList();
+    final legs = trip.flights.take(_maxLegsShown).toList();
+    final extraLegs = trip.flights.length - legs.length;
+    final notes = trip.notes?.trim() ?? '';
 
     return Container(
       width: double.infinity,
@@ -367,10 +460,18 @@ class _TripCard extends StatelessWidget {
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.divider,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.0 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -396,6 +497,11 @@ class _TripCard extends StatelessWidget {
                             color: isDark
                                 ? AppColors.textPrimaryDark
                                 : AppColors.primary)),
+                    if (trip.savedAt != null) ...[
+                      const SizedBox(height: 2),
+                      Text('Saved ${_fmtDate(trip.savedAt!)}',
+                          style: AppTextStyles.bodySmall),
+                    ],
                   ],
                 ),
               ),
@@ -409,6 +515,8 @@ class _TripCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
+
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -419,11 +527,13 @@ class _TripCard extends StatelessWidget {
             ),
             child: Column(
               children: [
-                for (final leg in legs) ...[
+                for (var i = 0; i < legs.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
-                        child: Text(leg.departureAirport,
+                        child: Text(legs[i].departureAirport,
                             style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w700)),
@@ -435,7 +545,7 @@ class _TripCard extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          leg.arrivalAirport,
+                          legs[i].arrivalAirport,
                           textAlign: TextAlign.right,
                           style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.primary,
@@ -445,28 +555,78 @@ class _TripCard extends StatelessWidget {
                     ],
                   ),
                 ],
+                if (extraLegs > 0) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                        '+$extraLegs more flight${extraLegs > 1 ? 's' : ''}',
+                        style: AppTextStyles.caption),
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: 10),
-          Text(
-            '${_fmtDate(trip.fromDate)} – ${_fmtDate(trip.toDate)}',
-            style: AppTextStyles.bodySmall,
-          ),
+          Text(_dateLabel, style: AppTextStyles.bodySmall),
+
+          if (notes.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              notes,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.bodySmall
+                  .copyWith(fontStyle: FontStyle.italic),
+            ),
+          ],
+
+          
+          if (trip.maxBudget > 0) ...[
+            const SizedBox(height: 10),
+            Divider(
+                height: 1,
+                color: isDark ? AppColors.borderDark : AppColors.divider),
+            const SizedBox(height: 10),
+            Text('BUDGET',
+                style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+            const SizedBox(height: 2),
+            Text(_budgetLabel,
+                style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.primary,
+                    fontWeight: FontWeight.w700)),
+          ],
+
           const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 10),
+          Divider(
+              height: 1,
+              color: isDark ? AppColors.borderDark : AppColors.divider),
+          const SizedBox(height: 12),
+
+          // Footer: pax / cabin (left) | Book Now (right)
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Wrap(
-                  spacing: 12,
-                  runSpacing: 4,
+                  spacing: 14,
+                  runSpacing: 6,
                   children: [
-                    _MetaChip(icon: Icons.people_outline, label: '$_paxCount Pax'),
+                    _MetaChip(
+                        icon: Icons.people_outline, label: '$_paxCount Pax'),
                     _MetaChip(
                         icon: Icons.airline_seat_recline_normal_outlined,
                         label: trip.cabinClass),
+                    if ((trip.preferredAirline ?? '').isNotEmpty)
+                      _MetaChip(
+                          icon: Icons.flight_outlined,
+                          label: trip.preferredAirline!),
+                    if (trip.autoBookingEnabled)
+                      const _MetaChip(
+                          icon: Icons.autorenew, label: 'Auto-book'),
                   ],
                 ),
               ),
@@ -478,6 +638,8 @@ class _TripCard extends StatelessWidget {
                   foregroundColor: AppColors.textOnPrimary,
                   minimumSize: const Size(0, 40),
                   padding: const EdgeInsets.symmetric(horizontal: 18),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
                 child: const Text('Book Now'),
               ),
@@ -490,7 +652,8 @@ class _TripCard extends StatelessWidget {
 }
 
 class _IconSquareButton extends StatelessWidget {
-  const _IconSquareButton({required this.icon, required this.onTap, this.color});
+  const _IconSquareButton(
+      {required this.icon, required this.onTap, this.color});
   final IconData icon;
   final VoidCallback onTap;
   final Color? color;
@@ -527,7 +690,7 @@ class _MetaChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: AppColors.primary),
+        Icon(icon, size: 14, color: AppColors.primary),
         const SizedBox(width: 4),
         Text(label,
             style: AppTextStyles.caption.copyWith(
