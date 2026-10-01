@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Flight> _suggestedFlights = [];
   bool _loadingSuggestions = true;
   String? _suggestionsError;
+  late _LocalWeather _localWeather;
 
   static const _tabs = ['Flights', 'Hotels', 'Cars', 'Cruise'];
 
@@ -199,6 +200,45 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  static const _defaultLocalWeather = _LocalWeather(
+    locationName: 'Detecting your location...',
+    updatedAt: 'Just now',
+    temperature: 24,
+    feelsLike: 25,
+    condition: 'Partly cloudy',
+    conditionIcon: Icons.cloud_queue,
+    high: 27,
+    low: 18,
+    hourly: [
+      _WeatherHour(label: 'Now', temperature: 24, icon: Icons.cloud_queue),
+      _WeatherHour(label: '11 AM', temperature: 25, icon: Icons.cloud_queue),
+      _WeatherHour(label: '12 PM', temperature: 26, icon: Icons.wb_sunny_outlined),
+      _WeatherHour(label: '1 PM', temperature: 27, icon: Icons.wb_sunny_outlined),
+      _WeatherHour(label: '2 PM', temperature: 27, icon: Icons.wb_sunny),
+      _WeatherHour(label: '3 PM', temperature: 26, icon: Icons.wb_sunny_outlined),
+    ],
+    daily: [
+      _WeatherDay(
+        day: 'Today',
+        icon: Icons.cloud_queue,
+        high: 27,
+        low: 18,
+      ),
+      _WeatherDay(day: 'Tomorrow', icon: Icons.wb_sunny, high: 29, low: 19),
+      _WeatherDay(day: 'Fri', icon: Icons.grain, high: 23, low: 17),
+      _WeatherDay(day: 'Sat', icon: Icons.wb_cloudy, high: 22, low: 16),
+      _WeatherDay(day: 'Sun', icon: Icons.wb_sunny_outlined, high: 26, low: 18),
+    ],
+  );
+
+  static const _fallbackLocations = [
+    'London, United Kingdom',
+    'Colombo, Sri Lanka',
+    'Dubai, United Arab Emirates',
+    'Singapore',
+    'New York, United States',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -206,6 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _tabScrollController = ScrollController();
     _trendingScrollController = ScrollController();
     _promotionalScrollController = ScrollController();
+    _localWeather = _defaultLocalWeather;
     _loadSuggestions();
   }
 
@@ -346,6 +387,74 @@ class _HomeScreenState extends State<HomeScreen> {
       targetOffset.toDouble(),
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOut,
+    );
+  }
+
+  Future<void> _detectLocation() async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 12),
+              Text(
+                'Select your location',
+                style: AppTextStyles.h4,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              for (final location in _fallbackLocations)
+                ListTile(
+                  leading: const Icon(Icons.location_on_outlined),
+                  title: Text(location, style: AppTextStyles.bodyMedium),
+                  onTap: () => Navigator.of(sheetContext).pop(location),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked == null || !mounted) return;
+    setState(() {
+      _localWeather = _withLocation(_localWeather, picked);
+    });
+  }
+
+  Future<void> _refreshLocalWeather() async {
+    final current = _localWeather;
+    setState(() {
+      _localWeather = _LocalWeather(
+        locationName: current.locationName,
+        updatedAt: 'Just now',
+        temperature: current.temperature,
+        feelsLike: current.feelsLike,
+        condition: current.condition,
+        conditionIcon: current.conditionIcon,
+        high: current.high,
+        low: current.low,
+        hourly: current.hourly,
+        daily: current.daily,
+      );
+    });
+  }
+
+  _LocalWeather _withLocation(_LocalWeather weather, String locationName) {
+    return _LocalWeather(
+      locationName: locationName,
+      updatedAt: weather.updatedAt,
+      temperature: weather.temperature,
+      feelsLike: weather.feelsLike,
+      condition: weather.condition,
+      conditionIcon: weather.conditionIcon,
+      high: weather.high,
+      low: weather.low,
+      hourly: weather.hourly,
+      daily: weather.daily,
     );
   }
 
@@ -684,6 +793,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Weather at your location', style: AppTextStyles.h4),
+                IconButton(
+                  onPressed: _refreshLocalWeather,
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh weather',
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _LocalWeatherCard(
+              weather: _localWeather,
+              onDetectLocation: _detectLocation,
             ),
             const SizedBox(height: 24),
           ],
@@ -1869,6 +1995,269 @@ class _PromotionalUpdateCardState extends State<_PromotionalUpdateCard> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WeatherHour {
+  const _WeatherHour({
+    required this.label,
+    required this.temperature,
+    required this.icon,
+  });
+
+  final String label;
+  final int temperature;
+  final IconData icon;
+}
+
+class _WeatherDay {
+  const _WeatherDay({
+    required this.day,
+    required this.icon,
+    required this.high,
+    required this.low,
+  });
+
+  final String day;
+  final IconData icon;
+  final int high;
+  final int low;
+}
+
+class _LocalWeather {
+  const _LocalWeather({
+    required this.locationName,
+    required this.updatedAt,
+    required this.temperature,
+    required this.feelsLike,
+    required this.condition,
+    required this.conditionIcon,
+    required this.high,
+    required this.low,
+    required this.hourly,
+    required this.daily,
+  });
+
+  final String locationName;
+  final String updatedAt;
+  final int temperature;
+  final int feelsLike;
+  final String condition;
+  final IconData conditionIcon;
+  final int high;
+  final int low;
+  final List<_WeatherHour> hourly;
+  final List<_WeatherDay> daily;
+}
+
+class _LocalWeatherCard extends StatelessWidget {
+  const _LocalWeatherCard({
+    required this.weather,
+    required this.onDetectLocation,
+  });
+
+  final _LocalWeather weather;
+  final VoidCallback onDetectLocation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primaryLight, AppColors.primary],
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      weather.locationName,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: onDetectLocation,
+                    icon: const Icon(Icons.my_location, size: 16),
+                    label: const Text('Use my location'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.accent,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(weather.conditionIcon, color: Colors.white, size: 72),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${weather.temperature}°C',
+                          style: AppTextStyles.h1.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          weather.condition,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Feels like ${weather.feelsLike}°  ·  H: ${weather.high}°  L: ${weather.low}°',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white60,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 96,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: weather.hourly.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final hour = weather.hourly[index];
+                  final isNow = index == 0;
+                  return Container(
+                    width: 68,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(isNow ? 0.22 : 0.10),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          hour.label,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        Icon(hour.icon, color: Colors.white, size: 22),
+                        Text(
+                          '${hour.temperature}°',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              color: Colors.black.withOpacity(0.18),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today_outlined,
+                          size: 14, color: Colors.white70),
+                      const SizedBox(width: 6),
+                      Text(
+                        '5 day forecast',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  for (final day in weather.daily)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 70,
+                            child: Text(
+                              day.day,
+                              style: AppTextStyles.bodyMedium
+                                  .copyWith(color: Colors.white),
+                            ),
+                          ),
+                          Icon(day.icon, color: Colors.white70, size: 18),
+                          const Spacer(),
+                          Text(
+                            '${day.high}°',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '${day.low}°',
+                            style: AppTextStyles.bodyMedium
+                                .copyWith(color: Colors.white60),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule, size: 12, color: Colors.white54),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Updated ${weather.updatedAt}',
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

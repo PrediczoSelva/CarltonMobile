@@ -38,6 +38,7 @@ import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_details_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_room_selection_screen.dart';
 import '../../features/hotel/domain/entities/hotel_search_criteria.dart';
+import '../../features/leisure_plan/presentation/screens/leisure_plan_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -57,6 +58,7 @@ abstract class AppRoutes {
   static const personalDetails = '/profile/personal-details';
   static const settings = '/profile/settings';
   static const wallet = '/profile/wallet';
+  static const leisurePlan = '/profile/leisure-plan';
   static const flightSearch = '/flights/search';
   static const flightResults = '/flights/results';
   static const passengerDetails = '/booking/passenger-details';
@@ -277,6 +279,10 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: 'wallet',
               builder: (context, state) => const WalletScreen(),
+            ),
+            GoRoute(
+              path: 'leisure-plan',
+              builder: (context, state) => const LeisurePlanPage(),
             ),
           ],
         ),
