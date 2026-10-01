@@ -10,6 +10,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
+import '../../../weather/domain/entities/weather_forecast.dart';
+import '../../../weather/domain/repositories/weather_repository.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../booking/domain/entities/passenger.dart';
 import '../../../hotel/presentation/screens/hotel_search_tab.dart';
@@ -21,7 +23,6 @@ import '../../domain/repositories/flight_repository.dart';
 import '../../presentation/bloc/flight_bloc.dart';
 import '../../presentation/bloc/flight_event.dart';
 import '../../presentation/bloc/flight_state.dart';
-import '../widgets/flight_weather_strip.dart';
 
 class FlightSearchScreen extends StatefulWidget {
   const FlightSearchScreen({super.key});
@@ -82,6 +83,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
 
   late final ApiClient _apiClient;
   late final BookingSession _session;
+  late final WeatherRepository _weatherRepository;
 
   final _weatherPlaceController = TextEditingController(text: 'Colombo (CMB)');
   DateTime? _weatherDate;
@@ -98,6 +100,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     _flightRepository = getIt<FlightRepository>();
     _apiClient = getIt<ApiClient>();
     _session = getIt<BookingSession>();
+    _weatherRepository = getIt<WeatherRepository>();
     _fromController.addListener(_onFromInputChanged);
     _toController.addListener(_onToInputChanged);
     _fromFocusNode.addListener(() {
@@ -414,17 +417,25 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     setState(() {
       _weatherDate = date;
       _isCheckingWeather = true;
+      _weatherForecast = null;
     });
 
-    // Dummy lookup. Replace this with a call to the weather repository once
-    // an API key is available.
-    final forecast = buildPlaceWeather(place, date);
+    final forecast = await _weatherRepository.forecastForPlace(
+      place: place,
+      date: date,
+    );
 
     if (!mounted) return;
     setState(() {
       _weatherForecast = forecast;
       _isCheckingWeather = false;
     });
+
+    if (forecast == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not find a forecast for "$place"')),
+      );
+    }
   }
 
   Widget _buildWeatherLookupSection() {
