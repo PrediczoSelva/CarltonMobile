@@ -8,7 +8,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../flight/domain/entities/flight.dart';
-import '../../../flight/presentation/widgets/flight_weather_strip.dart';
+import '../../../weather/domain/entities/weather_forecast.dart';
+import '../../../weather/domain/repositories/weather_repository.dart';
+import '../../../weather/presentation/widgets/flight_weather_strip.dart';
 import '../../../flight/domain/entities/flight_search_criteria.dart';
 import '../../../flight/domain/repositories/flight_repository.dart';
 
@@ -29,6 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loadingSuggestions = true;
   String? _suggestionsError;
   late _LocalWeather _localWeather;
+  late final WeatherRepository _weatherRepository;
+  final Map<String, FlightWeatherDay?> _flightWeather = {};
 
   static const _tabs = ['Flights', 'Hotels', 'Cars', 'Cruise'];
 
@@ -251,6 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _flightRepository = getIt<FlightRepository>();
+    _weatherRepository = getIt<WeatherRepository>();
     _tabScrollController = ScrollController();
     _trendingScrollController = ScrollController();
     _promotionalScrollController = ScrollController();
@@ -987,15 +992,42 @@ class _HomeScreenState extends State<HomeScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final flight = _suggestedFlights[index];
+        final weatherKey =
+            '${flight.id}-${flight.departureTime.toIso8601String()}';
+        final weather = _flightWeather[weatherKey];
+
+        // Kick off the fetch once per flight; the strip renders as soon as
+        // it resolves.
+        if (!_flightWeather.containsKey(weatherKey)) {
+          _loadFlightWeather(flight, weatherKey);
+        }
+
         return _SuggestedFlightCard(
           flight: flight,
-          weather: buildFlightWeather(flight),
+          weather: weather,
           formatDate: _formatWeatherDate,
           formatTime: _formatTime,
           onBook: () => _bookFlight(context, flight),
         );
       },
     );
+  }
+
+  void _loadFlightWeather(Flight flight, String key) {
+    // Record the pending state so the card does not refetch on rebuild.
+    _flightWeather[key] = null;
+
+    _weatherRepository
+        .forecastForFlight(
+          originCode: flight.origin,
+          destinationCode: flight.destination,
+          departureTime: flight.departureTime,
+          arrivalTime: flight.arrivalTime,
+        )
+        .then((forecast) {
+      if (!mounted) return;
+      setState(() => _flightWeather[key] = forecast);
+    });
   }
 
   void _bookFlight(BuildContext context, Flight flight) {
@@ -1174,7 +1206,7 @@ class _SuggestedFlightCard extends StatefulWidget {
   });
 
   final Flight flight;
-  final FlightWeatherDay weather;
+  final FlightWeatherDay? weather;
   final String Function(DateTime) formatDate;
   final String Function(DateTime) formatTime;
   final VoidCallback onBook;
@@ -1369,13 +1401,15 @@ class _SuggestedFlightCardState extends State<_SuggestedFlightCard> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  FlightWeatherStrip(
-                    weather: widget.weather,
-                    formatDate: widget.formatDate,
-                    origin: flight.origin,
-                    destination: flight.destination,
-                  ),
+                  if (widget.weather != null) ...[
+                    const SizedBox(height: 14),
+                    FlightWeatherStrip(
+                      weather: widget.weather!,
+                      formatDate: widget.formatDate,
+                      origin: flight.origin,
+                      destination: flight.destination,
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   Row(
                     children: [

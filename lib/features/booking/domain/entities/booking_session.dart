@@ -48,6 +48,10 @@ class BookingSession {
   int? bookingId;
   List<Map<String, dynamic>>? selectedTravelers;
 
+  /// True when the active booking is a hotel booking, false for flights.
+  /// Hotel flows use "guest" wording while flights use "passenger" wording.
+  bool isHotelBooking = false;
+
   bool get hasPassengerData => passengers.isNotEmpty;
 
   bool get hasSelectedFlight => selectedOutboundFlight != null;
@@ -91,5 +95,6 @@ class BookingSession {
     bookingStatus = null;
     bookingId = null;
     selectedTravelers = null;
+    isHotelBooking = false;
   }
 }
