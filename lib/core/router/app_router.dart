@@ -34,6 +34,8 @@ import '../../features/car/presentation/screens/car_results_screen.dart';
 import '../../features/car/presentation/screens/car_details_screen.dart';
 import '../../features/car/presentation/screens/car_extras_screen.dart';
 import '../../features/car/presentation/screens/car_guest_details_screen.dart';
+import '../../features/car/presentation/screens/car_payment_screen.dart';
+import '../../features/car/presentation/screens/car_confirmation_screen.dart';
 import '../../features/car/domain/entities/car_vehicle.dart';
 import '../../features/car/domain/entities/car_search_criteria.dart';
 import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
@@ -254,6 +256,47 @@ final GoRouter appRouter = GoRouter(
               );
             }
             return const CarGuestDetailsScreen();
+          },
+        ),
+        GoRoute(
+          path: '/car-search/checkout/payment',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              return CarPaymentScreen(
+                car: extra['car'] as CarVehicle?,
+                criteria: extra['criteria'] as CarSearchCriteria?,
+                total: (extra['total'] as num?)?.toDouble(),
+                extras: extra['extras'] is List
+                    ? (extra['extras'] as List).whereType<String>().toList()
+                    : const [],
+                guest: extra.map((key, value) => MapEntry('$key', '$value')),
+              );
+            }
+            return const CarPaymentScreen();
+          },
+        ),
+        GoRoute(
+          path: '/car-search/confirmation',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              return CarConfirmationScreen(
+                car: extra['car'] as CarVehicle?,
+                criteria: extra['criteria'] as CarSearchCriteria?,
+                total: (extra['total'] as num?)?.toDouble(),
+                extras: extra['extras'] is List
+                    ? (extra['extras'] as List).whereType<String>().toList()
+                    : const [],
+                guest: extra['guest'] is Map
+                    ? (extra['guest'] as Map).map(
+                        (key, value) => MapEntry('$key', '$value'),
+                      )
+                    : const {},
+                last4: extra['last4'] as String?,
+              );
+            }
+            return const CarConfirmationScreen();
           },
         ),
         GoRoute(
