@@ -1,6 +1,14 @@
-# Carlton Leisure — Mobile Application
+# Carlton Leisure Mobile App
 
-Flutter mobile app for Carlton Leisure flight, hotel, car, and cruise booking. It integrates with the existing .NET backend via cookie-based JWT authentication and supports a multi-step booking flow with Stripe, PayPal, Barclays Card, and wallet payments. Flight search, booking, payment, wallet, and profile features are all implemented.
+Flutter application for Carlton Leisure customer self-service. The app provides
+authentication, flight search and booking, payments, wallet and loyalty,
+bookings/trips, profile settings, and weather forecasts for travel locations.
+Hotel and car screens are currently UI placeholders; their backend integrations
+are not included in this repository.
+
+The checked-in native project is Android. The app also contains Flutter code
+that can be used with other Flutter targets after their platform projects and
+native payment/notification configuration have been added.
 
 ---
 
@@ -8,7 +16,7 @@ Flutter mobile app for Carlton Leisure flight, hotel, car, and cruise booking. I
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Flutter (Dart) |
+| Framework | Flutter (Dart), tested with Flutter 3.44.7 / Dart 3.12.2 |
 | State management | flutter_bloc + equatable |
 | Navigation | go_router (ShellRoute + nested routes) |
 | Dependency injection | get_it (manual registration, no code-gen) |
@@ -24,7 +32,7 @@ Flutter mobile app for Carlton Leisure flight, hotel, car, and cruise booking. I
 | Push notifications | firebase_core, firebase_messaging, flutter_local_notifications |
 | PDF & file handling | pdf, path_provider, open_filex |
 
-## Backend
+## Backend integration
 
 | Layer | Technology |
 |-------|-----------|
@@ -33,70 +41,167 @@ Flutter mobile app for Carlton Leisure flight, hotel, car, and cruise booking. I
 | Auth | JWT via HTTP-only cookies |
 | CORS | AllowFrontend policy |
 
-The backend repository lives at your workstation under the Carlton backend directory, e.g.:
-```
-/Users/sajaniprabhashika/Documents/Onedata 4/Carlton/backend/Carlton.CustomerSelfService
-```
+The app expects the Carlton ASP.NET Core API to be running separately. The API
+base URL is supplied at build time; it is not hard-coded to a production
+service. Authentication uses JWTs transported in HTTP-only cookies, so the API
+must allow requests from the selected client and support cookie credentials.
 
 ---
 
 ## Prerequisites
 
-- Flutter SDK (>=3.3.0)
+- Flutter SDK (3.3.0 or later; Flutter 3.44.7 is used for this project)
 - Dart SDK (bundled with Flutter)
-- Android emulator or physical Android device
-- .NET 10 SDK (for backend)
-- SQL Server (for backend)
+- Android Studio with the Android SDK and an emulator, or a physical Android
+  device
+- Java 21 (the Android Gradle configuration uses Java 21)
+- .NET 10 SDK and SQL Server if running the backend locally
 
-## Setup
+Check the local toolchain before starting:
 
-### 1. Get dependencies
+```bash
+flutter doctor
+flutter devices
+```
+
+## Setup and launch
+
+From the repository root:
 
 ```bash
 flutter pub get
 ```
 
-### 2. Start the backend
+### Start the backend (required for login and booking)
 
-Navigate to the backend project and run it:
+Start the Carlton backend using the backend repository's documented command.
+For example, from the ASP.NET Core project directory:
 
 ```bash
-cd "/Users/sajaniprabhashika/Documents/Onedata 4/Carlton/backend/Carlton.CustomerSelfService/Carlton.CustomerSelfService"
 dotnet run
 ```
 
-The backend starts on `http://localhost:5193` in Development mode. Wait for `Now listening on: http://localhost:5193` in the terminal.
+Use the URL printed by `dotnet run`. The examples below assume the API is
+listening on `http://localhost:5193`.
 
-### 3. Run the mobile app
+### Launch on an Android emulator
 
-For emulator development (Android emulator connects to host Mac via `10.0.2.2`):
+List available emulators and launch one if necessary:
 
 ```bash
-cd /Users/sajaniprabhashika/Documents/carlton_leisure_app
+flutter emulators
+flutter emulators --launch <emulator-id>
+```
+
+The Android emulator reaches services running on the development machine via
+`10.0.2.2`, not `localhost`. Start the app with:
+
+```bash
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5193/api
 ```
 
-For local machine testing (Flutter on web or device with host access):
+If more than one device is connected, specify the device:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://localhost:5193/api
+flutter run -d <device-id> \
+  --dart-define=API_BASE_URL=http://10.0.2.2:5193/api
 ```
 
-For production:
+### Launch on a physical Android device
+
+Enable Developer options and USB debugging, connect the device, then confirm
+that Flutter detects it:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=https://api.carltonleisure.com/api
+flutter devices
+flutter run -d <android-device-id> \
+  --dart-define=API_BASE_URL=http://<computer-ip>:5193/api
 ```
 
-### 4. Test credentials
+The phone and computer must be on the same network, and the backend/firewall
+must allow connections from the phone. Do not use `10.0.2.2` on a physical
+device.
 
-Use seeded test accounts from the SQL Server database. The backend seeds default users on first run. Use `customer1` / `customer123` or existing database credentials.
+### Run with payment configuration
+
+Only publishable/client-side values belong in the app. Keep secret payment
+credentials on the backend:
+
+```bash
+flutter run -d <device-id> \
+  --dart-define=API_BASE_URL=http://10.0.2.2:5193/api \
+  --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_xxx \
+  --dart-define=PAYPAL_CLIENT_ID=xxx
+```
+
+Alternatively, create a local, untracked `env.json` and run:
+
+```json
+{
+  "API_BASE_URL": "http://10.0.2.2:5193/api",
+  "STRIPE_PUBLISHABLE_KEY": "pk_test_xxx",
+  "PAYPAL_CLIENT_ID": "xxx"
+}
+```
+
+```bash
+flutter run -d <device-id> --dart-define-from-file=env.json
+```
+
+Add `env.json` to `.gitignore` before putting real values in it. The app
+defaults to `http://10.0.2.2:5193/api`, so Android emulator development also
+works with just `flutter run` when the backend uses that port.
+
+### Test credentials
+
+Use the seeded or provisioned credentials supplied by the backend environment.
+Credentials are intentionally not documented here because they are environment
+data and may differ between databases.
+
+## Development commands
+
+```bash
+# Static analysis
+flutter analyze
+
+# Unit and integration tests
+flutter test
+
+# Live Open-Meteo integration tests only
+flutter test test/weather_open_meteo_test.dart
+
+# Generate a debug APK
+flutter build apk --debug
+```
+
+The weather integration tests call the live Open-Meteo service and require
+network access. The application itself uses Open-Meteo without an API key;
+retain the required Open-Meteo attribution when exposing weather functionality.
+
+## Troubleshooting
+
+- **No device found:** run `flutter devices`, start an Android emulator with
+  `flutter emulators --launch <id>`, or enable USB debugging on a phone.
+- **API connection refused on an emulator:** use `10.0.2.2` instead of
+  `localhost` and confirm the backend is listening on port `5193`.
+- **API connection refused on a phone:** use the computer's LAN IP and verify
+  both devices are on the same network.
+- **Gradle/Java errors:** verify that Java 21 is selected by Android Studio or
+  set it with `flutter config --jdk-dir=<path-to-jdk-21>`.
+- **Payment setup errors:** provide only publishable Stripe and client-side
+  PayPal values through `--dart-define`; payment secret keys must remain on the
+  backend.
+- **iOS/macOS plugin errors:** CocoaPods and checked-in iOS/macOS platform
+  projects are not part of this repository. Android is the supported native
+  target until those projects are added and configured.
 
 ---
 
 ## API Endpoints
 
-All endpoints are relative to the `API_BASE_URL` (default `http://10.0.2.2:5193/api`).
+The table uses the backend's full route notation (`/api/...`). The app's
+`API_BASE_URL` already includes the `/api` prefix, so datasource paths append
+routes such as `/Auth/login` and `/flights/search/all`.
 
 ### Auth
 
@@ -347,26 +452,11 @@ The app uses **cookie-based JWT authentication** matching the backend's approach
 
 ## Handling API keys and secrets
 
-Never commit real keys to source control. Configuration values are read at build time via `--dart-define` with safe empty/placeholder defaults in `app_constants.dart`.
-
-Run with your real values:
-
-```bash
-flutter run \
-  --dart-define=API_BASE_URL=http://10.0.2.2:5193/api \
-  --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_xxx \
-  --dart-define=PAYPAL_CLIENT_ID=xxx
-```
-
-Or use an env file:
-
-```bash
-flutter run --dart-define-from-file=env.json
-```
-
-Add `env.json` to `.gitignore`.
-
-**Secret keys (Stripe secret key, Barclays merchant credentials) must never live in the app** — they belong on your backend. The app only holds *publishable*/*client* keys.
+Never commit real keys to source control. Configuration is read at build time
+via `--dart-define`; see [Run with payment configuration](#run-with-payment-configuration)
+for the command-line and `env.json` examples. Secret keys (Stripe secret key
+and Barclays merchant credentials) must remain on the backend; the app only
+holds publishable/client-side values.
 
 ---
 
