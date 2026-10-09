@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -184,8 +185,17 @@ class _CarGuestDetailsScreenState extends State<CarGuestDetailsScreen> {
 
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Guest details saved.')),
-    );
+    context.push('/car-search/checkout/payment', extra: {
+      'car': widget.car,
+      'criteria': widget.criteria,
+      'total': widget.total,
+      'extras': widget.extras,
+      'title': _title,
+      'firstName': _firstNameController.text.trim(),
+      'lastName': _lastNameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'flightNumber': _flightController.text.trim(),
+    });
   }
 }
