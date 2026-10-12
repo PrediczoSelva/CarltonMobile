@@ -3,7 +3,33 @@ import '../../../flight/domain/entities/flight_search_criteria.dart';
 import '../../../hotel/domain/entities/hotel.dart';
 import '../../../hotel/domain/entities/hotel_search_criteria.dart';
 import '../../../hotel/data/repositories/hotel_repository.dart';
+import '../../../car/domain/entities/car_search_criteria.dart';
+import '../../../car/domain/entities/car_vehicle.dart';
 import 'passenger.dart';
+
+class CarBookingRecord {
+  CarBookingRecord({
+    required this.reference,
+    required this.car,
+    required this.criteria,
+    required this.totalPrice,
+    required this.extras,
+    required this.guest,
+    required this.paymentLast4,
+    required this.bookingDate,
+  });
+
+  final String reference;
+  final CarVehicle car;
+  final CarSearchCriteria criteria;
+  final double totalPrice;
+  final List<String> extras;
+  final Map<String, String> guest;
+  final String? paymentLast4;
+  final DateTime bookingDate;
+
+  String get status => 'Confirmed';
+}
 
 class HotelBookingSession {
   Hotel? hotel;
@@ -22,6 +48,7 @@ class HotelBookingSession {
 /// (search results -> passenger details -> summary -> payment -> confirmation).
 /// Registered as a singleton in DI so every screen reads the same instance.
 class BookingSession {
+  CarBookingRecord? carBooking;
   FlightSearchCriteria? searchCriteria;
   List<Flight> outboundFlights = [];
   List<Flight> returnFlights = [];
@@ -70,6 +97,7 @@ class BookingSession {
   double get totalPriceWithTaxes => (totalPrice ?? totalFlightPrice) * 1.14;
 
   void reset() {
+    carBooking = null;
     searchCriteria = null;
     outboundFlights = [];
     returnFlights = [];
