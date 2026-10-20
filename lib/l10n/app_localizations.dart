@@ -243,6 +243,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version {version}'**
   String version(Object version);
+
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
+  /// No description provided for @bookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings'**
+  String get bookings;
+
+  /// No description provided for @myAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'My account'**
+  String get myAccount;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @noUserData.
+  ///
+  /// In en, this message translates to:
+  /// **'No user data available'**
+  String get noUserData;
+
+  /// No description provided for @personalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal details'**
+  String get personalDetails;
+
+  /// No description provided for @savedPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved preferences'**
+  String get savedPreferences;
+
+  /// No description provided for @myBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'My Bookings'**
+  String get myBookings;
+
+  /// No description provided for @myWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'My Wallet'**
+  String get myWallet;
+
+  /// No description provided for @leisurePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Leisure Plan'**
+  String get leisurePlan;
+
+  /// No description provided for @helpSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & support'**
+  String get helpSupport;
+
+  /// No description provided for @logOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out'**
+  String get logOut;
+
+  /// No description provided for @messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get messages;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications at the moment.'**
+  String get noNotifications;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signIn;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back'**
+  String get welcomeBack;
+
+  /// No description provided for @signInToManageBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to manage your bookings'**
+  String get signInToManageBookings;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @pleaseFillEmailPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in both email and password'**
+  String get pleaseFillEmailPassword;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @dontHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account? Sign up'**
+  String get dontHaveAccount;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @seeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get seeAll;
+
+  /// No description provided for @trendingDestinations.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending destinations'**
+  String get trendingDestinations;
+
+  /// No description provided for @promotionalUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotional updates'**
+  String get promotionalUpdates;
+
+  /// No description provided for @weatherAtYourLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather at your location'**
+  String get weatherAtYourLocation;
+
+  /// No description provided for @suggestedHotels.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested hotels'**
+  String get suggestedHotels;
+
+  /// No description provided for @suggestedCars.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested cars'**
+  String get suggestedCars;
+
+  /// No description provided for @book.
+  ///
+  /// In en, this message translates to:
+  /// **'Book'**
+  String get book;
+
+  /// No description provided for @useMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my location'**
+  String get useMyLocation;
 }
 
 class _AppLocalizationsDelegate

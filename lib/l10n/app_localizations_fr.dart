@@ -83,4 +83,102 @@ class AppLocalizationsFr extends AppLocalizations {
   String version(Object version) {
     return 'Version $version';
   }
+
+  @override
+  String get home => 'Accueil';
+
+  @override
+  String get search => 'Rechercher';
+
+  @override
+  String get bookings => 'Réservations';
+
+  @override
+  String get myAccount => 'Mon compte';
+
+  @override
+  String get profile => 'Profil';
+
+  @override
+  String get noUserData => 'Aucune donnée utilisateur disponible';
+
+  @override
+  String get personalDetails => 'Détails personnels';
+
+  @override
+  String get savedPreferences => 'Préférences enregistrées';
+
+  @override
+  String get myBookings => 'Mes réservations';
+
+  @override
+  String get myWallet => 'Mon portefeuille';
+
+  @override
+  String get leisurePlan => 'Programme de loisirs';
+
+  @override
+  String get helpSupport => 'Aide et assistance';
+
+  @override
+  String get logOut => 'Se déconnecter';
+
+  @override
+  String get messages => 'Messages';
+
+  @override
+  String get noNotifications => 'Aucune notification pour le moment.';
+
+  @override
+  String get signIn => 'Se connecter';
+
+  @override
+  String get welcomeBack => 'Bon retour';
+
+  @override
+  String get signInToManageBookings =>
+      'Connectez-vous pour gérer vos réservations';
+
+  @override
+  String get email => 'E-mail';
+
+  @override
+  String get password => 'Mot de passe';
+
+  @override
+  String get pleaseFillEmailPassword =>
+      'Veuillez remplir l’e-mail et le mot de passe';
+
+  @override
+  String get forgotPassword => 'Mot de passe oublié ?';
+
+  @override
+  String get dontHaveAccount => 'Vous n’avez pas de compte ? Inscrivez-vous';
+
+  @override
+  String get retry => 'Réessayer';
+
+  @override
+  String get seeAll => 'Voir tout';
+
+  @override
+  String get trendingDestinations => 'Destinations tendance';
+
+  @override
+  String get promotionalUpdates => 'Offres promotionnelles';
+
+  @override
+  String get weatherAtYourLocation => 'Météo à votre emplacement';
+
+  @override
+  String get suggestedHotels => 'Hôtels suggérés';
+
+  @override
+  String get suggestedCars => 'Voitures suggérées';
+
+  @override
+  String get book => 'Réserver';
+
+  @override
+  String get useMyLocation => 'Utiliser ma position';
 }

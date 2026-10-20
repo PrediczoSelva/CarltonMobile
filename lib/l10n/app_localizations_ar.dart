@@ -81,4 +81,101 @@ class AppLocalizationsAr extends AppLocalizations {
   String version(Object version) {
     return 'الإصدار $version';
   }
+
+  @override
+  String get home => 'الرئيسية';
+
+  @override
+  String get search => 'بحث';
+
+  @override
+  String get bookings => 'الحجوزات';
+
+  @override
+  String get myAccount => 'حسابي';
+
+  @override
+  String get profile => 'الملف الشخصي';
+
+  @override
+  String get noUserData => 'لا تتوفر بيانات المستخدم';
+
+  @override
+  String get personalDetails => 'البيانات الشخصية';
+
+  @override
+  String get savedPreferences => 'التفضيلات المحفوظة';
+
+  @override
+  String get myBookings => 'حجوزاتي';
+
+  @override
+  String get myWallet => 'محفظتي';
+
+  @override
+  String get leisurePlan => 'خطة الترفيه';
+
+  @override
+  String get helpSupport => 'المساعدة والدعم';
+
+  @override
+  String get logOut => 'تسجيل الخروج';
+
+  @override
+  String get messages => 'الرسائل';
+
+  @override
+  String get noNotifications => 'لا توجد إشعارات في الوقت الحالي.';
+
+  @override
+  String get signIn => 'تسجيل الدخول';
+
+  @override
+  String get welcomeBack => 'مرحبًا بعودتك';
+
+  @override
+  String get signInToManageBookings => 'سجّل الدخول لإدارة حجوزاتك';
+
+  @override
+  String get email => 'البريد الإلكتروني';
+
+  @override
+  String get password => 'كلمة المرور';
+
+  @override
+  String get pleaseFillEmailPassword =>
+      'يرجى إدخال البريد الإلكتروني وكلمة المرور';
+
+  @override
+  String get forgotPassword => 'هل نسيت كلمة المرور؟';
+
+  @override
+  String get dontHaveAccount => 'ليس لديك حساب؟ سجّل الآن';
+
+  @override
+  String get retry => 'إعادة المحاولة';
+
+  @override
+  String get seeAll => 'عرض الكل';
+
+  @override
+  String get trendingDestinations => 'الوجهات الرائجة';
+
+  @override
+  String get promotionalUpdates => 'العروض الترويجية';
+
+  @override
+  String get weatherAtYourLocation => 'الطقس في موقعك';
+
+  @override
+  String get suggestedHotels => 'الفنادق المقترحة';
+
+  @override
+  String get suggestedCars => 'السيارات المقترحة';
+
+  @override
+  String get book => 'احجز';
+
+  @override
+  String get useMyLocation => 'استخدام موقعي';
 }
