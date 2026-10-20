@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../booking/domain/entities/booking_session.dart';
 import '../../domain/entities/car_search_criteria.dart';
 import '../../domain/entities/car_vehicle.dart';
 
-class CarConfirmationScreen extends StatelessWidget {
+class CarConfirmationScreen extends StatefulWidget {
   const CarConfirmationScreen({
     super.key,
     this.car,
@@ -26,9 +28,41 @@ class CarConfirmationScreen extends StatelessWidget {
   final String? last4;
 
   @override
-  Widget build(BuildContext context) {
-    final reference =
+  State<CarConfirmationScreen> createState() => _CarConfirmationScreenState();
+}
+
+class _CarConfirmationScreenState extends State<CarConfirmationScreen> {
+  late final String _reference;
+
+  @override
+  void initState() {
+    super.initState();
+    _reference =
         'CAR-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
+    _saveBooking();
+  }
+
+  void _saveBooking() {
+    final car = widget.car;
+    final criteria = widget.criteria;
+    if (car == null || criteria == null) return;
+
+    getIt<BookingSession>().carBooking = CarBookingRecord(
+      reference: _reference,
+      car: car,
+      criteria: criteria,
+      totalPrice: widget.total ?? car.dailyPrice * criteria.rentalDays,
+      extras: List.unmodifiable(widget.extras),
+      guest: Map.unmodifiable(widget.guest),
+      paymentLast4: widget.last4,
+      bookingDate: DateTime.now(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final car = widget.car;
+    final criteria = widget.criteria;
     final days = criteria?.rentalDays ?? 1;
     return Scaffold(
       appBar: AppBar(title: const Text('Booking confirmed')),
@@ -64,7 +98,7 @@ class CarConfirmationScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Your booking details will be sent to ${guest['email'] ?? 'your email address'}.',
+                      'Your booking details will be sent to ${widget.guest['email'] ?? 'your email address'}.',
                       style: AppTextStyles.bodyMedium,
                     ),
                   ),
@@ -74,19 +108,19 @@ class CarConfirmationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _section('Booking details', [
-            _row('Reference', reference),
-            if (car != null) _row('Vehicle', car!.name),
-            if (car != null) _row('Rental company', car!.companyName),
+            _row('Reference', _reference),
+            if (car != null) _row('Vehicle', car.name),
+            if (car != null) _row('Rental company', car.companyName),
             _row('Duration', '$days day${days == 1 ? '' : 's'}'),
-            if (criteria != null)
-              _row('Pick-up location', criteria!.pickupLocation),
-            if (extras.isNotEmpty) _row('Extras', extras.join(', ')),
+            if (criteria != null) _row('Pick-up location', criteria.pickupLocation),
+            if (widget.extras.isNotEmpty)
+              _row('Extras', widget.extras.join(', ')),
           ]),
           const SizedBox(height: 16),
           _section('Payment', [
             _row('Payment method',
-                last4 == null ? 'Card' : 'Card ending in $last4'),
-            _row('Total paid', '£${(total ?? 0).toStringAsFixed(2)}'),
+                widget.last4 == null ? 'Card' : 'Card ending in ${widget.last4}'),
+            _row('Total paid', '£${(widget.total ?? 0).toStringAsFixed(2)}'),
           ]),
           const SizedBox(height: 24),
           PrimaryButton(

@@ -9,6 +9,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../auth/domain/entities/user.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -16,13 +17,13 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.profile)),
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           if (state is AuthAuthenticated) {
             return _buildProfile(context, state.user);
           }
-          return const Center(child: Text('No user data available'));
+          return Center(child: Text(AppLocalizations.of(context)!.noUserData));
         },
       ),
     );
@@ -55,19 +56,19 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 24),
         _ProfileTile(
             icon: Icons.person_outline,
-            label: 'Personal details',
+            label: AppLocalizations.of(context)!.personalDetails,
             onTap: () => context.push(AppRoutes.personalDetails)),
         _ProfileTile(
             icon: Icons.favorite_border,
-            label: 'Saved preferences',
+            label: AppLocalizations.of(context)!.savedPreferences,
             onTap: () {}),
         _ProfileTile(
             icon: Icons.card_giftcard_outlined,
-            label: 'My Bookings',
+            label: AppLocalizations.of(context)!.myBookings,
             onTap: () => context.push(AppRoutes.myTrips)),
         _ProfileTile(
             icon: Icons.account_balance_wallet_outlined,
-            label: 'My Wallet',
+            label: AppLocalizations.of(context)!.myWallet,
             onTap: () => context.push(AppRoutes.wallet)),
         _ProfileTile(
             icon: Icons.bookmark_border,
@@ -75,14 +76,16 @@ class ProfileScreen extends StatelessWidget {
             onTap: () => context.push(AppRoutes.travelPlan)),
         _ProfileTile(
             icon: Icons.card_travel_outlined,
-            label: 'Leisure Plan',
+            label: AppLocalizations.of(context)!.leisurePlan,
             onTap: () => context.push(AppRoutes.leisurePlan)),
         _ProfileTile(
             icon: Icons.settings_outlined,
-            label: 'Settings',
+            label: AppLocalizations.of(context)!.settings,
             onTap: () => context.push(AppRoutes.settings)),
         _ProfileTile(
-            icon: Icons.help_outline, label: 'Help & support', onTap: () {}),
+            icon: Icons.help_outline,
+            label: AppLocalizations.of(context)!.helpSupport,
+            onTap: () {}),
         const SizedBox(height: 24),
         ElevatedButton.icon(
           onPressed: () {
@@ -90,7 +93,7 @@ class ProfileScreen extends StatelessWidget {
             context.go('/login');
           },
           icon: const Icon(Icons.logout),
-          label: const Text('Log out'),
+          label: Text(AppLocalizations.of(context)!.logOut),
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
         ),
       ],

@@ -2,22 +2,93 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/localization/locale_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/theme_notifier.dart';
+import '../../../../l10n/app_localizations.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  static final _languages = <Locale, String>{
+    const Locale('en'): 'englishDefault',
+    const Locale('fr'): 'french',
+    const Locale('ar'): 'arabic',
+  };
+
+  Future<void> _selectLanguage() async {
+    final localeNotifier = getIt<LocaleNotifier>();
+    final l10n = AppLocalizations.of(context)!;
+    final selectedLocale = await showDialog<Locale>(
+      context: context,
+      builder: (context) {
+        var draftLocale = localeNotifier.value;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(l10n.language),
+              content: DropdownButtonFormField<Locale>(
+                initialValue: draftLocale,
+                decoration: InputDecoration(
+                  labelText: l10n.selectLanguage,
+                ),
+                items: _languages.entries
+                    .map(
+                      (entry) => DropdownMenuItem<Locale>(
+                        value: entry.key,
+                        child: Text(_languageName(l10n, entry.key)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (locale) {
+                  if (locale != null) {
+                    setDialogState(() => draftLocale = locale);
+                  }
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(l10n.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(draftLocale),
+                  child: Text(l10n.save),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (!mounted || selectedLocale == null) return;
+
+    localeNotifier.setLocale(selectedLocale);
+    await getIt<FlutterSecureStorage>().write(
+      key: 'language_code',
+      value: selectedLocale.languageCode,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final selectedLanguage = _languageName(l10n, getIt<LocaleNotifier>().value);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _SettingsSection(
-            title: 'Appearance',
+            title: l10n.appearance,
             children: [
               ValueListenableBuilder<ThemeMode>(
                 valueListenable: getIt<ThemeNotifier>(),
@@ -30,20 +101,20 @@ class SettingsScreen extends StatelessWidget {
                       final storage = getIt<FlutterSecureStorage>();
                       await storage.write(key: 'theme_mode', value: value ? 'dark' : 'light');
                     },
-                    title: const Text('Dark mode'),
-                    subtitle: const Text('Use dark theme across the app'),
+                    title: Text(l10n.darkMode),
+                    subtitle: Text(l10n.useDarkTheme),
                   );
                 },
               ),
-              const _SettingsTile(
+              _SettingsTile(
                 icon: Icons.language,
-                title: 'Language',
-                subtitle: 'English',
-                onTap: null,
+                title: l10n.language,
+                subtitle: selectedLanguage,
+                onTap: _selectLanguage,
               ),
-              const _SettingsTile(
+              _SettingsTile(
                 icon: Icons.attach_money,
-                title: 'Currency',
+                title: l10n.currency,
                 subtitle: '£',
                 onTap: null,
               ),
@@ -51,40 +122,40 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _SettingsSection(
-            title: 'Notifications',
+            title: l10n.notifications,
             children: [
               SwitchListTile(
                 value: true,
                 onChanged: (value) {},
-                title: const Text('Push notifications'),
-                subtitle: const Text('Flight deals and booking updates'),
+                title: Text(l10n.pushNotifications),
+                subtitle: Text(l10n.flightDealsAndBookingUpdates),
               ),
               SwitchListTile(
                 value: true,
                 onChanged: (value) {},
-                title: const Text('Email notifications'),
-                subtitle: const Text('Receipts and e-tickets'),
+                title: Text(l10n.emailNotifications),
+                subtitle: Text(l10n.receiptsAndETickets),
               ),
               SwitchListTile(
                 value: false,
                 onChanged: (value) {},
-                title: const Text('SMS notifications'),
-                subtitle: const Text('Payment and booking alerts'),
+                title: Text(l10n.smsNotifications),
+                subtitle: Text(l10n.paymentAndBookingAlerts),
               ),
             ],
           ),
           const SizedBox(height: 16),
           _SettingsSection(
-            title: 'Account',
+            title: l10n.account,
             children: [
-              const _SettingsTile(
+              _SettingsTile(
                 icon: Icons.lock_outline,
-                title: 'Change password',
+                title: l10n.changePassword,
                 onTap: null,
               ),
-              const _SettingsTile(
+              _SettingsTile(
                 icon: Icons.delete_outline,
-                title: 'Delete account',
+                title: l10n.deleteAccount,
                 titleColor: AppColors.error,
                 onTap: null,
               ),
@@ -92,13 +163,24 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Version 0.1.0',
+            l10n.version('0.1.0'),
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
           ),
         ],
       ),
     );
+  }
+
+  String _languageName(AppLocalizations l10n, Locale locale) {
+    switch (locale.languageCode) {
+      case 'fr':
+        return l10n.french;
+      case 'ar':
+        return l10n.arabic;
+      default:
+        return l10n.englishDefault;
+    }
   }
 }
 
