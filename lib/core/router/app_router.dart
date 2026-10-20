@@ -49,6 +49,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
 import '../../features/profile/presentation/screens/help_support_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
+import '../../l10n/app_localizations.dart';
 
 abstract class AppRoutes {
   static const splash = '/';
@@ -424,13 +425,6 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
-  static const _navItems = [
-    _NavItem(icon: Icons.home, label: 'Home'),
-    _NavItem(icon: Icons.search, label: 'Search'),
-    _NavItem(icon: Icons.bookmark_outline, label: 'Bookings'),
-    _NavItem(icon: Icons.person_outline, label: 'My account'),
-  ];
-
   static const _routes = [
     AppRoutes.home,
     AppRoutes.flightSearch,
@@ -454,7 +448,12 @@ class _MainShellState extends State<MainShell> {
           });
           GoRouter.of(context).go(_routes[index]);
         },
-        items: _navItems
+        items: [
+          _NavItem(icon: Icons.home, label: AppLocalizations.of(context)!.home),
+          _NavItem(icon: Icons.search, label: AppLocalizations.of(context)!.search),
+          _NavItem(icon: Icons.bookmark_outline, label: AppLocalizations.of(context)!.bookings),
+          _NavItem(icon: Icons.person_outline, label: AppLocalizations.of(context)!.myAccount),
+        ]
             .map((item) => BottomNavigationBarItem(
           icon: Icon(item.icon),
           label: item.label,
