@@ -10,6 +10,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
+import '../../../weather/domain/entities/weather_forecast.dart';
+import '../../../weather/domain/repositories/weather_repository.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../booking/domain/entities/passenger.dart';
 import '../../../hotel/presentation/screens/hotel_search_tab.dart';
@@ -81,6 +83,12 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
 
   late final ApiClient _apiClient;
   late final BookingSession _session;
+  late final WeatherRepository _weatherRepository;
+
+  final _weatherPlaceController = TextEditingController(text: 'Colombo (CMB)');
+  DateTime? _weatherDate;
+  WeatherForecast? _weatherForecast;
+  bool _isCheckingWeather = false;
 
   @override
   void initState() {
@@ -92,6 +100,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     _flightRepository = getIt<FlightRepository>();
     _apiClient = getIt<ApiClient>();
     _session = getIt<BookingSession>();
+    _weatherRepository = getIt<WeatherRepository>();
     _fromController.addListener(_onFromInputChanged);
     _toController.addListener(_onToInputChanged);
     _fromFocusNode.addListener(() {
@@ -120,6 +129,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     _toController.removeListener(_onToInputChanged);
     _fromController.dispose();
     _toController.dispose();
+    _weatherPlaceController.dispose();
     _fromFocusNode.dispose();
     _toFocusNode.dispose();
     for (final leg in _multiCityLegs) {
@@ -379,6 +389,128 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
     );
     if (!mounted || picked == null) return;
     setState(() => leg.date = picked);
+  }
+
+  Future<void> _pickWeatherDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _weatherDate ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 16)),
+    );
+    if (picked != null && mounted) {
+      setState(() => _weatherDate = picked);
+    }
+  }
+
+  Future<void> _checkWeather() async {
+    final place = _weatherPlaceController.text.trim();
+    if (place.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a location to check the weather')),
+      );
+      return;
+    }
+
+    final date = _weatherDate ?? DateTime.now();
+    setState(() {
+      _weatherDate = date;
+      _isCheckingWeather = true;
+      _weatherForecast = null;
+    });
+
+    final forecast = await _weatherRepository.forecastForPlace(
+      place: place,
+      date: date,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _weatherForecast = forecast;
+      _isCheckingWeather = false;
+    });
+
+    if (forecast == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not find a forecast for "$place"')),
+      );
+    }
+  }
+
+  Widget _buildWeatherLookupSection() {
+    final forecast = _weatherForecast;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.cloud_outlined,
+                  size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Check weather',
+                style: AppTextStyles.h4.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Look up the forecast for any destination before you book.',
+            style: AppTextStyles.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _weatherPlaceController,
+            textInputAction: TextInputAction.search,
+            onSubmitted: (_) => _checkWeather(),
+            decoration: const InputDecoration(
+              labelText: 'Location',
+              hintText: 'e.g. London (LHR)',
+              prefixIcon: Icon(Icons.place_outlined),
+            ),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: _pickWeatherDate,
+            borderRadius: BorderRadius.circular(4),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Date',
+                prefixIcon: Icon(Icons.calendar_today_outlined),
+              ),
+              child: Text(
+                _weatherDate == null
+                    ? 'Select date'
+                    : '${_weatherDate!.day}/${_weatherDate!.month}/${_weatherDate!.year}',
+                style: AppTextStyles.bodyMedium,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          PrimaryButton(
+            label: 'Check weather',
+            icon: Icons.search,
+            isLoading: _isCheckingWeather,
+            onPressed: _isCheckingWeather ? null : _checkWeather,
+          ),
+          if (forecast != null) ...[
+            const SizedBox(height: 16),
+            _WeatherForecastResult(forecast: forecast),
+          ],
+        ],
+      ),
+    );
   }
 
   String _formatTime(TimeOfDay? time) {
@@ -1376,6 +1508,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                             isLoading: isLoading,
                             onPressed: isLoading ? null : _searchFlights,
                           ),
+                          const SizedBox(height: 28),
+                          _buildWeatherLookupSection(),
                         ],
                       ),
                     ),
@@ -1388,6 +1522,200 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WeatherForecastResult extends StatelessWidget {
+  const _WeatherForecastResult({required this.forecast});
+
+  final WeatherForecast forecast;
+
+  String _formatDate(DateTime date) =>
+      '${date.day}/${date.month}/${date.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    final condition = forecast.condition;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined,
+                  size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  forecast.place,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                _formatDate(forecast.date),
+                style: AppTextStyles.bodySmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(condition.icon, size: 56, color: condition.color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '${forecast.temperatureHigh}°',
+                          style: AppTextStyles.h2.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'High ${forecast.temperatureHigh}°  '
+                          'Low ${forecast.temperatureLow}°',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      condition.label,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: condition.color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Feels like ${forecast.feelsLike}°',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _WeatherStatChip(
+                icon: Icons.water_drop_outlined,
+                label: '${forecast.chanceOfRain}% rain',
+              ),
+              _WeatherStatChip(
+                icon: Icons.air,
+                label: '${forecast.windSpeedKph} km/h',
+              ),
+              _WeatherStatChip(
+                icon: Icons.water,
+                label: '${forecast.humidity}% humidity',
+              ),
+              _WeatherStatChip(
+                icon: Icons.wb_twilight,
+                label: 'Sunrise ${forecast.sunrise}',
+              ),
+              _WeatherStatChip(
+                icon: Icons.nights_stay_outlined,
+                label: 'Sunset ${forecast.sunset}',
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text('Hourly', style: AppTextStyles.bodySmall),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 82,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: forecast.hourly.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final hour = forecast.hourly[index];
+                return Container(
+                  width: 72,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(hour.label, style: AppTextStyles.caption),
+                      Icon(hour.condition.icon,
+                          size: 20, color: hour.condition.color),
+                      Text(
+                        '${hour.temperature}°',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text('${hour.chanceOfRain}%', style: AppTextStyles.caption),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Updated ${forecast.updatedAt}',
+            style: AppTextStyles.caption,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeatherStatChip extends StatelessWidget {
+  const _WeatherStatChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppColors.textSecondary),
+          const SizedBox(width: 5),
+          Text(label, style: AppTextStyles.bodySmall),
+        ],
       ),
     );
   }

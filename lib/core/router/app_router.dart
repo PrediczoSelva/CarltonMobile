@@ -32,18 +32,26 @@ import '../../features/cruise/presentation/screens/cruise_details_screen.dart';
 import '../../features/cruise/domain/entities/cruise.dart';
 import '../../features/car/presentation/screens/car_results_screen.dart';
 import '../../features/car/presentation/screens/car_details_screen.dart';
+import '../../features/car/presentation/screens/car_extras_screen.dart';
+import '../../features/car/presentation/screens/car_guest_details_screen.dart';
+import '../../features/car/presentation/screens/car_payment_screen.dart';
+import '../../features/car/presentation/screens/car_confirmation_screen.dart';
 import '../../features/car/domain/entities/car_vehicle.dart';
 import '../../features/car/domain/entities/car_search_criteria.dart';
 import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_details_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_room_selection_screen.dart';
 import '../../features/hotel/domain/entities/hotel_search_criteria.dart';
+import '../../features/leisure_plan/presentation/screens/leisure_plan_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
 import '../../features/profile/presentation/screens/personal_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
 import '../../features/profile/presentation/screens/help_support_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
+import '../../l10n/app_localizations.dart';
+import '../../features/travel_plan/presentation/screens/travel_plan_screen.dart';
+import '../../features/travel_plan/presentation/screens/plan_new_trip_screen.dart';
 
 abstract class AppRoutes {
   static const splash = '/';
@@ -55,6 +63,7 @@ abstract class AppRoutes {
   static const personalDetails = '/profile/personal-details';
   static const settings = '/profile/settings';
   static const wallet = '/profile/wallet';
+  static const leisurePlan = '/profile/leisure-plan';
   static const flightSearch = '/flights/search';
   static const flightResults = '/flights/results';
   static const passengerDetails = '/booking/passenger-details';
@@ -72,6 +81,8 @@ abstract class AppRoutes {
   static const messages = '/messages';
   static const notifications = '/notifications';
   static const helpSupport = '/help-support';
+  static const travelPlan = '/travel-plan';
+  static const travelPlanCreate = '/travel-plan/create';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -133,13 +144,13 @@ final GoRouter appRouter = GoRouter(
             final criteria = state.extra is HotelSearchCriteria
                 ? state.extra as HotelSearchCriteria
                 : HotelSearchCriteria(
-                    destination: '',
-                    checkIn: DateTime.now().add(const Duration(days: 7)),
-                    checkOut: DateTime.now().add(const Duration(days: 10)),
-                    adults: 1,
-                    children: 0,
-                    rooms: 1,
-                  );
+              destination: '',
+              checkIn: DateTime.now().add(const Duration(days: 7)),
+              checkOut: DateTime.now().add(const Duration(days: 10)),
+              adults: 1,
+              children: 0,
+              rooms: 1,
+            );
             return HotelDetailsScreen(hotelId: hotelId, criteria: criteria);
           },
         ),
@@ -151,13 +162,13 @@ final GoRouter appRouter = GoRouter(
             final criteria = state.extra is HotelSearchCriteria
                 ? state.extra as HotelSearchCriteria
                 : HotelSearchCriteria(
-                    destination: '',
-                    checkIn: DateTime.now().add(const Duration(days: 7)),
-                    checkOut: DateTime.now().add(const Duration(days: 10)),
-                    adults: 1,
-                    children: 0,
-                    rooms: 1,
-                  );
+              destination: '',
+              checkIn: DateTime.now().add(const Duration(days: 7)),
+              checkOut: DateTime.now().add(const Duration(days: 10)),
+              adults: 1,
+              children: 0,
+              rooms: 1,
+            );
             return HotelRoomSelectionScreen(
               hotelId: hotelId,
               hotelName: hotelName,
@@ -197,7 +208,7 @@ final GoRouter appRouter = GoRouter(
             if (args is! CarSearchResultArgs) {
               return const Scaffold(
                 body:
-                    Center(child: Text('Car search results are unavailable.')),
+                Center(child: Text('Car search results are unavailable.')),
               );
             }
             return CarResultsScreen(args: args);
@@ -217,6 +228,80 @@ final GoRouter appRouter = GoRouter(
             return const Scaffold(
               body: Center(child: Text('Car details are unavailable.')),
             );
+          },
+        ),
+        GoRoute(
+          path: '/car-search/:carId/extras',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              final car = extra['car'] as CarVehicle?;
+              final criteria = extra['criteria'] as CarSearchCriteria?;
+              if (car != null && criteria != null) {
+                return CarExtrasScreen(car: car, criteria: criteria);
+              }
+            }
+            return const Scaffold(
+              body: Center(child: Text('Car extras are unavailable.')),
+            );
+          },
+        ),
+        GoRoute(
+          path: '/car-search/checkout/guest',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              return CarGuestDetailsScreen(
+                car: extra['car'] as CarVehicle?,
+                criteria: extra['criteria'] as CarSearchCriteria?,
+                total: (extra['total'] as num?)?.toDouble(),
+                extras: extra['extras'] is List
+                    ? (extra['extras'] as List).whereType<String>().toList()
+                    : const [],
+              );
+            }
+            return const CarGuestDetailsScreen();
+          },
+        ),
+        GoRoute(
+          path: '/car-search/checkout/payment',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              return CarPaymentScreen(
+                car: extra['car'] as CarVehicle?,
+                criteria: extra['criteria'] as CarSearchCriteria?,
+                total: (extra['total'] as num?)?.toDouble(),
+                extras: extra['extras'] is List
+                    ? (extra['extras'] as List).whereType<String>().toList()
+                    : const [],
+                guest: extra.map((key, value) => MapEntry('$key', '$value')),
+              );
+            }
+            return const CarPaymentScreen();
+          },
+        ),
+        GoRoute(
+          path: '/car-search/confirmation',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              return CarConfirmationScreen(
+                car: extra['car'] as CarVehicle?,
+                criteria: extra['criteria'] as CarSearchCriteria?,
+                total: (extra['total'] as num?)?.toDouble(),
+                extras: extra['extras'] is List
+                    ? (extra['extras'] as List).whereType<String>().toList()
+                    : const [],
+                guest: extra['guest'] is Map
+                    ? (extra['guest'] as Map).map(
+                        (key, value) => MapEntry('$key', '$value'),
+                      )
+                    : const {},
+                last4: extra['last4'] as String?,
+              );
+            }
+            return const CarConfirmationScreen();
           },
         ),
         GoRoute(
@@ -255,6 +340,10 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const HelpSupportScreen(),
         ),
         GoRoute(
+          path: AppRoutes.travelPlan,
+          builder: (context, state) => const TravelPlanScreen(),
+        ),
+        GoRoute(
           path: AppRoutes.profile,
           builder: (context, state) => const ProfileScreen(),
           routes: [
@@ -269,6 +358,10 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: 'wallet',
               builder: (context, state) => const WalletScreen(),
+            ),
+            GoRoute(
+              path: 'leisure-plan',
+              builder: (context, state) => const LeisurePlanPage(),
             ),
           ],
         ),
@@ -325,6 +418,11 @@ final GoRouter appRouter = GoRouter(
         ),
       ],
     ),
+
+    GoRoute(
+      path: AppRoutes.travelPlanCreate,
+      builder: (context, state) => const PlanNewTripScreen(),
+    ),
   ],
 );
 
@@ -339,13 +437,6 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
-
-  static const _navItems = [
-    _NavItem(icon: Icons.home, label: 'Home'),
-    _NavItem(icon: Icons.search, label: 'Search'),
-    _NavItem(icon: Icons.bookmark_outline, label: 'Bookings'),
-    _NavItem(icon: Icons.person_outline, label: 'My account'),
-  ];
 
   static const _routes = [
     AppRoutes.home,
@@ -370,11 +461,16 @@ class _MainShellState extends State<MainShell> {
           });
           GoRouter.of(context).go(_routes[index]);
         },
-        items: _navItems
+        items: [
+          _NavItem(icon: Icons.home, label: AppLocalizations.of(context)!.home),
+          _NavItem(icon: Icons.search, label: AppLocalizations.of(context)!.search),
+          _NavItem(icon: Icons.bookmark_outline, label: AppLocalizations.of(context)!.bookings),
+          _NavItem(icon: Icons.person_outline, label: AppLocalizations.of(context)!.myAccount),
+        ]
             .map((item) => BottomNavigationBarItem(
-                  icon: Icon(item.icon),
-                  label: item.label,
-                ))
+          icon: Icon(item.icon),
+          label: item.label,
+        ))
             .toList(),
       ),
     );

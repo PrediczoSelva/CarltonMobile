@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../presentation/bloc/auth_bloc.dart';
 import '../../presentation/bloc/auth_event.dart';
 import '../../presentation/bloc/auth_state.dart';
@@ -19,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,9 +33,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in both email and password'),
+        SnackBar(
+          content: Text(l10n.pleaseFillEmailPassword),
         ),
       );
       return;
@@ -52,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign in')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.signIn)),
       body: SafeArea(
         child: BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
@@ -71,23 +72,24 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 24),
-                Text('Welcome back', style: AppTextStyles.h2),
+                Text(AppLocalizations.of(context)!.welcomeBack, style: AppTextStyles.h2),
                 const SizedBox(height: 8),
-                Text('Sign in to manage your bookings',
+                Text(AppLocalizations.of(context)!.signInToManageBookings,
                     style: AppTextStyles.bodyMedium),
                 const SizedBox(height: 32),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                      labelText: 'Email', hintText: 'you@example.com'),
+                  decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.email,
+                      hintText: 'you@example.com'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: AppLocalizations.of(context)!.password,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _isPasswordVisible
@@ -107,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   builder: (context, state) {
                     final isLoading = state is AuthLoading;
                     return PrimaryButton(
-                      label: 'Sign in',
+                      label: AppLocalizations.of(context)!.signIn,
                       isLoading: isLoading,
                       onPressed: isLoading ? null : _handleLogin,
                     );
@@ -116,12 +118,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => context.push('/forgot-password'),
-                  child: const Text('Forgot password?'),
+                  child: Text(AppLocalizations.of(context)!.forgotPassword),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => context.push('/signup'),
-                  child: const Text('Don\'t have an account? Sign up'),
+                  child: Text(AppLocalizations.of(context)!.dontHaveAccount),
                 ),
               ],
             ),

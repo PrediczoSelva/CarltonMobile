@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -94,9 +95,10 @@ class CarDetailsScreen extends StatelessWidget {
               child: PrimaryButton(
                 label: 'Reserve now',
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Booking flow for ${car.name} coming soon.')),
-                  );
+                  context.push('/car-search/${car.id}/extras', extra: {
+                    'car': car,
+                    'criteria': criteria,
+                  });
                 },
               ),
             ),

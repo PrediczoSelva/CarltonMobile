@@ -21,6 +21,16 @@ class AppConstants {
     defaultValue: '',
   );
 
+  // Weather - Open-Meteo. Free, no API key required for non-commercial use.
+  // Attribution to Open-Meteo.com is required by its CC BY 4.0 licence.
+  static const String openMeteoBaseUrl =
+      String.fromEnvironment('OPEN_METEO_URL', defaultValue: 'https://api.open-meteo.com/v1');
+
+  static const String openMeteoGeocodingBaseUrl = String.fromEnvironment(
+    'OPEN_METEO_GEOCODING_URL',
+    defaultValue: 'https://geocoding-api.open-meteo.com/v1',
+  );
+
   // Secure storage keys
   static const String keyAccessToken = 'access_token';
   static const String keyRefreshToken = 'refresh_token';

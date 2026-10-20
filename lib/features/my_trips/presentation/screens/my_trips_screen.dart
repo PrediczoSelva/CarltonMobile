@@ -54,7 +54,8 @@ class _MyTripsScreenState extends State<MyTripsScreen>
     super.dispose();
   }
 
-  Future<void> _checkScheduleChange(BuildContext context, Booking booking) async {
+  Future<void> _checkScheduleChange(
+      BuildContext context, Booking booking) async {
     try {
       final repo = getIt<BookingRepository>();
       final change = await repo.getScheduleChangeForBooking(booking.id);
@@ -169,7 +170,8 @@ class _MyTripsScreenState extends State<MyTripsScreen>
     // Remove this block when the real API is available.
     final mockScheduleChangeBookingIds = <int>{};
     for (final b in allBookings) {
-      if (!b.status.toLowerCase().contains('cancel') && !b.flight.departureTime.isBefore(now)) {
+      if (!b.status.toLowerCase().contains('cancel') &&
+          !b.flight.departureTime.isBefore(now)) {
         mockScheduleChangeBookingIds.add(b.id);
         break;
       }
@@ -225,7 +227,7 @@ class _MyTripsScreenState extends State<MyTripsScreen>
                 icon: Icons.hotel_outlined,
                 label: 'hotel',
               ),
-              _buildServiceBookings(
+              _buildCarBookings(
                 icon: Icons.directions_car_outlined,
                 label: 'car',
               ),
@@ -291,6 +293,136 @@ class _MyTripsScreenState extends State<MyTripsScreen>
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCarBookings({
+    required IconData icon,
+    required String label,
+  }) {
+    final carBooking = getIt<BookingSession>().carBooking;
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          const SizedBox(height: 14),
+          _buildStatusTabs(),
+          const SizedBox(height: 10),
+          Expanded(
+            child: TabBarView(
+              children: [
+                carBooking == null
+                    ? _buildServiceEmptyState(
+                        icon: icon, label: label, status: 'upcoming')
+                    : _buildCarBookingList(carBooking),
+                _buildServiceEmptyState(
+                    icon: icon, label: label, status: 'cancelled'),
+                _buildServiceEmptyState(
+                    icon: icon, label: label, status: 'finished'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCarBookingList(CarBookingRecord booking) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+      children: [
+        Card(
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.directions_car,
+                          color: AppColors.textOnPrimary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(booking.car.name, style: AppTextStyles.h4),
+                          const SizedBox(height: 3),
+                          Text(booking.car.companyName,
+                              style: AppTextStyles.bodySmall),
+                        ],
+                      ),
+                    ),
+                    _buildStatusChip(booking.status),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _carBookingRow(
+                  Icons.location_on_outlined,
+                  'Pick-up',
+                  booking.criteria.pickupLocation,
+                ),
+                _carBookingRow(
+                  Icons.calendar_today_outlined,
+                  'Dates',
+                  '${DateFormat('d MMM yyyy').format(booking.criteria.pickupDate)} - '
+                      '${DateFormat('d MMM yyyy').format(booking.criteria.returnDate)}',
+                ),
+                _carBookingRow(
+                  Icons.schedule_outlined,
+                  'Duration',
+                  '${booking.criteria.rentalDays} day${booking.criteria.rentalDays == 1 ? '' : 's'}',
+                ),
+                if (booking.extras.isNotEmpty)
+                  _carBookingRow(
+                    Icons.add_circle_outline,
+                    'Extras',
+                    booking.extras.join(', '),
+                  ),
+                const Divider(height: 24),
+                Row(
+                  children: [
+                    Text('Total paid', style: AppTextStyles.bodyLarge),
+                    const Spacer(),
+                    Text('£${booking.totalPrice.toStringAsFixed(2)}',
+                        style: AppTextStyles.price),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('Reference: ${booking.reference}',
+                    style: AppTextStyles.caption),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _carBookingRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: AppColors.primary),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 72,
+            child: Text(label, style: AppTextStyles.bodySmall),
+          ),
+          Expanded(child: Text(value, style: AppTextStyles.bodyMedium)),
         ],
       ),
     );
