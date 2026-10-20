@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 
+import '../localization/locale_notifier.dart';
 import '../network/api_client.dart';
 import '../network/weather_api_client.dart';
 import '../theme/theme_notifier.dart';
@@ -51,6 +52,7 @@ Future<void> setupDependencyInjection() async {
 
   // Theme
   getIt.registerLazySingleton<ThemeNotifier>(() => ThemeNotifier());
+  getIt.registerLazySingleton<LocaleNotifier>(() => LocaleNotifier());
 
   // Networking
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
