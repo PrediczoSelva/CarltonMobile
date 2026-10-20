@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -7,6 +6,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../booking/domain/entities/booking.dart';
 import '../../../booking/domain/entities/schedule_change.dart';
 import '../../../booking/domain/repositories/booking_repository.dart';
@@ -93,11 +93,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.notifications)),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : _notifications.isEmpty
-              ? const Center(child: Text('No notifications at the moment.'))
+              ? Center(child: Text(AppLocalizations.of(context)!.noNotifications))
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _notifications.length,
