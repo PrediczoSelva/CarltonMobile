@@ -1,0 +1,32 @@
+{
+  "@@locale": "en",
+  "appTitle": "Carlton Leisure",
+  "settings": "Settings",
+  "appearance": "Appearance",
+  "darkMode": "Dark mode",
+  "useDarkTheme": "Use dark theme across the app",
+  "language": "Language",
+  "englishDefault": "English (Default)",
+  "french": "French",
+  "arabic": "Arabic",
+  "selectLanguage": "Select language",
+  "cancel": "Cancel",
+  "save": "Save",
+  "currency": "Currency",
+  "notifications": "Notifications",
+  "pushNotifications": "Push notifications",
+  "flightDealsAndBookingUpdates": "Flight deals and booking updates",
+  "emailNotifications": "Email notifications",
+  "receiptsAndETickets": "Receipts and e-tickets",
+  "smsNotifications": "SMS notifications",
+  "paymentAndBookingAlerts": "Payment and booking alerts",
+  "account": "Account",
+  "changePassword": "Change password",
+  "deleteAccount": "Delete account",
+  "version": "Version {version}",
+  "@version": {
+    "placeholders": {
+      "version": {}
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "@@locale": "ar",
+  "appTitle": "Carlton Leisure",
+  "settings": "الإعدادات",
+  "appearance": "المظهر",
+  "darkMode": "الوضع الداكن",
+  "useDarkTheme": "استخدام المظهر الداكن في جميع أنحاء التطبيق",
+  "language": "اللغة",
+  "englishDefault": "الإنجليزية (افتراضي)",
+  "french": "الفرنسية",
+  "arabic": "العربية",
+  "selectLanguage": "اختر اللغة",
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "currency": "العملة",
+  "notifications": "الإشعارات",
+  "pushNotifications": "الإشعارات الفورية",
+  "flightDealsAndBookingUpdates": "عروض الرحلات وتحديثات الحجوزات",
+  "emailNotifications": "إشعارات البريد الإلكتروني",
+  "receiptsAndETickets": "الإيصالات والتذاكر الإلكترونية",
+  "smsNotifications": "إشعارات الرسائل النصية",
+  "paymentAndBookingAlerts": "تنبيهات الدفع والحجوزات",
+  "account": "الحساب",
+  "changePassword": "تغيير كلمة المرور",
+  "deleteAccount": "حذف الحساب",
+  "version": "الإصدار {version}",
+  "@version": {
+    "placeholders": {
+      "version": {}
+    }
+  }
+}
