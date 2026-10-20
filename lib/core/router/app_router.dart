@@ -50,6 +50,8 @@ import '../../features/profile/presentation/screens/settings_screen.dart';
 import '../../features/profile/presentation/screens/help_support_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
 import '../../l10n/app_localizations.dart';
+import '../../features/travel_plan/presentation/screens/travel_plan_screen.dart';
+import '../../features/travel_plan/presentation/screens/plan_new_trip_screen.dart';
 
 abstract class AppRoutes {
   static const splash = '/';
@@ -79,6 +81,8 @@ abstract class AppRoutes {
   static const messages = '/messages';
   static const notifications = '/notifications';
   static const helpSupport = '/help-support';
+  static const travelPlan = '/travel-plan';
+  static const travelPlanCreate = '/travel-plan/create';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -336,6 +340,10 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const HelpSupportScreen(),
         ),
         GoRoute(
+          path: AppRoutes.travelPlan,
+          builder: (context, state) => const TravelPlanScreen(),
+        ),
+        GoRoute(
           path: AppRoutes.profile,
           builder: (context, state) => const ProfileScreen(),
           routes: [
@@ -409,6 +417,11 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const NotificationsScreen(),
         ),
       ],
+    ),
+
+    GoRoute(
+      path: AppRoutes.travelPlanCreate,
+      builder: (context, state) => const PlanNewTripScreen(),
     ),
   ],
 );
