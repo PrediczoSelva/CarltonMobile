@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../booking/domain/entities/booking_session.dart';
@@ -507,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Carlton Leisure'),
+        title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.message_outlined),
@@ -667,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text('Suggested flights', style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () => context.push('/flights/search'),
-                  child: const Text('See all'),
+                  child: Text(AppLocalizations.of(context)!.seeAll),
                 ),
               ],
             ),
@@ -677,7 +678,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Trending destinations', style: AppTextStyles.h4),
+                Text(AppLocalizations.of(context)!.trendingDestinations, style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () {},
                   child: const Text('View all'),
@@ -746,7 +747,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Promotional updates', style: AppTextStyles.h4),
+                Text(AppLocalizations.of(context)!.promotionalUpdates, style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () {},
                   child: const Text('View all'),
@@ -815,7 +816,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Weather at your location', style: AppTextStyles.h4),
+                Text(AppLocalizations.of(context)!.weatherAtYourLocation, style: AppTextStyles.h4),
                 IconButton(
                   onPressed: _refreshLocalWeather,
                   icon: const Icon(Icons.refresh),
@@ -852,7 +853,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Suggested hotels', style: AppTextStyles.h4),
+              Text(AppLocalizations.of(context)!.suggestedHotels, style: AppTextStyles.h4),
               TextButton(onPressed: () {}, child: const Text('See all')),
             ],
           ),
@@ -893,8 +894,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Suggested cars', style: AppTextStyles.h4),
-              TextButton(onPressed: () {}, child: const Text('See all')),
+              Text(AppLocalizations.of(context)!.suggestedCars, style: AppTextStyles.h4),
+              TextButton(onPressed: () {}, child: Text(AppLocalizations.of(context)!.seeAll)),
             ],
           ),
           const SizedBox(height: 12),
@@ -934,7 +935,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Suggested cruises', style: AppTextStyles.h4),
-            TextButton(onPressed: () {}, child: const Text('See all')),
+            TextButton(onPressed: () {}, child: Text(AppLocalizations.of(context)!.seeAll)),
           ],
         ),
         const SizedBox(height: 12),
@@ -1181,7 +1182,7 @@ class _SuggestedHotelCardState extends State<_SuggestedHotelCard> {
                           style: ElevatedButton.styleFrom(
                             elevation: _isHovered ? 1 : 0,
                           ),
-                          child: const Text('Book'),
+                          child: Text(AppLocalizations.of(context)!.book),
                         ),
                       ),
                     ],
@@ -1428,7 +1429,7 @@ class _SuggestedFlightCardState extends State<_SuggestedFlightCard> {
                           style: ElevatedButton.styleFrom(
                             elevation: _isHovered ? 1 : 0,
                           ),
-                          child: const Text('Book'),
+                          child: Text(AppLocalizations.of(context)!.book),
                         ),
                       ),
                     ],
@@ -1610,7 +1611,7 @@ class _SuggestedCruiseCardState extends State<_SuggestedCruiseCard> {
                               style: ElevatedButton.styleFrom(
                                 elevation: _isHovered ? 1 : 0,
                               ),
-                              child: const Text('Book'),
+                              child: Text(AppLocalizations.of(context)!.book),
                             ),
                           ),
                         ],
@@ -2159,7 +2160,7 @@ class _LocalWeatherCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onDetectLocation,
                     icon: const Icon(Icons.my_location, size: 16),
-                    label: const Text('Use my location'),
+                    label: Text(AppLocalizations.of(context)!.useMyLocation),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.accent,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
