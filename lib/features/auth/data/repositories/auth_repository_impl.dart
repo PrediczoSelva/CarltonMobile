@@ -11,6 +11,8 @@ import '../../data/models/login_request.dart';
 import '../../data/models/login_response.dart';
 import '../../data/models/register_request.dart';
 import '../../data/models/user_model.dart';
+import '../../domain/entities/login_result.dart';
+import '../../domain/entities/mfa_challenge.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
@@ -27,10 +29,22 @@ class AuthRepositoryImpl implements AuthRepository {
   static const _keyUser = 'current_user';
 
   @override
-  Future<UserEntity> login(String username, String password) async {
-    final response = await _remoteDatasource.login(
+  Future<LoginResult> login(String username, String password) async {
+    final attempt = await _remoteDatasource.login(
       LoginRequest(username: username, password: password),
     );
+    if (attempt.requiresMfa) {
+      return LoginMfaRequired(attempt.challenge!);
+    }
+    final user = attempt.response!.user;
+    await _saveUser(user);
+    return LoginSuccess(UserEntity.fromModel(user));
+  }
+
+  @override
+  Future<UserEntity> verifyMfa(MfaChallenge challenge, String code) async {
+    final response =
+        await _remoteDatasource.verifyMfa(challenge.challengeToken, code);
     await _saveUser(response.user);
     return UserEntity.fromModel(response.user);
   }

@@ -32,3 +32,16 @@ class AuthRegisterRequested extends AuthEvent {
 class AuthLogoutRequested extends AuthEvent {}
 
 class AuthCheckSessionRequested extends AuthEvent {}
+
+/// User typed the one-time code on the MFA screen.
+class AuthMfaVerifyRequested extends AuthEvent {
+  final String code;
+
+  AuthMfaVerifyRequested({required this.code});
+}
+
+/// User asked for a new one-time code.
+class AuthMfaResendRequested extends AuthEvent {}
+
+/// User left the MFA screen without finishing.
+class AuthMfaCancelled extends AuthEvent {}

@@ -1,7 +1,10 @@
-import '../../domain/entities/user.dart';
+import '../entities/login_result.dart';
+import '../entities/mfa_challenge.dart';
+import '../entities/user.dart';
 
 abstract class AuthRepository {
-  Future<UserEntity> login(String username, String password);
+  Future<LoginResult> login(String username, String password);
+  Future<UserEntity> verifyMfa(MfaChallenge challenge, String code);
   Future<UserEntity> register({
     required String firstName,
     required String lastName,
