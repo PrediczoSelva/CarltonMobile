@@ -39,28 +39,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const _hotelSuggestions = [
     _HotelSuggestion(
-      name: 'Shangri-La Colombo',
-      location: 'Colombo, Sri Lanka',
-      price: 4500,
+      name: 'The Savoy',
+      location: 'London, United Kingdom',
+      price: 395,
       rating: 4.8,
+      imageUrl:
+          'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80',
     ),
     _HotelSuggestion(
-      name: 'Taj Samudra',
-      location: 'Colombo, Sri Lanka',
-      price: 5200,
+      name: 'The Balmoral',
+      location: 'Edinburgh, Scotland',
+      price: 280,
       rating: 4.6,
+      imageUrl:
+          'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=900&q=80',
     ),
     _HotelSuggestion(
-      name: 'Cinnamon Grand',
-      location: 'Colombo, Sri Lanka',
-      price: 4800,
+      name: 'The Lowry Hotel',
+      location: 'Manchester, England',
+      price: 190,
       rating: 4.7,
+      imageUrl:
+          'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=900&q=80',
     ),
     _HotelSuggestion(
-      name: 'Heritance Kandalama',
-      location: 'Dambulla, Sri Lanka',
-      price: 3800,
+      name: 'The Grand Brighton',
+      location: 'Brighton, England',
+      price: 165,
       rating: 4.5,
+      imageUrl:
+          'https://images.unsplash.com/photo-1568084680786-a84f91d1153c?auto=format&fit=crop&w=900&q=80',
     ),
   ];
 
@@ -665,7 +673,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(AppLocalizations.of(context)!.suggestedFlights, style: AppTextStyles.h4),
+                Text(AppLocalizations.of(context)!.suggestedFlights,
+                    style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () => context.push('/flights/search'),
                   child: Text(AppLocalizations.of(context)!.seeAll),
@@ -678,7 +687,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(AppLocalizations.of(context)!.trendingDestinations, style: AppTextStyles.h4),
+                Text(AppLocalizations.of(context)!.trendingDestinations,
+                    style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () {},
                   child: Text(AppLocalizations.of(context)!.viewAll),
@@ -747,7 +757,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(AppLocalizations.of(context)!.promotionalUpdates, style: AppTextStyles.h4),
+                Text(AppLocalizations.of(context)!.promotionalUpdates,
+                    style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () {},
                   child: Text(AppLocalizations.of(context)!.viewAll),
@@ -816,7 +827,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(AppLocalizations.of(context)!.weatherAtYourLocation, style: AppTextStyles.h4),
+                Text(AppLocalizations.of(context)!.weatherAtYourLocation,
+                    style: AppTextStyles.h4),
                 IconButton(
                   onPressed: _refreshLocalWeather,
                   icon: const Icon(Icons.refresh),
@@ -853,7 +865,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(AppLocalizations.of(context)!.suggestedHotels, style: AppTextStyles.h4),
+              Text(AppLocalizations.of(context)!.suggestedHotels,
+                  style: AppTextStyles.h4),
               TextButton(onPressed: () {}, child: const Text('See all')),
             ],
           ),
@@ -867,7 +880,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final hotel = _hotelSuggestions[index];
               return _SuggestedHotelCard(
                 hotel: hotel,
-                onBook: () {},
+                onBook: () => context.push('/flights/search?tab=hotels'),
               );
             },
           ),
@@ -894,8 +907,11 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(AppLocalizations.of(context)!.suggestedCars, style: AppTextStyles.h4),
-              TextButton(onPressed: () {}, child: Text(AppLocalizations.of(context)!.seeAll)),
+              Text(AppLocalizations.of(context)!.suggestedCars,
+                  style: AppTextStyles.h4),
+              TextButton(
+                  onPressed: () {},
+                  child: Text(AppLocalizations.of(context)!.seeAll)),
             ],
           ),
           const SizedBox(height: 12),
@@ -934,8 +950,11 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(AppLocalizations.of(context)!.suggestedCruises, style: AppTextStyles.h4),
-            TextButton(onPressed: () {}, child: Text(AppLocalizations.of(context)!.seeAll)),
+            Text(AppLocalizations.of(context)!.suggestedCruises,
+                style: AppTextStyles.h4),
+            TextButton(
+                onPressed: () {},
+                child: Text(AppLocalizations.of(context)!.seeAll)),
           ],
         ),
         const SizedBox(height: 12),
@@ -1020,11 +1039,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _weatherRepository
         .forecastForFlight(
-          originCode: flight.origin,
-          destinationCode: flight.destination,
-          departureTime: flight.departureTime,
-          arrivalTime: flight.arrivalTime,
-        )
+      originCode: flight.origin,
+      destinationCode: flight.destination,
+      departureTime: flight.departureTime,
+      arrivalTime: flight.arrivalTime,
+    )
         .then((forecast) {
       if (!mounted) return;
       setState(() => _flightWeather[key] = forecast);
@@ -1108,6 +1127,24 @@ class _SuggestedHotelCardState extends State<_SuggestedHotelCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: SizedBox(
+                      height: 150,
+                      width: double.infinity,
+                      child: Image.network(
+                        hotel.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: AppColors.surfaceVariant,
+                            child: const Icon(Icons.hotel_outlined, size: 40),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(
@@ -1794,12 +1831,14 @@ class _HotelSuggestion {
     required this.location,
     required this.price,
     required this.rating,
+    required this.imageUrl,
   });
 
   final String name;
   final String location;
   final double price;
   final double rating;
+  final String imageUrl;
 }
 
 class _CarSuggestion {
