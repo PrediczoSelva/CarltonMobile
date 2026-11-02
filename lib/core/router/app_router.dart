@@ -41,6 +41,9 @@ import '../../features/car/domain/entities/car_search_criteria.dart';
 import '../../features/hotel/presentation/screens/hotel_results_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_details_screen.dart';
 import '../../features/hotel/presentation/screens/hotel_room_selection_screen.dart';
+import '../../features/hotel/presentation/screens/hotel_guest_details_screen.dart';
+import '../../features/hotel/presentation/screens/hotel_payment_screen.dart';
+import '../../features/hotel/presentation/screens/hotel_confirmation_screen.dart';
 import '../../features/hotel/domain/entities/hotel_search_criteria.dart';
 import '../../features/leisure_plan/presentation/screens/leisure_plan_screen.dart';
 import '../../features/my_trips/presentation/screens/my_trips_screen.dart';
@@ -74,6 +77,9 @@ abstract class AppRoutes {
   static const barclaysPayment = '/booking/payment/barclays';
   static const paymentProcessing = '/booking/payment/process';
   static const bookingConfirmation = '/booking/confirmation';
+  static const hotelGuestDetails = '/hotels/checkout/guest';
+  static const hotelPayment = '/hotels/checkout/payment';
+  static const hotelConfirmation = '/hotels/confirmation';
   static const myTrips = '/my-trips';
   static const scheduleChange = '/my-trips/schedule-change';
   static const messages = '/messages';
@@ -171,6 +177,18 @@ final GoRouter appRouter = GoRouter(
               criteria: criteria,
             );
           },
+        ),
+        GoRoute(
+          path: AppRoutes.hotelGuestDetails,
+          builder: (context, state) => const HotelGuestDetailsScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.hotelPayment,
+          builder: (context, state) => const HotelPaymentScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.hotelConfirmation,
+          builder: (context, state) => const HotelConfirmationScreen(),
         ),
         GoRoute(
           path: '/cruises/results',
