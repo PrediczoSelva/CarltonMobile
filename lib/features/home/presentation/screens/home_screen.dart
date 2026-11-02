@@ -78,24 +78,32 @@ class _HomeScreenState extends State<HomeScreen> {
       category: 'Sedan',
       price: 850,
       seats: 5,
+      imageUrl:
+          'https://images.unsplash.com/photo-1550355291-b6c1a8b3c3a0?auto=format&fit=crop&w=900&q=80',
     ),
     _CarSuggestion(
       name: 'Honda CR-V',
       category: 'SUV',
       price: 1200,
       seats: 5,
+      imageUrl:
+          'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=900&q=80',
     ),
     _CarSuggestion(
       name: 'Toyota Hiace',
       category: 'Van',
       price: 1800,
       seats: 8,
+      imageUrl:
+          'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=900&q=80',
     ),
     _CarSuggestion(
       name: 'Suzuki Alto',
       category: 'Hatchback',
       price: 550,
       seats: 4,
+      imageUrl:
+          'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80',
     ),
   ];
 
@@ -924,7 +932,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final car = _carSuggestions[index];
               return _SuggestedCarCard(
                 car: car,
-                onBook: () {},
+                onBook: () => context.push('/flights/search?tab=cars'),
               );
             },
           ),
@@ -1727,6 +1735,24 @@ class _SuggestedCarCardState extends State<_SuggestedCarCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: SizedBox(
+                      height: 150,
+                      width: double.infinity,
+                      child: Image.network(
+                        car.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: AppColors.surfaceVariant,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.directions_car,
+                              size: 52, color: AppColors.primary),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(
@@ -1847,12 +1873,14 @@ class _CarSuggestion {
     required this.category,
     required this.price,
     required this.seats,
+    required this.imageUrl,
   });
 
   final String name;
   final String category;
   final double price;
   final int seats;
+  final String imageUrl;
 }
 
 class _CruiseSuggestion {
