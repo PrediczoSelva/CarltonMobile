@@ -72,7 +72,7 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
         'HTL-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
     _session.bookingReference = _session.hotelBookingReference;
     _session.bookingStatus = 'Confirmed';
-    context.push('/hotels/confirmation');
+    context.push('/hotels/checkout/confirmation');
   }
 
   @override

@@ -79,7 +79,7 @@ abstract class AppRoutes {
   static const bookingConfirmation = '/booking/confirmation';
   static const hotelGuestDetails = '/hotels/checkout/guest';
   static const hotelPayment = '/hotels/checkout/payment';
-  static const hotelConfirmation = '/hotels/confirmation';
+  static const hotelConfirmation = '/hotels/checkout/confirmation';
   static const myTrips = '/my-trips';
   static const scheduleChange = '/my-trips/schedule-change';
   static const messages = '/messages';
@@ -146,13 +146,13 @@ final GoRouter appRouter = GoRouter(
             final criteria = state.extra is HotelSearchCriteria
                 ? state.extra as HotelSearchCriteria
                 : HotelSearchCriteria(
-              destination: '',
-              checkIn: DateTime.now().add(const Duration(days: 7)),
-              checkOut: DateTime.now().add(const Duration(days: 10)),
-              adults: 1,
-              children: 0,
-              rooms: 1,
-            );
+                    destination: '',
+                    checkIn: DateTime.now().add(const Duration(days: 7)),
+                    checkOut: DateTime.now().add(const Duration(days: 10)),
+                    adults: 1,
+                    children: 0,
+                    rooms: 1,
+                  );
             return HotelDetailsScreen(hotelId: hotelId, criteria: criteria);
           },
         ),
@@ -164,13 +164,13 @@ final GoRouter appRouter = GoRouter(
             final criteria = state.extra is HotelSearchCriteria
                 ? state.extra as HotelSearchCriteria
                 : HotelSearchCriteria(
-              destination: '',
-              checkIn: DateTime.now().add(const Duration(days: 7)),
-              checkOut: DateTime.now().add(const Duration(days: 10)),
-              adults: 1,
-              children: 0,
-              rooms: 1,
-            );
+                    destination: '',
+                    checkIn: DateTime.now().add(const Duration(days: 7)),
+                    checkOut: DateTime.now().add(const Duration(days: 10)),
+                    adults: 1,
+                    children: 0,
+                    rooms: 1,
+                  );
             return HotelRoomSelectionScreen(
               hotelId: hotelId,
               hotelName: hotelName,
@@ -222,7 +222,7 @@ final GoRouter appRouter = GoRouter(
             if (args is! CarSearchResultArgs) {
               return const Scaffold(
                 body:
-                Center(child: Text('Car search results are unavailable.')),
+                    Center(child: Text('Car search results are unavailable.')),
               );
             }
             return CarResultsScreen(args: args);
@@ -468,14 +468,19 @@ class _MainShellState extends State<MainShell> {
         },
         items: [
           _NavItem(icon: Icons.home, label: AppLocalizations.of(context)!.home),
-          _NavItem(icon: Icons.search, label: AppLocalizations.of(context)!.search),
-          _NavItem(icon: Icons.bookmark_outline, label: AppLocalizations.of(context)!.bookings),
-          _NavItem(icon: Icons.person_outline, label: AppLocalizations.of(context)!.myAccount),
+          _NavItem(
+              icon: Icons.search, label: AppLocalizations.of(context)!.search),
+          _NavItem(
+              icon: Icons.bookmark_outline,
+              label: AppLocalizations.of(context)!.bookings),
+          _NavItem(
+              icon: Icons.person_outline,
+              label: AppLocalizations.of(context)!.myAccount),
         ]
             .map((item) => BottomNavigationBarItem(
-          icon: Icon(item.icon),
-          label: item.label,
-        ))
+                  icon: Icon(item.icon),
+                  label: item.label,
+                ))
             .toList(),
       ),
     );
