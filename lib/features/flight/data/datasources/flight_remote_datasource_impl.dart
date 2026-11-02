@@ -147,13 +147,22 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
         '$_basePath/recommendations',
         receiveTimeout: _searchTimeout,
       );
-      final data = response.data as Map<String, dynamic>?;
-      if (data == null) return [];
+      final data = response.data;
+      final featuredFlights = data is List
+          ? data
+          : data is Map
+              ? data['featuredFlights'] ??
+                  data['flights'] ??
+                  data['results'] ??
+                  data['items'] ??
+                  const []
+              : const [];
+      if (featuredFlights is! List) return [];
 
-      final featuredFlights = data['featuredFlights'] as List<dynamic>? ?? [];
       final flights = featuredFlights
-          .map((json) => Flight.fromJson(json as Map<String, dynamic>))
-          .toList();
+          .whereType<Map>()
+          .map((json) => Flight.fromJson(Map<String, dynamic>.from(json)))
+          .toList(growable: false);
 
       if (kDebugMode) {
         debugPrint(
@@ -163,7 +172,11 @@ class FlightRemoteDatasourceImpl implements FlightRemoteDatasource {
               '[FlightSearch]   $f | origin=${f.origin} dest=${f.destination} price=${f.price} ${f.currency} source=${f.source}');
         }
       }
-      return flights;
+      if (flights.isNotEmpty) return flights;
+
+      // Some deployments expose the live catalog but not the optional
+      // recommendations projection. Keep the home page live in that case.
+      return getAllFlights();
     } on DioException catch (e) {
       if (kDebugMode) {
         debugPrint(
