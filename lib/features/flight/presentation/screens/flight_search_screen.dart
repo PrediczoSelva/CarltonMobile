@@ -9,6 +9,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../weather/domain/entities/weather_forecast.dart';
 import '../../../weather/domain/repositories/weather_repository.dart';
@@ -405,10 +406,11 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   }
 
   Future<void> _checkWeather() async {
+    final l10n = AppLocalizations.of(context)!;
     final place = _weatherPlaceController.text.trim();
     if (place.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a location to check the weather')),
+        SnackBar(content: Text(l10n.enterLocationWeather)),
       );
       return;
     }
@@ -433,12 +435,13 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
 
     if (forecast == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not find a forecast for "$place"')),
+        SnackBar(content: Text(l10n.forecastUnavailable(place))),
       );
     }
   }
 
   Widget _buildWeatherLookupSection() {
+    final l10n = AppLocalizations.of(context)!;
     final forecast = _weatherForecast;
 
     return Container(
@@ -457,7 +460,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                   size: 20, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'Check weather',
+                l10n.checkWeather,
                 style: AppTextStyles.h4.copyWith(
                   color: AppColors.primary,
                 ),
@@ -466,7 +469,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Look up the forecast for any destination before you book.',
+            l10n.weatherLookupDescription,
             style: AppTextStyles.bodySmall,
           ),
           const SizedBox(height: 16),
@@ -474,8 +477,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             controller: _weatherPlaceController,
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => _checkWeather(),
-            decoration: const InputDecoration(
-              labelText: 'Location',
+            decoration: InputDecoration(
+              labelText: l10n.location,
               hintText: 'e.g. London (LHR)',
               prefixIcon: Icon(Icons.place_outlined),
             ),
@@ -485,13 +488,13 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             onTap: _pickWeatherDate,
             borderRadius: BorderRadius.circular(4),
             child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Date',
+              decoration: InputDecoration(
+                labelText: l10n.date,
                 prefixIcon: Icon(Icons.calendar_today_outlined),
               ),
               child: Text(
                 _weatherDate == null
-                    ? 'Select date'
+                    ? l10n.selectDate
                     : '${_weatherDate!.day}/${_weatherDate!.month}/${_weatherDate!.year}',
                 style: AppTextStyles.bodyMedium,
               ),
@@ -499,7 +502,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
           ),
           const SizedBox(height: 16),
           PrimaryButton(
-            label: 'Check weather',
+            label: l10n.checkWeather,
             icon: Icons.search,
             isLoading: _isCheckingWeather,
             onPressed: _isCheckingWeather ? null : _checkWeather,

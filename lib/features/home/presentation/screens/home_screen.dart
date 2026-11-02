@@ -656,7 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
               readOnly: true,
               onTap: () => context.push('/flights/search'),
               decoration: InputDecoration(
-                hintText: 'Search flights',
+                hintText: AppLocalizations.of(context)!.searchFlights,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: const Icon(Icons.tune),
               ),
@@ -665,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Suggested flights', style: AppTextStyles.h4),
+                Text(AppLocalizations.of(context)!.suggestedFlights, style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () => context.push('/flights/search'),
                   child: Text(AppLocalizations.of(context)!.seeAll),
@@ -681,7 +681,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(AppLocalizations.of(context)!.trendingDestinations, style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () {},
-                  child: const Text('View all'),
+                  child: Text(AppLocalizations.of(context)!.viewAll),
                 ),
               ],
             ),
@@ -750,7 +750,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(AppLocalizations.of(context)!.promotionalUpdates, style: AppTextStyles.h4),
                 TextButton(
                   onPressed: () {},
-                  child: const Text('View all'),
+                  child: Text(AppLocalizations.of(context)!.viewAll),
                 ),
               ],
             ),
@@ -934,7 +934,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Suggested cruises', style: AppTextStyles.h4),
+            Text(AppLocalizations.of(context)!.suggestedCruises, style: AppTextStyles.h4),
             TextButton(onPressed: () {}, child: Text(AppLocalizations.of(context)!.seeAll)),
           ],
         ),

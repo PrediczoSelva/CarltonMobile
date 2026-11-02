@@ -12,6 +12,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
@@ -101,7 +102,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     final hasBookingId = _session.bookingId != null && _session.bookingId! > 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Booking confirmed')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.bookingConfirmed)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -261,7 +262,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
               _session.reset();
               context.go('/home');
             },
-            child: const Text('Back to home'),
+            child: Text(AppLocalizations.of(context)!.backToHome),
           ),
         ],
       ),

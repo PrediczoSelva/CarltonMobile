@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/di/injection.dart';
 import '../bloc/wallet_bloc.dart';
 import '../bloc/wallet_event.dart';
@@ -49,7 +50,7 @@ class _WalletView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Wallet'),
+        title: Text(AppLocalizations.of(context)!.myWalletTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -170,7 +171,7 @@ class _BalanceCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () => _showTopUpModal(context),
               icon: const Icon(Icons.add),
-              label: const Text('Top Up Wallet'),
+              label: Text(AppLocalizations.of(context)!.topUpWallet),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 foregroundColor: AppColors.textOnAccent,
@@ -306,7 +307,7 @@ class _LoyaltyCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () => _navigateToRedeemScreen(context),
               icon: const Icon(Icons.redeem),
-              label: const Text('Redeem Points'),
+              label: Text(AppLocalizations.of(context)!.redeemPoints),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFFD97706),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/car_search_criteria.dart';
 import '../../domain/entities/car_vehicle.dart';
 
@@ -40,14 +41,15 @@ class _CarResultsScreenState extends State<CarResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final cars = _cars;
     final criteria = widget.args.criteria;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Car results'),
+        title: Text(l10n.carResults),
         actions: [
           Center(
-              child: Text('${cars.length} found',
+              child: Text(l10n.itemsFound(cars.length),
                   style:
                       AppTextStyles.bodySmall.copyWith(color: Colors.white))),
           const SizedBox(width: 12),
@@ -64,7 +66,7 @@ class _CarResultsScreenState extends State<CarResultsScreen> {
                         '${criteria.pickupLocation} · ${criteria.rentalDays} day${criteria.rentalDays == 1 ? '' : 's'}',
                         style: AppTextStyles.h4)),
                 IconButton(
-                    tooltip: 'Modify search',
+                    tooltip: l10n.modifySearchTooltip,
                     onPressed: () => context.pop(),
                     icon: const Icon(Icons.edit_outlined)),
               ],
@@ -78,22 +80,22 @@ class _CarResultsScreenState extends State<CarResultsScreen> {
                 DropdownButton<String>(
                   value: _sort,
                   underline: const SizedBox.shrink(),
-                  items: const [
+                  items: [
                     DropdownMenuItem(
-                        value: 'recommended', child: Text('Recommended')),
+                        value: 'recommended', child: Text(l10n.recommended)),
                     DropdownMenuItem(
-                        value: 'price_low', child: Text('Lowest price')),
+                        value: 'price_low', child: Text(l10n.lowestPrice)),
                     DropdownMenuItem(
-                        value: 'price_high', child: Text('Highest price')),
+                        value: 'price_high', child: Text(l10n.highestPrice)),
                     DropdownMenuItem(
-                        value: 'rating', child: Text('Best rated')),
+                        value: 'rating', child: Text(l10n.bestRated)),
                   ],
                   onChanged: (value) =>
                       setState(() => _sort = value ?? 'recommended'),
                 ),
                 const SizedBox(width: 8),
                 FilterChip(
-                    label: const Text('Free cancellation'),
+                    label: Text(l10n.freeCancellation),
                     selected: _freeCancellation,
                     onSelected: (value) =>
                         setState(() => _freeCancellation = value)),
@@ -127,11 +129,11 @@ class _CarResultsScreenState extends State<CarResultsScreen> {
               const Icon(Icons.directions_car_outlined,
                   size: 52, color: AppColors.textSecondary),
               const SizedBox(height: 12),
-              Text('No cars found', style: AppTextStyles.h4),
+              Text(AppLocalizations.of(context)!.noCarsFound, style: AppTextStyles.h4),
               TextButton.icon(
                   onPressed: () => context.pop(),
                   icon: const Icon(Icons.search),
-                  label: const Text('Modify search')),
+                  label: Text(AppLocalizations.of(context)!.modifySearch)),
             ],
           ),
         );

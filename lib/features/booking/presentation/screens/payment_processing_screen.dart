@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../booking/domain/entities/booking.dart';
 import '../../../booking/domain/entities/booking_session.dart';
@@ -285,7 +286,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Payment')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.payment)),
       body: BlocListener<BookingBloc, BookingState>(
         listener: (context, state) {
           if (state is BookingError) {
