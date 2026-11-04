@@ -6,6 +6,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -816,7 +817,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     final flight = _session.selectedOutboundFlight;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Passenger details')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.passengerDetails)),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(

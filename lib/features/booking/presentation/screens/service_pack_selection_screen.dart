@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 
@@ -48,7 +49,7 @@ class _ServicePackSelectionScreenState
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose Your Service Pack')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.chooseServicePack)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

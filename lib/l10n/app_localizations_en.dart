@@ -86,9 +86,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get home => 'Home';
 
   @override
-  String get search => 'Search';
-
-  @override
   String get bookings => 'Bookings';
 
   @override
@@ -178,4 +175,280 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get useMyLocation => 'Use my location';
+
+  @override
+  String get availableFlights => 'Available flights';
+
+  @override
+  String flightsCount(Object count) {
+    return '$count flights';
+  }
+
+  @override
+  String get noFlightsFound => 'No flights found';
+
+  @override
+  String get modifySearch => 'Modify search';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get location => 'Location';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get roundTrip => 'Round Trip';
+
+  @override
+  String get oneWay => 'One Way';
+
+  @override
+  String get multiCity => 'Multi-City';
+
+  @override
+  String flightNumber(Object number) {
+    return 'Flight $number';
+  }
+
+  @override
+  String get from => 'From';
+
+  @override
+  String get to => 'To';
+
+  @override
+  String get departureDate => 'Departure date';
+
+  @override
+  String get returnDate => 'Return date';
+
+  @override
+  String get removeFlight => 'Remove flight';
+
+  @override
+  String get addAnotherFlight => 'Add another flight';
+
+  @override
+  String get addNewTraveller => 'Add New Traveller';
+
+  @override
+  String get selectTraveller => 'Select traveller';
+
+  @override
+  String get relationship => 'Relationship';
+
+  @override
+  String get selectRelationship => 'Select relationship';
+
+  @override
+  String get passengerType => 'Passenger Type';
+
+  @override
+  String get selectType => 'Select type';
+
+  @override
+  String get personalInformation => 'Personal Information';
+
+  @override
+  String get firstName => 'First name';
+
+  @override
+  String get lastName => 'Last name';
+
+  @override
+  String get dateOfBirth => 'Date of Birth';
+
+  @override
+  String get nationality => 'Nationality';
+
+  @override
+  String get passportDetails => 'Passport Details';
+
+  @override
+  String get passportNumber => 'Passport Number';
+
+  @override
+  String get issueNumber => 'Issue Number';
+
+  @override
+  String get expiryDate => 'Expiry Date';
+
+  @override
+  String get optionalDetails => 'Optional Details';
+
+  @override
+  String get frequencyFlyerNumber => 'Frequent Flyer No';
+
+  @override
+  String get knownTravellerNumber => 'Known Traveller No';
+
+  @override
+  String get specialRequirement => 'Special Requirement';
+
+  @override
+  String get addPassenger => 'Add passenger';
+
+  @override
+  String get cabinClass => 'Cabin Class';
+
+  @override
+  String get economy => 'Economy';
+
+  @override
+  String get premiumEconomy => 'Premium Economy';
+
+  @override
+  String get business => 'Business';
+
+  @override
+  String get first => 'First';
+
+  @override
+  String get noFlightsForSearch => 'No flights found for your search.';
+
+  @override
+  String get pleaseCompleteCityPair => 'Please complete every city pair';
+
+  @override
+  String get pleaseFillRequired => 'Please fill in all required fields';
+
+  @override
+  String get pleaseSelectReturnDate => 'Please select a return date';
+
+  @override
+  String get enterLocationWeather => 'Enter a location to check the weather';
+
+  @override
+  String forecastUnavailable(Object place) {
+    return 'Could not find a forecast for \"$place\"';
+  }
+
+  @override
+  String get hotelResults => 'Hotel results';
+
+  @override
+  String get carResults => 'Car results';
+
+  @override
+  String get cruiseResults => 'Cruise results';
+
+  @override
+  String itemsFound(Object count) {
+    return '$count found';
+  }
+
+  @override
+  String get recommended => 'Recommended';
+
+  @override
+  String get priceLowHigh => 'Price: low to high';
+
+  @override
+  String get priceHighLow => 'Price: high to low';
+
+  @override
+  String get lowestPrice => 'Lowest price';
+
+  @override
+  String get highestPrice => 'Highest price';
+
+  @override
+  String get guestRating => 'Guest rating';
+
+  @override
+  String get bestRated => 'Best rated';
+
+  @override
+  String get freeCancellation => 'Free cancellation';
+
+  @override
+  String get fourPlusStars => '4+ stars';
+
+  @override
+  String get allInclusive => 'All-inclusive';
+
+  @override
+  String get noHotelsFound => 'No hotels found';
+
+  @override
+  String get noCarsFound => 'No cars found';
+
+  @override
+  String get noCruisesFound => 'No cruises found';
+
+  @override
+  String get tryChangingFilters => 'Try changing your dates or filters.';
+
+  @override
+  String get viewDetails => 'View details';
+
+  @override
+  String get viewCabinsDetails => 'View cabins & details';
+
+  @override
+  String get reserve => 'Reserve';
+
+  @override
+  String get modifySearchTooltip => 'Modify search';
+
+  @override
+  String get max => 'Max';
+
+  @override
+  String get searchFlights => 'Search flights';
+
+  @override
+  String get suggestedFlights => 'Suggested flights';
+
+  @override
+  String get suggestedCruises => 'Suggested cruises';
+
+  @override
+  String get viewAll => 'View all';
+
+  @override
+  String get payment => 'Payment';
+
+  @override
+  String get paymentMethod => 'Payment method';
+
+  @override
+  String get bookingSummary => 'Booking summary';
+
+  @override
+  String get bookingConfirmed => 'Booking confirmed';
+
+  @override
+  String get backToHome => 'Back to home';
+
+  @override
+  String get passengerDetails => 'Passenger details';
+
+  @override
+  String get chooseServicePack => 'Choose Your Service Pack';
+
+  @override
+  String get myWalletTitle => 'My Wallet';
+
+  @override
+  String get topUpWallet => 'Top Up Wallet';
+
+  @override
+  String get redeemPoints => 'Redeem Points';
+
+  @override
+  String get checkWeather => 'Check weather';
+
+  @override
+  String get weatherLookupDescription =>
+      'Look up the forecast for any destination before you book.';
+
+  @override
+  String get selectDate => 'Select date';
+
+  @override
+  String get select => 'Select';
 }
