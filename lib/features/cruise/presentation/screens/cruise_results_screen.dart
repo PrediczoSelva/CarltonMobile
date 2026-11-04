@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/cruise.dart';
 import '../../domain/entities/cruise_search_criteria.dart';
 
@@ -55,14 +56,15 @@ class _CruiseResultsScreenState extends State<CruiseResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final criteria = widget.args.criteria;
     final cruises = _cruises;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cruise results'),
+        title: Text(l10n.cruiseResults),
         actions: [
           Center(
-              child: Text('${cruises.length} found',
+              child: Text(l10n.itemsFound(cruises.length),
                   style:
                       AppTextStyles.bodySmall.copyWith(color: Colors.white))),
           const SizedBox(width: 12),
@@ -81,7 +83,7 @@ class _CruiseResultsScreenState extends State<CruiseResultsScreen> {
                   ),
                 ),
                 IconButton(
-                    tooltip: 'Modify search',
+                    tooltip: l10n.modifySearchTooltip,
                     onPressed: () => context.pop(),
                     icon: const Icon(Icons.edit_outlined)),
               ],
@@ -108,6 +110,7 @@ class _CruiseResultsScreenState extends State<CruiseResultsScreen> {
   }
 
   Widget _buildControls() {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -116,13 +119,13 @@ class _CruiseResultsScreenState extends State<CruiseResultsScreen> {
           DropdownButton<String>(
             value: _sort,
             underline: const SizedBox.shrink(),
-            items: const [
+            items: [
               DropdownMenuItem(
-                  value: 'recommended', child: Text('Recommended')),
+                  value: 'recommended', child: Text(l10n.recommended)),
               DropdownMenuItem(
-                  value: 'price-asc', child: Text('Price: low to high')),
+                  value: 'price-asc', child: Text(l10n.priceLowHigh)),
               DropdownMenuItem(
-                  value: 'price-desc', child: Text('Price: high to low')),
+                  value: 'price-desc', child: Text(l10n.priceHighLow)),
               DropdownMenuItem(
                   value: 'duration-asc', child: Text('Shortest duration')),
               DropdownMenuItem(
@@ -135,14 +138,14 @@ class _CruiseResultsScreenState extends State<CruiseResultsScreen> {
           ),
           const SizedBox(width: 8),
           FilterChip(
-              label: const Text('All-inclusive'),
+              label: Text(l10n.allInclusive),
               selected: _allInclusiveOnly,
               onSelected: (value) => setState(() => _allInclusiveOnly = value)),
           const SizedBox(width: 8),
           SizedBox(
             width: 180,
             child: Row(children: [
-              const Text('Max'),
+              Text(l10n.max),
               Expanded(
                   child: Slider(
                       value: _maximumPrice,
@@ -159,19 +162,22 @@ class _CruiseResultsScreenState extends State<CruiseResultsScreen> {
     );
   }
 
-  Widget _emptyState() => Center(
+  Widget _emptyState() {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
         const Icon(Icons.directions_boat_outlined,
             size: 52, color: AppColors.textSecondary),
         const SizedBox(height: 12),
-        Text('No cruises found', style: AppTextStyles.h4),
+        Text(l10n.noCruisesFound, style: AppTextStyles.h4),
         const SizedBox(height: 8),
         const Text('Try changing your destination, port, or filters.'),
         TextButton.icon(
             onPressed: () => context.pop(),
             icon: const Icon(Icons.search),
-            label: const Text('Modify search')),
+            label: Text(l10n.modifySearch)),
       ]));
+  }
 
   void _viewDetails(BuildContext context, Cruise cruise) {
     context.push('/cruises/${cruise.id}', extra: cruise);

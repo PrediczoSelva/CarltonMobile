@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 
@@ -35,7 +36,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
     final total = basePrice + taxes;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Booking summary')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.bookingSummary)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

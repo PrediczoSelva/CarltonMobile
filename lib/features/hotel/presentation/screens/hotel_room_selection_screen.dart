@@ -203,7 +203,9 @@ class _HotelRoomSelectionScreenState extends State<HotelRoomSelectionScreen> {
                       ? () => setState(() => _roomQuantity--)
                       : null,
                   icon: const Icon(Icons.remove_circle_outline),
-                  color: _roomQuantity > 1 ? AppColors.primary : AppColors.disabled,
+                  color: _roomQuantity > 1
+                      ? AppColors.primary
+                      : AppColors.disabled,
                 ),
                 Text(
                   '$_roomQuantity',
@@ -301,7 +303,8 @@ class _HotelRoomSelectionScreenState extends State<HotelRoomSelectionScreen> {
                 const Spacer(),
                 Text(
                   '£${_total.toStringAsFixed(0)}',
-                  style: AppTextStyles.price.copyWith(fontWeight: FontWeight.w700),
+                  style:
+                      AppTextStyles.price.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -316,8 +319,14 @@ class _HotelRoomSelectionScreenState extends State<HotelRoomSelectionScreen> {
 
     _bookingSession.totalPrice = _total;
     _bookingSession.currency = _selectedOffer!.currency;
+    _bookingSession.isHotelBooking = true;
+    _bookingSession.hotelId = widget.hotelId;
+    _bookingSession.hotelName = widget.hotelName;
+    _bookingSession.hotelSearchCriteria = widget.criteria;
+    _bookingSession.selectedHotelOffer = _selectedOffer;
+    _bookingSession.hotelRoomQuantity = _roomQuantity;
 
-    context.push('/booking/passenger-details');
+    context.push('/hotels/checkout/guest');
   }
 }
 
@@ -410,7 +419,7 @@ class _RoomCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(offer.description!, style: AppTextStyles.bodySmall),
                 ],
-                const SizedBox(height: 8                ),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,

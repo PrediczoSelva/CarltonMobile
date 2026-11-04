@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "380012676543",
+    "project_id": "carlton-leisure",
+    "storage_bucket": "carlton-leisure.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380012676543:android:d9391316f11c7414554d0a",
+        "android_client_info": {
+          "package_name": "com.example.carlton_leisure_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDX1g-H_hD7fSmOukA91vVYb9-tWHPHhUQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

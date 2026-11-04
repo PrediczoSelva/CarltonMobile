@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../../l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -49,15 +50,16 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final criteria = widget.args.criteria;
     final hotels = _hotels;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hotel results'),
+        title: Text(l10n.hotelResults),
         actions: [
           if (widget.args.hotels.isNotEmpty)
             Center(
-                child: Text('${hotels.length} found',
+                child: Text(l10n.itemsFound(hotels.length),
                     style:
                         AppTextStyles.bodySmall.copyWith(color: Colors.white))),
           const SizedBox(width: 12),
@@ -88,6 +90,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   }
 
   Widget _buildSummary(HotelSearchCriteria criteria) {
+    final l10n = AppLocalizations.of(context)!;
     final dateFormat = DateFormat('d MMM');
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -106,7 +109,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
             ),
           ),
           IconButton(
-            tooltip: 'Modify search',
+            tooltip: l10n.modifySearchTooltip,
             onPressed: () => context.pop(),
             icon: const Icon(Icons.edit_outlined),
           ),
@@ -116,6 +119,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   }
 
   Widget _buildFilters() {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -124,28 +128,28 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
           DropdownButton<String>(
             value: _sort,
             underline: const SizedBox.shrink(),
-            items: const [
+            items: [
               DropdownMenuItem(
-                  value: 'recommended', child: Text('Recommended')),
+                  value: 'recommended', child: Text(l10n.recommended)),
               DropdownMenuItem(
-                  value: 'price_low', child: Text('Price: low to high')),
+                  value: 'price_low', child: Text(l10n.priceLowHigh)),
               DropdownMenuItem(
-                  value: 'price_high', child: Text('Price: high to low')),
-              DropdownMenuItem(value: 'rating', child: Text('Guest rating')),
+                  value: 'price_high', child: Text(l10n.priceHighLow)),
+              DropdownMenuItem(value: 'rating', child: Text(l10n.guestRating)),
             ],
             onChanged: (value) =>
                 setState(() => _sort = value ?? 'recommended'),
           ),
           const SizedBox(width: 8),
           FilterChip(
-            label: const Text('Free cancellation'),
+            label: Text(l10n.freeCancellation),
             selected: _freeCancellationOnly,
             onSelected: (value) =>
                 setState(() => _freeCancellationOnly = value),
           ),
           const SizedBox(width: 8),
           FilterChip(
-            label: const Text('4+ stars'),
+            label: Text(l10n.fourPlusStars),
             selected: _minimumStars == 4,
             onSelected: (value) =>
                 setState(() => _minimumStars = value ? 4 : null),
@@ -156,6 +160,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -163,13 +168,13 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
           const Icon(Icons.hotel_outlined,
               size: 52, color: AppColors.textSecondary),
           const SizedBox(height: 12),
-          Text('No hotels found', style: AppTextStyles.h4),
+          Text(l10n.noHotelsFound, style: AppTextStyles.h4),
           const SizedBox(height: 8),
-          const Text('Try changing your dates or filters.'),
+          Text(l10n.tryChangingFilters),
           TextButton.icon(
             onPressed: () => context.pop(),
             icon: const Icon(Icons.search),
-            label: const Text('Modify search'),
+            label: Text(l10n.modifySearch),
           ),
         ],
       ),

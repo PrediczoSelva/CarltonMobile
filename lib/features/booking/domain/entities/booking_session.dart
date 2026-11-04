@@ -78,6 +78,15 @@ class BookingSession {
   /// True when the active booking is a hotel booking, false for flights.
   /// Hotel flows use "guest" wording while flights use "passenger" wording.
   bool isHotelBooking = false;
+  String? hotelId;
+  String? hotelName;
+  HotelSearchCriteria? hotelSearchCriteria;
+  HotelOffer? selectedHotelOffer;
+  int hotelRoomQuantity = 1;
+  Map<String, String> hotelLeadGuest = {};
+  String? hotelEmergencyContact;
+  String? hotelPaymentLast4;
+  String? hotelBookingReference;
 
   bool get hasPassengerData => passengers.isNotEmpty;
 
@@ -124,5 +133,14 @@ class BookingSession {
     bookingId = null;
     selectedTravelers = null;
     isHotelBooking = false;
+    hotelId = null;
+    hotelName = null;
+    hotelSearchCriteria = null;
+    selectedHotelOffer = null;
+    hotelRoomQuantity = 1;
+    hotelLeadGuest = {};
+    hotelEmergencyContact = null;
+    hotelPaymentLast4 = null;
+    hotelBookingReference = null;
   }
 }

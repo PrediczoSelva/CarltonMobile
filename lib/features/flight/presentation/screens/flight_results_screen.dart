@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../booking/domain/entities/booking_session.dart';
 import '../../../weather/domain/entities/weather_forecast.dart';
 import '../../../weather/domain/repositories/weather_repository.dart';
@@ -64,19 +65,20 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final flights = _session.outboundFlights;
     final criteria = _session.searchCriteria;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Available flights'),
+        title: Text(l10n.availableFlights),
         actions: [
           if (flights.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               child: Center(
                 child: Text(
-                  '${flights.length} flights',
+                  l10n.flightsCount(flights.length),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textOnPrimary,
                   ),
@@ -99,7 +101,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No flights found',
+                      l10n.noFlightsFound,
                       style: AppTextStyles.h4,
                     ),
                     if (criteria != null) ...[
@@ -113,7 +115,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     TextButton.icon(
                       onPressed: () => context.go('/flights/search'),
                       icon: const Icon(Icons.search),
-                      label: const Text('Modify search'),
+                      label: Text(l10n.modifySearch),
                     ),
                   ],
                 ),
