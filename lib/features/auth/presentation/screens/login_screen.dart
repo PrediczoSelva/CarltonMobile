@@ -60,6 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
             if (state is AuthAuthenticated) {
               context.go('/home');
             }
+            if (state is AuthMfaRequired && state.isNewChallenge) {
+              context.push('/mfa');
+            }
             if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message)),

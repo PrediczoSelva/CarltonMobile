@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/localization/locale_notifier.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/theme_notifier.dart';
@@ -21,6 +23,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
     const Locale('fr'): 'french',
     const Locale('ar'): 'arabic',
   };
+
+  /// null = unknown / not available for this account (switch is hidden).
+  bool? _twoFaEnabled;
+  bool _twoFaBusy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTwoFaStatus();
+  }
+
+  Future<void> _loadTwoFaStatus() async {
+    try {
+      final response =
+          await getIt<ApiClient>().get<dynamic>('/Auth/2fa/status');
+      final data = response.data;
+      if (!mounted) return;
+      setState(() => _twoFaEnabled = data is Map ? data['enabled'] == true : null);
+    } catch (_) {
+      if (mounted) setState(() => _twoFaEnabled = null);
+    }
+  }
+
+  Future<void> _toggleTwoFa(bool value) async {
+    setState(() => _twoFaBusy = true);
+    try {
+      await getIt<ApiClient>()
+          .post<dynamic>('/Auth/2fa/toggle', data: {'Enabled': value});
+      if (!mounted) return;
+      setState(() => _twoFaEnabled = value);
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final message = data is Map ? data['message'] as String? : null;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              message ?? 'Could not update two-factor authentication.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _twoFaBusy = false);
+    }
+  }
 
   Future<void> _selectLanguage() async {
     final localeNotifier = getIt<LocaleNotifier>();
@@ -148,6 +196,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _SettingsSection(
             title: l10n.account,
             children: [
+              if (_twoFaEnabled != null)
+                SwitchListTile(
+                  value: _twoFaEnabled!,
+                  onChanged: _twoFaBusy ? null : _toggleTwoFa,
+                  secondary: const Icon(Icons.verified_user_outlined),
+                  title: const Text('Two-factor authentication'),
+                  subtitle:
+                      const Text('Require an email code when signing in'),
+                ),
               _SettingsTile(
                 icon: Icons.lock_outline,
                 title: l10n.changePassword,
